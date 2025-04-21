@@ -1,0 +1,6 @@
+# requirements-dev.txt
+pytest
+pytest-asyncio  # For testing async code
+pytest-mock     # Fixture for mocking (unittest.mock wrapper)
+httpx           # Required by FastAPI's TestClient
+# Add any other test-specific dependencies here

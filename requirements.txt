@@ -1,0 +1,22 @@
+# Core web framework
+fastapi
+
+# ASGI server for running FastAPI
+uvicorn[standard]
+
+# Pydantic (often comes with FastAPI, but explicit is good)
+pydantic
+pydantic-settings # For loading config from env vars
+
+# Google Cloud Libraries
+google-cloud-firestore
+google-cloud-storage
+
+# For reading .env files during local development
+python-dotenv
+
+# For generating unique IDs
+uuid
+
+# Used for timezone name extraction
+pytz
