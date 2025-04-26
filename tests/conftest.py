@@ -3,35 +3,58 @@ import pytest
 from fastapi.testclient import TestClient
 import sys
 import os
-from unittest.mock import AsyncMock # Import AsyncMock for async functions
+from unittest.mock import AsyncMock
+# *** ADDED: Import load_dotenv ***
+from dotenv import load_dotenv
 
-# Add project root to path to allow importing 'main' and other modules
+# *** ADDED: Load test environment variables very early ***
+print("Attempting to load .env.test from tests/conftest.py...")
+# Construct path relative to this conftest.py file (assuming it's in tests/)
+# Go up one level to the project root, then find .env.test
+dotenv_path = os.path.join(os.path.dirname(__file__), '..', '.env.test')
+if os.path.exists(dotenv_path):
+    # override=True ensures that env vars from .env.test take precedence
+    # over any existing system environment variables.
+    load_dotenv(dotenv_path=dotenv_path, override=True)
+    print(f".env.test loaded successfully from: {dotenv_path}")
+else:
+    print(f"Warning: .env.test file not found at {dotenv_path}. Relying on system environment variables.")
+    # Optionally, check if required variables are present in the environment anyway
+    required_vars = ["GCP_PROJECT_ID", "GCS_BUCKET_NAME"]
+    missing_vars = [v for v in required_vars if v not in os.environ]
+    if missing_vars:
+        print(f"ERROR: Required test environment variables missing: {', '.join(missing_vars)}")
+        pytest.exit(f"Required test environment variables {', '.join(missing_vars)} not set and .env.test not found.", 1)
+
+
+# Add project root to path AFTER loading env vars, in case config depends on it
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-sys.path.insert(0, project_root)
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
 
-# Ensure settings are loaded for testing (can use test-specific .env if needed)
-# This import implicitly loads settings from .env or environment
-# Important: Ensure .env exists or required env vars are set for config loading
+# Now import config and main, which will initialize Settings using loaded env vars
 try:
+    print("Importing config...")
     from config import settings
+    print("Config imported successfully.")
+    # Log critical settings to verify they loaded
+    print(f"Loaded GCP_PROJECT_ID: {os.getenv('GCP_PROJECT_ID')}")
+    print(f"Loaded GCS_BUCKET_NAME: {os.getenv('GCS_BUCKET_NAME')}")
 except ImportError as e:
     print(f"Error importing config: {e}. Make sure config.py exists and project root is in sys.path.")
-    # Provide default values or raise error if settings are crucial for app setup
-    # For testing where services are mocked, exact config values might be less critical
-    # but the FastAPI app initialization still needs the 'settings' object.
-    # As a fallback for tests if config fails:
-    # settings = type('obj', (object,), {'api_title': 'Test API', 'port': 8000})()
-    pass
+    settings = None # Set to None or fallback if needed
+    pytest.exit(f"Failed to import config.py: {e}", 1)
+except Exception as e_settings: # Catch potential validation errors during import
+     print(f"Error initializing Settings from config.py: {e_settings}")
+     pytest.exit(f"Failed to initialize Settings: {e_settings}", 1)
 
 
-# Import the FastAPI app instance
-# This should happen AFTER potentially setting test environment variables
-# or modifying sys.path if your config depends on relative paths.
 try:
+    print("Importing main app...")
     from main import app as fastapi_app
+    print("Main app imported successfully.")
 except ImportError as e:
      print(f"Error importing main: {e}. Make sure main.py exists and project root is in sys.path.")
-     # Cannot proceed without the app instance
      pytest.exit(f"Failed to import FastAPI app from main.py: {e}", 1)
 
 
@@ -40,18 +63,18 @@ def client() -> TestClient:
     """
     Create a FastAPI TestClient instance for the session.
     """
-    # If you need to override dependencies for *all* tests, do it here using app.dependency_overrides
-    # Example:
-    # def get_mock_firestore(): return AsyncMock()
-    # fastapi_app.dependency_overrides[firestore_service.get_db] = get_mock_firestore
-    # We will use pytest-mock per-test instead for more granular control.
-    with TestClient(fastapi_app) as test_client:
-        yield test_client
+    print("Creating TestClient...")
+    try:
+        with TestClient(fastapi_app) as test_client:
+            print("TestClient created.")
+            yield test_client
+    except Exception as e:
+        print(f"ERROR creating TestClient: {e}")
+        pytest.fail(f"Failed to create TestClient: {e}")
 
 # Optional: Fixture for base API URL prefix if needed elsewhere
 @pytest.fixture(scope="session")
 def api_prefix() -> str:
-    # Adjust if your routers use a different global prefix in main.py
     return "" # Assuming routers are included directly under root
 
 # Optional: Fixture for common headers
