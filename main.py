@@ -48,7 +48,7 @@ async def lifespan(app: FastAPI):
 # *** FIX: Create servers list dynamically using initialized settings.port ***
 servers_list = [
     # You should replace this placeholder with your actual Cloud Run URL when known
-    # {"url": "https://your-cloud-run-service-url.a.run.app", "description": "Cloud Run Service (Replace)"},
+    {"url": "https://pottery-api-1073709451179.us-central1.run.app", "description": "Cloud Run Service (Replace)"},
     # Use the correctly initialized settings.port value here
     {"url": f"http://localhost:{settings.port}", "description": "Local Development Server"}
 ]

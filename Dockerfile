@@ -2,11 +2,11 @@
 
 # --- Stage 1: Build Stage (Optional but good for managing dependencies) ---
 # Use an official Python runtime as a parent image
-FROM python:3.10-slim as builder
+FROM python:3.11-slim AS builder
 
 # Set environment variables
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
 # Set work directory
 WORKDIR /app
@@ -21,13 +21,11 @@ RUN pip wheel --no-cache-dir --no-deps --wheel-dir /app/wheels -r requirements.t
 
 
 # --- Stage 2: Runtime Stage ---
-FROM python:3.10-slim
+FROM python:3.11-slim
 
 # Set environment variables
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
-# Set the default port Cloud Run expects (can be overridden by Cloud Run)
-ENV PORT 8080
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 # Set PYTHONPATH if your project structure requires it (usually not needed with this flat structure)
 # ENV PYTHONPATH /app
 
@@ -36,6 +34,9 @@ WORKDIR /app
 
 # Install runtime dependencies (if any, e.g., system libraries needed by Python packages)
 # RUN apt-get update && apt-get install -y --no-install-recommends some-runtime-lib && rm -rf /var/lib/apt/lists/*
+
+# Install debugpy for remote debugging
+RUN pip install debugpy
 
 # Copy installed wheels from the builder stage
 COPY --from=builder /app/wheels /wheels
@@ -49,7 +50,7 @@ COPY . .
 # Expose the port the app runs on (matches ENV PORT)
 EXPOSE 8080
 
-# Command to run the application using Uvicorn
+# Command to run the application using Uvicorn with debugpy
 # Use the PORT environment variable provided by Cloud Run
 # Use 0.0.0.0 to listen on all interfaces within the container
 # Set the number of workers based on CPU availability (Cloud Run handles scaling)
@@ -59,3 +60,7 @@ EXPOSE 8080
 # Simpler Uvicorn command (often sufficient for Cloud Run)
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
 
+# For debugging in local docker container
+# Expose the debug port
+# EXPOSE 5678
+# CMD ["python", "-m", "debugpy", "--listen", "0.0.0.0:5678", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080", "--reload"]

@@ -30,6 +30,7 @@ The application is designed to be containerized using Docker and deployed to Goo
 .
 ├── .env                  # Optional: For local environment variables (add to .gitignore!)
 ├── .env.example          # Example environment variables
+├── build.env             # Optional: For build/deployment specific variables
 ├── Dockerfile            # Container definition
 ├── requirements.txt      # Python dependencies
 ├── requirements-dev.txt  # Development/test dependencies
@@ -38,6 +39,8 @@ The application is designed to be containerized using Docker and deployed to Goo
 ├── models.py             # Pydantic data models (incl. internal and response models)
 ├── pytest.ini            # Pytest configuration (e.g., markers)
 ├── README.md             # This file
+├── build_docker_image.sh # Script to build and push Docker image
+├── deploy.sh             # Script to deploy image to Cloud Run
 ├── routers/
 │   ├── __init__.py
 │   ├── items.py          # Router for /api/items endpoints
@@ -83,17 +86,27 @@ cd <repository-directory>
     ```bash
     cp .env.example .env
     ```
-* Edit the `.env` file and provide your specific Google Cloud configuration:
-    * `GCP_PROJECT_ID`: Your Google Cloud project ID.
-    * `GCS_BUCKET_NAME`: The name of the GCS bucket to use for photo storage. **Ensure this bucket exists.**
+* Edit the `.env` file and provide your specific Google Cloud configuration for **runtime**:
+    * `GCP_PROJECT_ID`: Your Google Cloud project ID. **(Required)**
+    * `GCS_BUCKET_NAME`: The name of the GCS bucket to use for photo storage. **Ensure this bucket exists.** **(Required)**
     * `FIRESTORE_COLLECTION`: (Optional) Name for the Firestore collection (defaults to `pottery_items`).
     * `FIRESTORE_DATABASE_ID`: (Optional) Firestore database ID if not using `(default)`.
-* **Important:** Add `.env` to your `.gitignore` file to avoid committing secrets.
-* **Authentication (Local):** For local development, authenticate the Google Cloud SDK to provide Application Default Credentials (ADC). The easiest way is often:
+    * `SIGNED_URL_EXPIRATION_MINUTES`: (Optional) Validity duration for photo URLs (defaults to 15).
+    * `PORT`: (Optional) Port for the local Uvicorn server (defaults to 8080).
+* Create a `build.env` file (or set environment variables directly) for **build/deployment**:
+    * `GCP_PROJECT_ID`: Your Google Cloud project ID. **(Required)**
+    * `BUILD_SERVICE_NAME`: (Optional) Name for the Cloud Run service / Docker image tag (defaults to `pottery-api`).
+    * `BUILD_REGION`: (Optional) GCP region for Artifact Registry / Cloud Build (defaults to `us-central1`).
+    * `BUILD_REPO_NAME`: (Optional) Artifact Registry repository name (defaults to `pottery-app-repo`).
+    * `CLOUD_RUN_SERVICE_ACCOUNT_EMAIL`: (Optional) Email of the service account the Cloud Run service will run as (defaults to `pottery-app-sa@[PROJECT_ID].iam.gserviceaccount.com`). Needs Firestore/GCS permissions.
+    * `DEPLOYMENT_SERVICE_ACCOUNT_EMAIL`: **(Required)** Email of the service account used to run the deployment script. Needs Artifact Registry Admin, Cloud Run Admin, IAM Service Account User roles.
+    * `DEPLOYMENT_SERVICE_ACCOUNT_KEY_FILE`: **(Required)** Path to the JSON key file for the deployment service account.
+* **Important:** Add `.env` and `build.env` (and any key files) to your `.gitignore` file.
+* **Authentication (Local):** For running the app locally (not deploying), authenticate the Google Cloud SDK:
     ```bash
     gcloud auth application-default login
     ```
-    Alternatively, download a service account key file (with Firestore and GCS permissions) and set the `GOOGLE_APPLICATION_CREDENTIALS` environment variable to its path (e.g., `export GOOGLE_APPLICATION_CREDENTIALS="/path/to/your/keyfile.json"`).
+    Or set `GOOGLE_APPLICATION_CREDENTIALS` to a key file path.
 
 ### 3. Install Dependencies
 
@@ -112,15 +125,14 @@ python main.py
 ```
 Or using uvicorn for auto-reload:
 ```bash
-uvicorn main:app --reload --port 8000
+uvicorn main:app --reload --port ${PORT:-8000}
 ```
-(Replace `8000` with the desired port, although it defaults to 8080 or the `PORT` value in `.env`).
 
 ### 5. Access API Documentation
 
 Once the server is running, access the interactive API documentation (Swagger UI) in your browser:
 
-* [http://localhost:8080/api/docs](http://localhost:8080/api/docs) (Adjust port if necessary)
+* [http://localhost:${PORT:-8000}/api/docs](http://localhost:${PORT:-8000}/api/docs)
 
 You can also view the ReDoc documentation at `/api/redoc`.
 
@@ -173,73 +185,61 @@ pytest tests/integration/
 
 ### Prerequisites
 
-* Google Cloud SDK (`gcloud`) configured and authenticated with permissions to manage Cloud Run, Cloud Build, Artifact Registry (or GCR), Firestore, and GCS.
+* Google Cloud SDK (`gcloud`) configured.
 * Required GCP APIs enabled (Cloud Run, Cloud Build, Artifact Registry, Firestore, Cloud Storage).
-* A Service Account for the Cloud Run service with appropriate IAM roles (e.g., Firestore User, Storage Object Admin, Cloud Storage Service Agent (for signed URLs)).
+* An Artifact Registry repository created (or use GCR). **Note:** The `deploy.sh` script can now create this if it doesn't exist.
+* A Service Account for the Cloud Run service (e.g., `pottery-app-sa@[PROJECT_ID].iam.gserviceaccount.com`) with roles like `Firestore User`, `Storage Object Admin`, `Cloud Storage Service Agent`.
+* A separate Service Account for **running the deployment** (e.g., `deployer-sa@[PROJECT_ID].iam.gserviceaccount.com`) with roles like `Artifact Registry Administrator` (to create repo), `Cloud Run Admin`, `IAM Service Account User` (to act as the Cloud Run SA during deployment). You need to download a key file for this deployer service account.
 
 ### 1. Build the Docker Image
 
-You can use Google Cloud Build to build the image directly from your source code and push it to Artifact Registry (recommended) or Google Container Registry (GCR).
+Use the provided `build_docker_image.sh` script.
+
+**Build Script Variables:**
+
+Configure these in `build.env` or your environment:
+
+* `GCP_PROJECT_ID`: **(Required)** Your Google Cloud project ID.
+* `BUILD_SERVICE_NAME`: (Optional) Defaults to `pottery-api`.
+* `BUILD_REGION`: (Optional) Defaults to `us-central1`.
+* `BUILD_REPO_NAME`: (Optional) Defaults to `pottery-app-repo`.
+
+**Run the Build Script:**
 
 ```bash
-# --- Replace placeholders ---
-PROJECT_ID="your-gcp-project-id"
-SERVICE_NAME="pottery-api" # Or your desired service name
-REGION="your-gcp-region" # e.g., us-central1
-REPO_NAME="your-artifact-registry-repo-name" # e.g., pottery-app-repo
-
-# --- Build and Push Command (Using Artifact Registry) ---
-gcloud builds submit --tag ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}/${SERVICE_NAME}:latest --project ${PROJECT_ID}
-
-# --- Build and Push Command (Using Google Container Registry - GCR) ---
-# gcloud builds submit --tag gcr.io/${PROJECT_ID}/${SERVICE_NAME}:latest --project ${PROJECT_ID}
+# Authenticate gcloud if needed for Cloud Build permissions
+# gcloud auth application-default login OR gcloud auth login
+chmod +x build_docker_image.sh
+./build_docker_image.sh
 ```
 
 ### 2. Deploy to Cloud Run
 
-Deploy the container image using the `gcloud run deploy` command. This example script sets common options; adapt as needed.
+Use the provided `deploy.sh` script.
+
+**Deployment Script Variables:**
+
+Configure these in `build.env` or your environment:
+
+* `GCP_PROJECT_ID`: **(Required)** Your Google Cloud project ID.
+* `GCS_BUCKET_NAME`: **(Required)** The runtime GCS bucket name.
+* `BUILD_SERVICE_NAME`: (Optional) Defaults to `pottery-api`. Must match build step.
+* `BUILD_REGION`: (Optional) Defaults to `us-central1`. Must match build step.
+* `BUILD_REPO_NAME`: (Optional) Defaults to `pottery-app-repo`. Must match build step.
+* `CLOUD_RUN_SERVICE_ACCOUNT_EMAIL`: (Optional) Email for the runtime service account. Defaults provided.
+* `DEPLOYMENT_SERVICE_ACCOUNT_EMAIL`: **(Required)** Email of the deployer service account.
+* `DEPLOYMENT_SERVICE_ACCOUNT_KEY_FILE`: **(Required)** Path to the deployer service account key file.
+* Other runtime variables from `.env` can also be included in the `ENV_VARS` construction within the script if needed.
+
+**Run the Deploy Script:**
 
 ```bash
-# --- Replace placeholders ---
-PROJECT_ID="your-gcp-project-id"
-SERVICE_NAME="pottery-api" # Or your desired service name
-REGION="your-gcp-region" # e.g., us-central1
-# Use the image URL from Artifact Registry or GCR (must match the build step)
-IMAGE_URL="${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}/${SERVICE_NAME}:latest"
-# IMAGE_URL="gcr.io/${PROJECT_ID}/${SERVICE_NAME}:latest" # GCR example
-
-# Service account for Cloud Run instance (must have Firestore/GCS permissions)
-# Create one if needed: gcloud iam service-accounts create ...
-SERVICE_ACCOUNT_EMAIL="your-cloud-run-service-account@${PROJECT_ID}.iam.gserviceaccount.com"
-
-# --- Required Environment Variables ---
-GCS_BUCKET="your-gcs-bucket-name-for-photos" # Bucket used by the deployed app
-# Optional (defaults are often fine)
-# FS_COLLECTION="pottery_items"
-# FS_DB_ID="(default)"
-# SIGNED_URL_MINS="15"
-
-# Construct the environment variables string for gcloud command
-# Always include GCP_PROJECT_ID for clarity within the app/clients
-ENV_VARS="GCP_PROJECT_ID=${PROJECT_ID}"
-ENV_VARS+=",GCS_BUCKET_NAME=${GCS_BUCKET}"
-# Add optional vars if needed:
-# ENV_VARS+=",FIRESTORE_COLLECTION=${FS_COLLECTION}"
-# ENV_VARS+=",FIRESTORE_DATABASE_ID=${FS_DB_ID}"
-# ENV_VARS+=",SIGNED_URL_EXPIRATION_MINUTES=${SIGNED_URL_MINS}"
-
-# --- Deploy Command ---
-gcloud run deploy ${SERVICE_NAME} \
-    --image ${IMAGE_URL} \
-    --platform managed \
-    --region ${REGION} \
-    --service-account ${SERVICE_ACCOUNT_EMAIL} \
-    --set-env-vars "${ENV_VARS}" \
-    --allow-unauthenticated \
-    --project ${PROJECT_ID}
-
-# Note: --allow-unauthenticated makes the API public.
-# For private APIs, use --no-allow-unauthenticated and configure IAM/IAP for access control.
+chmod +x deploy.sh
+./deploy.sh
 ```
+The script will:
+1. Authenticate using the deployment service account key.
+2. **Check if the specified Artifact Registry repository exists and create it if it doesn't (requires `roles/artifactregistry.admin` for the deployer SA).**
+3. Deploy the pre-built image to Cloud Run using the specified configuration.
 
 After deployment, Cloud Run will provide a service URL where your API will be accessible.

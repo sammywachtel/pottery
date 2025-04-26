@@ -20,3 +20,6 @@ uuid
 
 # Used for timezone name extraction
 pytz
+
+# For handling multipart/form-data (file uploads)
+python-multipart
