@@ -1,36 +1,33 @@
 #!/bin/bash
 
-# Combined Build and Deploy Script
+# Combined Build and Deploy Script for Cloud Run
 
-# Load environment variables from .env file if it exists
-if [ -f ".env" ]; then
-  echo "Loading environment variables from .env file..."
+# --- Load Environment Variables ---
+# Load environment variables ONLY from .env.deploy file if it exists
+ENV_DEPLOY_FILE=".env.deploy"
+if [ -f "${ENV_DEPLOY_FILE}" ]; then
+  echo "Loading environment variables from ${ENV_DEPLOY_FILE} file..."
+  # Use set -a to export all variables defined in the file
   set -a
-  source .env
+  source "${ENV_DEPLOY_FILE}"
   set +a
 else
-  echo "Warning: .env file not found. Relying on existing environment variables."
-fi
-
-# Load build/deployment environment variables from build.env file if it exists
-if [ -f "build.env" ]; then
-  echo "Loading environment variables from build.env file..."
-  set -a
-  source build.env
-  set +a
-else
-  echo "Warning: build.env file not found. Relying on existing environment variables."
-fi
-
-# --- Configuration Variables ---
-# Ensure GCP_PROJECT_ID is set
-if [ -z "${GCP_PROJECT_ID}" ]; then
-  echo "Error: GCP_PROJECT_ID environment variable is not set."
+  # If the primary deploy env file is missing, it's an error.
+  echo "Error: ${ENV_DEPLOY_FILE} file not found. Please create it from .env.deploy.example."
   exit 1
 fi
-PROJECT_ID="${GCP_PROJECT_ID}"
 
-# Set defaults for Build/Deploy parameters if not provided
+# --- Configuration Variables (from .env.deploy) ---
+# Ensure required variables are set
+if [ -z "${GCP_PROJECT_ID}" ]; then echo "Error: GCP_PROJECT_ID not set in ${ENV_DEPLOY_FILE}." && exit 1; fi
+if [ -z "${GCS_BUCKET_NAME}" ]; then echo "Error: GCS_BUCKET_NAME not set in ${ENV_DEPLOY_FILE}." && exit 1; fi
+if [ -z "${DEPLOYMENT_SERVICE_ACCOUNT_KEY_FILE}" ]; then echo "Error: DEPLOYMENT_SERVICE_ACCOUNT_KEY_FILE not set in ${ENV_DEPLOY_FILE}." && exit 1; fi
+if [ -z "${DEPLOYMENT_SERVICE_ACCOUNT_EMAIL}" ]; then echo "Error: DEPLOYMENT_SERVICE_ACCOUNT_EMAIL not set in ${ENV_DEPLOY_FILE}." && exit 1; fi
+if [ ! -f "${DEPLOYMENT_SERVICE_ACCOUNT_KEY_FILE}" ]; then echo "Error: Deployment key file not found at path specified in ${ENV_DEPLOY_FILE}: ${DEPLOYMENT_SERVICE_ACCOUNT_KEY_FILE}" && exit 1; fi
+
+
+PROJECT_ID="${GCP_PROJECT_ID}"
+# Set defaults for optional Build/Deploy parameters if not provided
 SERVICE_NAME="${BUILD_SERVICE_NAME:-pottery-api}"
 BUILD_REGION="${BUILD_REGION:-us-central1}"
 REPO_NAME="${BUILD_REPO_NAME:-pottery-app-repo}"
@@ -38,27 +35,19 @@ REPO_NAME="${BUILD_REPO_NAME:-pottery-app-repo}"
 # Construct the image URL (used for both tagging the build and deploying)
 IMAGE_URL="${BUILD_REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}/${SERVICE_NAME}:latest"
 
-# Runtime Service Account for Cloud Run
+# Runtime Service Account for Cloud Run (use default if not set in .env.deploy)
 CLOUD_RUN_SERVICE_ACCOUNT_EMAIL="${CLOUD_RUN_SERVICE_ACCOUNT_EMAIL:-pottery-app-sa@${PROJECT_ID}.iam.gserviceaccount.com}"
 
-# Deployment Service Account (needs permissions for Build, AR, Run, IAM)
-if [ -z "${DEPLOYMENT_SERVICE_ACCOUNT_KEY_FILE}" ] || [ -z "${DEPLOYMENT_SERVICE_ACCOUNT_EMAIL}" ]; then
-  echo "Error: DEPLOYMENT_SERVICE_ACCOUNT_KEY_FILE or DEPLOYMENT_SERVICE_ACCOUNT_EMAIL is not set."
-  echo "Please set these in build.env or your environment."
-  exit 1
-fi
-
-# Runtime GCS Bucket
-if [ -z "${GCS_BUCKET_NAME}" ]; then
-  echo "Error: GCS_BUCKET_NAME environment variable (for runtime) is not set."
-  exit 1
-fi
+# Runtime GCS Bucket (already checked above)
 GCS_BUCKET="${GCS_BUCKET_NAME}"
 
-# Construct the runtime environment variables string for Cloud Run
+# Construct the runtime environment variables string for Cloud Run deployment
+# Required vars
 ENV_VARS="GCP_PROJECT_ID=${PROJECT_ID},GCS_BUCKET_NAME=${GCS_BUCKET}"
-# Add other optional runtime vars if set
-# Example: if [ -n "${FIRESTORE_COLLECTION}" ]; then ENV_VARS+=",FIRESTORE_COLLECTION=${FIRESTORE_COLLECTION}"; fi
+# Add optional runtime vars if they are set in .env.deploy
+if [ -n "${FIRESTORE_COLLECTION}" ]; then ENV_VARS+=",FIRESTORE_COLLECTION=${FIRESTORE_COLLECTION}"; fi
+if [ -n "${FIRESTORE_DATABASE_ID}" ]; then ENV_VARS+=",FIRESTORE_DATABASE_ID=${FIRESTORE_DATABASE_ID}"; fi
+if [ -n "${SIGNED_URL_EXPIRATION_MINUTES}" ]; then ENV_VARS+=",SIGNED_URL_EXPIRATION_MINUTES=${SIGNED_URL_EXPIRATION_MINUTES}"; fi
 
 
 echo "--- Build & Deploy Configuration ---"

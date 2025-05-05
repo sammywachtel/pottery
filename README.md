@@ -11,6 +11,7 @@ The application is designed to be containerized using Docker and deployed to Goo
 * **CRUD Operations for Items:** Create, Read, Update, and Delete pottery item metadata (name, clay type, location, notes, measurements, created date/time).
 * **Photo Management:** Upload photos associated with specific items, update photo metadata (stage, notes), and delete photos.
 * **Secure Photo Access:** Photos are stored privately in GCS, and access is granted via short-lived Signed URLs included in API responses.
+* **JWT Authentication:** Secure API access using JWT tokens with username/password authentication.
 * **Timezone Awareness:** Stores creation/upload timestamps in UTC while preserving the original client timezone information.
 * **Automatic API Documentation:** Interactive documentation (Swagger UI and ReDoc) generated automatically by FastAPI.
 * **Containerized Deployment:** Includes a Dockerfile ready for building and deploying on Google Cloud Run or other container platforms.
@@ -93,7 +94,8 @@ This project uses separate `.env` files for different environments:
         * `GCP_PROJECT_ID`: Your project ID. **(Required)**
         * `GCS_BUCKET_NAME`: Your GCS bucket name. **(Required)**
         * `HOST_KEY_PATH`: **Absolute path** on your computer to a service account key file with Firestore/GCS permissions. This key is used for authentication when running locally. **(Required)**
-        * (Optional) `FIRESTORE_COLLECTION`, `FIRESTORE_DATABASE_ID`, `PORT`, `LOCAL_PORT`, `SIGNED_URL_EXPIRATION_MINUTES`. Defaults are provided in `config.py` or `run_docker_local.sh`.
+        * `JWT_SECRET_KEY`: Secret key for JWT token signing. Generate a secure random key for production. **(Recommended)**
+        * (Optional) `FIRESTORE_COLLECTION`, `FIRESTORE_DATABASE_ID`, `PORT`, `LOCAL_PORT`, `SIGNED_URL_EXPIRATION_MINUTES`, `JWT_ALGORITHM`, `JWT_ACCESS_TOKEN_EXPIRE_MINUTES`. Defaults are provided in `config.py` or `run_docker_local.sh`.
 * **`.env.deploy` (For Build & Deployment):**
     * Copy `.env.deploy.example` to `.env.deploy`.
     * Edit `.env.deploy` and fill in:
@@ -109,6 +111,7 @@ This project uses separate `.env` files for different environments:
     * Edit `.env.test` and fill in:
         * `GCP_PROJECT_ID`: Use your **TEST** project ID. **(Required)**
         * `GCS_BUCKET_NAME`: Use your **TEST** GCS bucket name. **(Required)**
+        * (Optional) `JWT_SECRET_KEY`, `JWT_ALGORITHM`, `JWT_ACCESS_TOKEN_EXPIRE_MINUTES` for authentication testing.
         * (Optional) `FIRESTORE_*`, `SIGNED_URL_EXPIRATION_MINUTES` for test environment.
         * **For Integration Tests:** You also need authentication. Either set `GOOGLE_APPLICATION_CREDENTIALS=/path/to/your/TEST-keyfile.json` within `.env.test` OR set this variable in your shell environment before running `pytest`.
 * **Important:** Add `.env.local`, `.env.deploy`, and `.env.test` to your `.gitignore` file.
@@ -145,6 +148,16 @@ You can also view the ReDoc documentation at `/api/redoc`.
 
 The API provides endpoints for managing pottery items and their photos. Key endpoints include:
 
+### Authentication
+* `POST /api/token`: Obtain a JWT token using username and password.
+
+For development and testing, the API comes with a default user:
+* Username: `admin`
+* Password: `admin`
+
+**Note:** In production, you should change the default credentials and use a secure password.
+
+### Items and Photos
 * `GET /`: Health check.
 * `GET /api/items`: List all pottery items.
 * `POST /api/items`: Create a new pottery item.
@@ -154,6 +167,8 @@ The API provides endpoints for managing pottery items and their photos. Key endp
 * `POST /api/items/{item_id}/photos`: Upload a photo for an item.
 * `PUT /api/items/{item_id}/photos/{photo_id}`: Update a photo's metadata.
 * `DELETE /api/items/{item_id}/photos/{photo_id}`: Delete a specific photo.
+
+All endpoints except the health check (`GET /`) and token endpoint (`POST /api/token`) require authentication using a JWT token in the Authorization header.
 
 For detailed request/response schemas and to try out the API, please refer to the interactive documentation at `/api/docs`.
 
@@ -213,6 +228,7 @@ Ensure all necessary variables are set in `.env.deploy` (see Step 2 under Setup)
 * `DEPLOYMENT_SERVICE_ACCOUNT_KEY_FILE`
 * (Optional) `BUILD_*` variables
 * (Optional) `CLOUD_RUN_SERVICE_ACCOUNT_EMAIL`
+* (Optional) `JWT_SECRET_KEY`, `JWT_ALGORITHM`, `JWT_ACCESS_TOKEN_EXPIRE_MINUTES` (Authentication config)
 * (Optional) Runtime `FIRESTORE_*`, `SIGNED_URL_EXPIRATION_MINUTES`
 
 ### Run the Build and Deploy Script

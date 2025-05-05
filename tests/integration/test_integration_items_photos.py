@@ -48,10 +48,10 @@ def update_item_payload(original_payload):
 # *** ADDED MARKER ***
 @pytest.mark.integration
 @pytest.mark.asyncio
-async def test_item_create_get_delete_cycle(client: TestClient, resource_manager):
+async def test_item_create_get_delete_cycle(client: TestClient, resource_manager, auth_headers):
     """Tests creating, retrieving, and deleting an item."""
     created_item_ids, _ = resource_manager # Get the set to store created IDs
-    headers = {"Content-Type": "application/json"}
+    headers = {**auth_headers, "Content-Type": "application/json"}
     payload = create_item_payload()
     item_id = None
 
@@ -68,7 +68,7 @@ async def test_item_create_get_delete_cycle(client: TestClient, resource_manager
     assert created_data["createdTimezone"] == "UTC" # Check derived timezone
 
     # 2. Get Created Item
-    response_get = client.get(f"/api/items/{item_id}")
+    response_get = client.get(f"/api/items/{item_id}", headers=auth_headers)
     assert response_get.status_code == status.HTTP_200_OK
     get_data = response_get.json()
     assert get_data["id"] == item_id
@@ -77,7 +77,7 @@ async def test_item_create_get_delete_cycle(client: TestClient, resource_manager
     assert get_data["createdDateTime"] == created_data["createdDateTime"]
 
     # 3. List Items (verify created item is present)
-    response_list = client.get("/api/items")
+    response_list = client.get("/api/items", headers=auth_headers)
     assert response_list.status_code == status.HTTP_200_OK
     list_data = response_list.json()
     assert isinstance(list_data, list)
@@ -85,11 +85,11 @@ async def test_item_create_get_delete_cycle(client: TestClient, resource_manager
     assert found_in_list, f"Created item {item_id} not found in list"
 
     # 4. Delete Item (cleanup is handled by fixture, but test the endpoint)
-    response_delete = client.delete(f"/api/items/{item_id}")
+    response_delete = client.delete(f"/api/items/{item_id}", headers=auth_headers)
     assert response_delete.status_code == status.HTTP_204_NO_CONTENT
 
     # 5. Verify Deletion by trying to Get again
-    response_get_after_delete = client.get(f"/api/items/{item_id}")
+    response_get_after_delete = client.get(f"/api/items/{item_id}", headers=auth_headers)
     assert response_get_after_delete.status_code == status.HTTP_404_NOT_FOUND
 
     # Remove from cleanup list as we explicitly deleted it
@@ -99,10 +99,10 @@ async def test_item_create_get_delete_cycle(client: TestClient, resource_manager
 # *** ADDED MARKER ***
 @pytest.mark.integration
 @pytest.mark.asyncio
-async def test_item_update_cycle(client: TestClient, resource_manager):
+async def test_item_update_cycle(client: TestClient, resource_manager, auth_headers):
     """Tests creating, updating, and verifying update of an item."""
     created_item_ids, _ = resource_manager
-    headers = {"Content-Type": "application/json"}
+    headers = {**auth_headers, "Content-Type": "application/json"}
     create_payload_data = create_item_payload()
     item_id = None
 
@@ -124,7 +124,7 @@ async def test_item_update_cycle(client: TestClient, resource_manager):
     assert update_response_data["createdDateTime"] == update_payload_data["createdDateTime"]
 
     # 3. Get Item and Verify Update Persisted
-    response_get = client.get(f"/api/items/{item_id}")
+    response_get = client.get(f"/api/items/{item_id}", headers=auth_headers)
     assert response_get.status_code == status.HTTP_200_OK
     get_data = response_get.json()
     assert get_data["id"] == item_id
@@ -136,19 +136,19 @@ async def test_item_update_cycle(client: TestClient, resource_manager):
 # *** ADDED MARKER ***
 @pytest.mark.integration
 @pytest.mark.asyncio
-async def test_get_nonexistent_item(client: TestClient):
+async def test_get_nonexistent_item(client: TestClient, auth_headers):
     """Test getting an item that does not exist."""
     non_existent_id = str(uuid.uuid4())
-    response_get = client.get(f"/api/items/{non_existent_id}")
+    response_get = client.get(f"/api/items/{non_existent_id}", headers=auth_headers)
     assert response_get.status_code == status.HTTP_404_NOT_FOUND
 
 # *** ADDED MARKER ***
 @pytest.mark.integration
 @pytest.mark.asyncio
-async def test_photo_upload_get_delete_cycle(client: TestClient, resource_manager):
+async def test_photo_upload_get_delete_cycle(client: TestClient, resource_manager, auth_headers):
     """Tests uploading a real photo file, verifying, and deleting it."""
     created_item_ids, created_gcs_paths = resource_manager
-    headers = {"Content-Type": "application/json"}
+    headers = {**auth_headers, "Content-Type": "application/json"}
     item_payload = create_item_payload()
     item_id = None
     photo_id = None
@@ -179,7 +179,7 @@ async def test_photo_upload_get_delete_cycle(client: TestClient, resource_manage
     with open(image_path, "rb") as f:
         files = {'file': (file_name, f, content_type)}
         response_upload = client.post(
-            f"/api/items/{item_id}/photos", data=form_data, files=files
+            f"/api/items/{item_id}/photos", data=form_data, files=files, headers=auth_headers
         )
 
     assert response_upload.status_code == status.HTTP_201_CREATED
@@ -200,7 +200,7 @@ async def test_photo_upload_get_delete_cycle(client: TestClient, resource_manage
     time.sleep(2)
 
     # 3. Get Item and Verify Photo Metadata
-    response_get = client.get(f"/api/items/{item_id}")
+    response_get = client.get(f"/api/items/{item_id}", headers=auth_headers)
     assert response_get.status_code == status.HTTP_200_OK
     get_data = response_get.json()
     assert len(get_data["photos"]) == 1
@@ -220,7 +220,7 @@ async def test_photo_upload_get_delete_cycle(client: TestClient, resource_manage
         pytest.fail(f"Direct GCS check after upload failed: {e}")
 
     # 4. Delete Photo
-    response_delete_photo = client.delete(f"/api/items/{item_id}/photos/{photo_id}")
+    response_delete_photo = client.delete(f"/api/items/{item_id}/photos/{photo_id}", headers=auth_headers)
     assert response_delete_photo.status_code == status.HTTP_204_NO_CONTENT
     if gcs_path in created_gcs_paths:
          created_gcs_paths.remove(gcs_path) # Remove from cleanup list as we explicitly delete
@@ -229,7 +229,7 @@ async def test_photo_upload_get_delete_cycle(client: TestClient, resource_manage
     time.sleep(2)
 
     # 5. Verify Photo Deletion (check item metadata)
-    response_get_after_delete = client.get(f"/api/items/{item_id}")
+    response_get_after_delete = client.get(f"/api/items/{item_id}", headers=auth_headers)
     assert response_get_after_delete.status_code == status.HTTP_200_OK
     get_data_after_delete = response_get_after_delete.json()
     assert len(get_data_after_delete["photos"]) == 0
@@ -248,10 +248,10 @@ async def test_photo_upload_get_delete_cycle(client: TestClient, resource_manage
 # *** ADDED MARKER ***
 @pytest.mark.integration
 @pytest.mark.asyncio
-async def test_photo_update_details(client: TestClient, resource_manager):
+async def test_photo_update_details(client: TestClient, resource_manager, auth_headers):
     """Tests updating photo metadata (does not involve file upload)."""
     created_item_ids, created_gcs_paths = resource_manager
-    headers = {"Content-Type": "application/json"}
+    headers = {**auth_headers, "Content-Type": "application/json"}
     item_payload = create_item_payload()
     item_id = None
     photo_id = None
@@ -276,7 +276,7 @@ async def test_photo_update_details(client: TestClient, resource_manager):
     form_data = { "photo_stage": "BeforeUpdate" } # Initial stage
     with open(image_path, "rb") as f:
         files = {'file': (file_name, f, content_type)}
-        response_upload = client.post(f"/api/items/{item_id}/photos", data=form_data, files=files)
+        response_upload = client.post(f"/api/items/{item_id}/photos", data=form_data, files=files, headers=auth_headers)
 
     assert response_upload.status_code == status.HTTP_201_CREATED
     photo_id = response_upload.json()["id"]
@@ -300,7 +300,7 @@ async def test_photo_update_details(client: TestClient, resource_manager):
     assert update_response_data["imageNote"] == photo_update_payload["imageNote"]
 
     # 4. Get Item and Verify Updated Photo Metadata
-    response_get = client.get(f"/api/items/{item_id}")
+    response_get = client.get(f"/api/items/{item_id}", headers=auth_headers)
     assert response_get.status_code == status.HTTP_200_OK
     get_data = response_get.json()
     assert len(get_data["photos"]) == 1
@@ -308,4 +308,3 @@ async def test_photo_update_details(client: TestClient, resource_manager):
     assert photo_metadata["id"] == photo_id
     assert photo_metadata["stage"] == photo_update_payload["stage"]
     assert photo_metadata["imageNote"] == photo_update_payload["imageNote"]
-

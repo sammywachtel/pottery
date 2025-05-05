@@ -9,6 +9,7 @@ from models import (
     HTTPError, HTTPValidationError # Import error models
 )
 from services import firestore_service, gcs_service
+from auth import get_current_active_user, User
 
 logger = logging.getLogger(__name__)
 router = APIRouter(
@@ -68,11 +69,12 @@ async def _create_item_response(item: PotteryItem) -> PotteryItemResponse:
     description="Retrieves a list of all pottery items, including temporary signed URLs for photos.",
     responses={
         status.HTTP_200_OK: {"description": "Successful Response"},
+        status.HTTP_401_UNAUTHORIZED: {"model": HTTPError, "description": "Not authenticated"},
         status.HTTP_503_SERVICE_UNAVAILABLE: {"model": HTTPError, "description": "Service Unavailable"},
         # Inherits 500 from router defaults
     }
 )
-async def get_items():
+async def get_items(current_user: User = Depends(get_current_active_user)):
     """Retrieves all pottery items from Firestore and generates signed URLs for their photos."""
     try:
         items = await firestore_service.get_all_items()
@@ -96,12 +98,13 @@ async def get_items():
     description="Creates a new pottery item metadata entry in Firestore. Photos should be uploaded separately. Returns the created item (photos list will be empty).",
     responses={
         status.HTTP_201_CREATED: {"description": "Successful Response"},
+        status.HTTP_401_UNAUTHORIZED: {"model": HTTPError, "description": "Not authenticated"},
         status.HTTP_422_UNPROCESSABLE_ENTITY: {"model": HTTPValidationError, "description": "Validation Error"},
         status.HTTP_503_SERVICE_UNAVAILABLE: {"model": HTTPError, "description": "Service Unavailable"},
         # Inherits 500 from router defaults
     }
 )
-async def create_item(item_create: PotteryItemCreate):
+async def create_item(item_create: PotteryItemCreate, current_user: User = Depends(get_current_active_user)):
     """Creates a new pottery item document in Firestore."""
     try:
         new_item = await firestore_service.create_item(item_create)
@@ -123,11 +126,15 @@ async def create_item(item_create: PotteryItemCreate):
     description="Retrieves a single pottery item by its ID, including temporary signed URLs for photos.",
     responses={
         status.HTTP_200_OK: {"description": "Successful Response"},
+        status.HTTP_401_UNAUTHORIZED: {"model": HTTPError, "description": "Not authenticated"},
         status.HTTP_503_SERVICE_UNAVAILABLE: {"model": HTTPError, "description": "Service Unavailable"},
         # Inherits 404, 500 from router defaults (500 now also handled by dependency)
     }
 )
-async def get_item(item: PotteryItem = Depends(_get_item_or_404)): # Dependency handles 404/500/503
+async def get_item(
+    item: PotteryItem = Depends(_get_item_or_404), # Dependency handles 404/500/503
+    current_user: User = Depends(get_current_active_user)
+):
     """Retrieves a specific item by ID and generates signed URLs for its photos."""
     try:
         # If dependency _get_item_or_404 succeeded, 'item' is valid
@@ -150,12 +157,17 @@ async def get_item(item: PotteryItem = Depends(_get_item_or_404)): # Dependency 
     description="Updates an existing pottery item's metadata (name, clay, notes, etc.) in Firestore. Does not handle photo list updates directly. Returns the updated item including photo metadata with fresh signed URLs.",
     responses={
         status.HTTP_200_OK: {"description": "Successful Response"},
+        status.HTTP_401_UNAUTHORIZED: {"model": HTTPError, "description": "Not authenticated"},
         status.HTTP_422_UNPROCESSABLE_ENTITY: {"model": HTTPValidationError, "description": "Validation Error"},
         status.HTTP_503_SERVICE_UNAVAILABLE: {"model": HTTPError, "description": "Service Unavailable"},
         # Inherits 404, 500 from router defaults
     }
 )
-async def update_item(item_id: str, item_update: PotteryItemBase):
+async def update_item(
+    item_id: str, 
+    item_update: PotteryItemBase, 
+    current_user: User = Depends(get_current_active_user)
+):
     """Updates the metadata for a specific item."""
     try:
         updated_item = await firestore_service.update_item_metadata(item_id, item_update)
@@ -186,11 +198,12 @@ async def update_item(item_id: str, item_update: PotteryItemBase):
     description="Deletes a pottery item from Firestore and its associated photos from GCS.",
     responses={
         status.HTTP_204_NO_CONTENT: {"description": "No Content - Item and associated photos successfully deleted (or item did not exist)."},
+        status.HTTP_401_UNAUTHORIZED: {"model": HTTPError, "description": "Not authenticated"},
         status.HTTP_503_SERVICE_UNAVAILABLE: {"model": HTTPError, "description": "Service Unavailable"},
         # Inherits 404 (if initial check fails), 500 from router defaults
     }
 )
-async def delete_item(item_id: str):
+async def delete_item(item_id: str, current_user: User = Depends(get_current_active_user)):
     """Deletes an item and all its associated photos."""
     # 1. Get item details first to find associated photos
     # Use the dependency which now handles its own errors
@@ -230,4 +243,3 @@ async def delete_item(item_id: str):
     except Exception as e:
         logger.error(f"Unexpected error deleting item {item_id} from Firestore: {e}", exc_info=True)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to delete item metadata.")
-

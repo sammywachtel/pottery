@@ -2,16 +2,19 @@
 import logging
 import uvicorn
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException, status, Request
+from fastapi import FastAPI, HTTPException, status, Request, Depends
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
+from fastapi.security import OAuth2PasswordRequestForm
 from google.cloud.exceptions import GoogleCloudError
+from datetime import timedelta
 
 # Import settings first to ensure it's initialized
 from config import settings
 from routers import items, photos
 from models import HTTPError, HTTPValidationError # Import error models
 from services import firestore_service, gcs_service
+from auth import Token, User, authenticate_user, create_access_token, get_current_active_user, ACCESS_TOKEN_EXPIRE_MINUTES
 
 # --- Logging Configuration ---
 # Configure logging (adjust level and format as needed)
@@ -128,6 +131,30 @@ async def generic_exception_handler(request: Request, exc: Exception):
 # --- API Routers ---
 app.include_router(items.router)
 app.include_router(photos.router)
+
+# --- Authentication Endpoint ---
+@app.post("/api/token", response_model=Token, tags=["Authentication"], summary="Login")
+async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
+    """
+    OAuth2 compatible token login, get an access token for future requests.
+    """
+    user = authenticate_user(form_data.username, form_data.password)
+    if not user:
+        logger.warning(f"Failed login attempt for user: {form_data.username}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": user.username}, expires_delta=access_token_expires
+    )
+
+    logger.info(f"Successful login for user: {form_data.username}")
+    return {"access_token": access_token, "token_type": "bearer"}
+
 
 # --- Root Endpoint ---
 @app.get("/", tags=["Health Check"], summary="Health Check")

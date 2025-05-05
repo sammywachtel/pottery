@@ -82,3 +82,13 @@ def api_prefix() -> str:
 def common_headers() -> dict:
     return {"Content-Type": "application/json"}
 
+# Authentication fixtures
+@pytest.fixture
+def auth_headers(client: TestClient) -> dict:
+    """Get authentication headers with a valid token."""
+    response = client.post(
+        "/api/token",
+        data={"username": "admin", "password": "admin"},
+    )
+    token = response.json()["access_token"]
+    return {"Authorization": f"Bearer {token}"}

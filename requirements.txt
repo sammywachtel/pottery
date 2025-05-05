@@ -23,3 +23,7 @@ pytz
 
 # For handling multipart/form-data (file uploads)
 python-multipart
+
+# For JWT authentication
+python-jose[cryptography]
+passlib[bcrypt]

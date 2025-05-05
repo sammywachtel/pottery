@@ -21,6 +21,12 @@ class Settings(BaseSettings):
     # --- Signed URL Configuration ---
     signed_url_expiration_minutes: int = Field(15, validation_alias='SIGNED_URL_EXPIRATION_MINUTES')
 
+    # --- Authentication Configuration ---
+    # Secret key for JWT token signing (generate a secure key in production)
+    jwt_secret_key: str = Field("YOUR_SECRET_KEY_HERE", validation_alias='JWT_SECRET_KEY')
+    jwt_algorithm: str = Field("HS256", validation_alias='JWT_ALGORITHM')
+    jwt_access_token_expire_minutes: int = Field(30, validation_alias='JWT_ACCESS_TOKEN_EXPIRE_MINUTES')
+
     # --- Cloud Run / Server Configuration ---
     # Read the PORT environment variable (set by Cloud Run or Docker -p)
     # Default to 8080 if not set, which is standard for Cloud Run.
@@ -61,4 +67,3 @@ if __name__ == "__main__":
     print(f"Port: {settings.port}")
     print(f"K_SERVICE: {settings.service_name}")
     print(f"K_REVISION: {settings.service_revision}")
-

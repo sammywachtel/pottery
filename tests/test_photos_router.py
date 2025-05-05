@@ -61,7 +61,7 @@ sample_item_no_photos = PotteryItem(
 # --- POST /api/items/{item_id}/photos ---
 
 @pytest.mark.asyncio
-async def test_upload_photo_success(client: TestClient, mocker):
+async def test_upload_photo_success(client: TestClient, mocker, auth_headers):
     """Test POST /api/items/{item_id}/photos successfully."""
     # 1. Mock underlying service call used by the dependency
     mock_get_item_svc = mocker.patch('services.firestore_service.get_item_by_id', new_callable=AsyncMock)
@@ -104,7 +104,7 @@ async def test_upload_photo_success(client: TestClient, mocker):
     mock_dt.now.return_value = NOW_UTC # Control what now(timezone.utc) returns
 
     response = client.post(
-        f"/api/items/{TEST_ITEM_ID_1}/photos", data=form_data, files=files
+        f"/api/items/{TEST_ITEM_ID_1}/photos", data=form_data, files=files, headers=auth_headers
     )
 
     # Assertions
@@ -137,7 +137,7 @@ async def test_upload_photo_success(client: TestClient, mocker):
     mock_uuid.assert_called_once()
 
 @pytest.mark.asyncio
-async def test_upload_photo_item_not_found(client: TestClient, mocker):
+async def test_upload_photo_item_not_found(client: TestClient, mocker, auth_headers):
     """Test POST /photos when the item doesn't exist."""
     # *** FIX: Mock the underlying service call to return None ***
     mock_get_item_svc = mocker.patch('services.firestore_service.get_item_by_id', new_callable=AsyncMock)
@@ -147,7 +147,7 @@ async def test_upload_photo_item_not_found(client: TestClient, mocker):
     files = {'file': ('dummy.jpg', dummy_file, 'image/jpeg')}
     form_data = {"photo_stage": "Greenware"}
 
-    response = client.post(f"/api/items/{TEST_ITEM_ID_1}/photos", data=form_data, files=files)
+    response = client.post(f"/api/items/{TEST_ITEM_ID_1}/photos", data=form_data, files=files, headers=auth_headers)
 
     # Assert: The _get_item_or_404 dependency should now run, get None, and raise 404
     assert response.status_code == status.HTTP_404_NOT_FOUND
@@ -155,30 +155,30 @@ async def test_upload_photo_item_not_found(client: TestClient, mocker):
     mock_get_item_svc.assert_awaited_once_with(TEST_ITEM_ID_1)
 
 @pytest.mark.asyncio
-async def test_upload_photo_validation_error_missing_file(client: TestClient, mocker):
+async def test_upload_photo_validation_error_missing_file(client: TestClient, mocker, auth_headers):
     """Test POST /photos with missing file."""
     # Mock dependency service call to allow request to reach validation stage
     mock_get_item_svc = mocker.patch('services.firestore_service.get_item_by_id', new_callable=AsyncMock)
     mock_get_item_svc.return_value = sample_item_no_photos
 
     form_data = {"photo_stage": "Greenware"}
-    response = client.post(f"/api/items/{TEST_ITEM_ID_1}/photos", data=form_data) # No files
+    response = client.post(f"/api/items/{TEST_ITEM_ID_1}/photos", data=form_data, headers=auth_headers) # No files
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 @pytest.mark.asyncio
-async def test_upload_photo_validation_error_missing_stage(client: TestClient, mocker):
+async def test_upload_photo_validation_error_missing_stage(client: TestClient, mocker, auth_headers):
     """Test POST /photos with missing stage."""
     mock_get_item_svc = mocker.patch('services.firestore_service.get_item_by_id', new_callable=AsyncMock)
     mock_get_item_svc.return_value = sample_item_no_photos
 
     dummy_file = io.BytesIO(b"data")
     files = {'file': ('dummy.jpg', dummy_file, 'image/jpeg')}
-    response = client.post(f"/api/items/{TEST_ITEM_ID_1}/photos", files=files) # No data
+    response = client.post(f"/api/items/{TEST_ITEM_ID_1}/photos", files=files, headers=auth_headers) # No data
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
 @pytest.mark.asyncio
-async def test_upload_photo_gcs_error(client: TestClient, mocker):
+async def test_upload_photo_gcs_error(client: TestClient, mocker, auth_headers):
     """Test POST /photos when GCS upload fails."""
     mock_get_item_svc = mocker.patch('services.firestore_service.get_item_by_id', new_callable=AsyncMock)
     mock_get_item_svc.return_value = sample_item_no_photos
@@ -192,7 +192,7 @@ async def test_upload_photo_gcs_error(client: TestClient, mocker):
     files = {'file': ('dummy.jpg', dummy_file, 'image/jpeg')}
     form_data = {"photo_stage": "Greenware"}
 
-    response = client.post(f"/api/items/{TEST_ITEM_ID_1}/photos", data=form_data, files=files)
+    response = client.post(f"/api/items/{TEST_ITEM_ID_1}/photos", data=form_data, files=files, headers=auth_headers)
 
     assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
     # Check detail from the specific handler in upload_photo endpoint
@@ -201,7 +201,7 @@ async def test_upload_photo_gcs_error(client: TestClient, mocker):
 
 
 @pytest.mark.asyncio
-async def test_upload_photo_firestore_error(client: TestClient, mocker):
+async def test_upload_photo_firestore_error(client: TestClient, mocker, auth_headers):
     """Test POST /photos when adding metadata to Firestore fails."""
     mock_get_item_svc = mocker.patch('services.firestore_service.get_item_by_id', new_callable=AsyncMock)
     mock_get_item_svc.return_value = sample_item_no_photos
@@ -224,7 +224,7 @@ async def test_upload_photo_firestore_error(client: TestClient, mocker):
     files = {'file': ('dummy.jpg', dummy_file, 'image/jpeg')}
     form_data = {"photo_stage": "Greenware"}
 
-    response = client.post(f"/api/items/{TEST_ITEM_ID_1}/photos", data=form_data, files=files)
+    response = client.post(f"/api/items/{TEST_ITEM_ID_1}/photos", data=form_data, files=files, headers=auth_headers)
 
     assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
     # Check detail from the specific handler in upload_photo endpoint
@@ -236,7 +236,7 @@ async def test_upload_photo_firestore_error(client: TestClient, mocker):
 # --- DELETE /api/items/{item_id}/photos/{photo_id} ---
 
 @pytest.mark.asyncio
-async def test_delete_photo_success(client: TestClient, mocker):
+async def test_delete_photo_success(client: TestClient, mocker, auth_headers):
     """Test DELETE /photos/{photo_id} successfully."""
     mock_get_item_svc = mocker.patch('services.firestore_service.get_item_by_id', new_callable=AsyncMock)
     mock_get_item_svc.return_value = sample_item_with_photo # Item exists with photo
@@ -249,7 +249,7 @@ async def test_delete_photo_success(client: TestClient, mocker):
     updated_item_internal.photos = []
     mock_fs_remove_photo.return_value = updated_item_internal
 
-    response = client.delete(f"/api/items/{TEST_ITEM_ID_1}/photos/{EXISTING_PHOTO_ID}")
+    response = client.delete(f"/api/items/{TEST_ITEM_ID_1}/photos/{EXISTING_PHOTO_ID}", headers=auth_headers)
 
     assert response.status_code == status.HTTP_204_NO_CONTENT
     mock_get_item_svc.assert_awaited_once_with(TEST_ITEM_ID_1) # Check service mock
@@ -258,13 +258,13 @@ async def test_delete_photo_success(client: TestClient, mocker):
 
 
 @pytest.mark.asyncio
-async def test_delete_photo_item_not_found(client: TestClient, mocker):
+async def test_delete_photo_item_not_found(client: TestClient, mocker, auth_headers):
     """Test DELETE /photos/{photo_id} when item not found."""
     # *** FIX: Mock the underlying service call to return None ***
     mock_get_item_svc = mocker.patch('services.firestore_service.get_item_by_id', new_callable=AsyncMock)
     mock_get_item_svc.return_value = None # Simulate item not found in DB
 
-    response = client.delete(f"/api/items/{TEST_ITEM_ID_1}/photos/{EXISTING_PHOTO_ID}")
+    response = client.delete(f"/api/items/{TEST_ITEM_ID_1}/photos/{EXISTING_PHOTO_ID}", headers=auth_headers)
 
     # Assert: The _get_item_or_404 dependency should now run, get None, and raise 404
     assert response.status_code == status.HTTP_404_NOT_FOUND
@@ -272,7 +272,7 @@ async def test_delete_photo_item_not_found(client: TestClient, mocker):
     mock_get_item_svc.assert_awaited_once_with(TEST_ITEM_ID_1)
 
 @pytest.mark.asyncio
-async def test_delete_photo_photo_not_found_in_item(client: TestClient, mocker):
+async def test_delete_photo_photo_not_found_in_item(client: TestClient, mocker, auth_headers):
     """Test DELETE /photos/{photo_id} when item exists but photo doesn't."""
     # Simulate item returned by dependency service call, but photo isn't in it
     item_without_target_photo = sample_item_with_photo.model_copy(deep=True)
@@ -284,7 +284,7 @@ async def test_delete_photo_photo_not_found_in_item(client: TestClient, mocker):
     mock_gcs_delete = mocker.patch('services.gcs_service.delete_photo_from_gcs', new_callable=AsyncMock)
     mock_fs_remove_photo = mocker.patch('services.firestore_service.remove_photo_from_item', new_callable=AsyncMock)
 
-    response = client.delete(f"/api/items/{TEST_ITEM_ID_1}/photos/{EXISTING_PHOTO_ID}")
+    response = client.delete(f"/api/items/{TEST_ITEM_ID_1}/photos/{EXISTING_PHOTO_ID}", headers=auth_headers)
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
     # Detail comes from _get_photo_from_item_or_404 helper in photos router
@@ -295,7 +295,7 @@ async def test_delete_photo_photo_not_found_in_item(client: TestClient, mocker):
 
 
 @pytest.mark.asyncio
-async def test_delete_photo_gcs_error(client: TestClient, mocker):
+async def test_delete_photo_gcs_error(client: TestClient, mocker, auth_headers):
     """Test DELETE /photos/{photo_id} when GCS delete fails."""
     mock_get_item_svc = mocker.patch('services.firestore_service.get_item_by_id', new_callable=AsyncMock)
     mock_get_item_svc.return_value = sample_item_with_photo
@@ -306,7 +306,7 @@ async def test_delete_photo_gcs_error(client: TestClient, mocker):
 
     mock_fs_remove_photo = mocker.patch('services.firestore_service.remove_photo_from_item', new_callable=AsyncMock)
 
-    response = client.delete(f"/api/items/{TEST_ITEM_ID_1}/photos/{EXISTING_PHOTO_ID}")
+    response = client.delete(f"/api/items/{TEST_ITEM_ID_1}/photos/{EXISTING_PHOTO_ID}", headers=auth_headers)
 
     assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
     # *** FIX: Assert correct error detail from router's except Exception block ***
@@ -315,7 +315,7 @@ async def test_delete_photo_gcs_error(client: TestClient, mocker):
     mock_fs_remove_photo.assert_not_awaited() # Should not be called if GCS fails
 
 @pytest.mark.asyncio
-async def test_delete_photo_firestore_error(client: TestClient, mocker):
+async def test_delete_photo_firestore_error(client: TestClient, mocker, auth_headers):
     """Test DELETE /photos/{photo_id} when Firestore remove fails."""
     mock_get_item_svc = mocker.patch('services.firestore_service.get_item_by_id', new_callable=AsyncMock)
     mock_get_item_svc.return_value = sample_item_with_photo
@@ -326,7 +326,7 @@ async def test_delete_photo_firestore_error(client: TestClient, mocker):
     mock_fs_remove_photo = mocker.patch('services.firestore_service.remove_photo_from_item', new_callable=AsyncMock)
     mock_fs_remove_photo.side_effect = Exception("Firestore array remove failed")
 
-    response = client.delete(f"/api/items/{TEST_ITEM_ID_1}/photos/{EXISTING_PHOTO_ID}")
+    response = client.delete(f"/api/items/{TEST_ITEM_ID_1}/photos/{EXISTING_PHOTO_ID}", headers=auth_headers)
 
     assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
     # Check specific detail from the handler in delete_photo endpoint
@@ -342,7 +342,7 @@ photo_update_payload = {
 }
 
 @pytest.mark.asyncio
-async def test_update_photo_details_success(client: TestClient, mocker, common_headers):
+async def test_update_photo_details_success(client: TestClient, mocker, auth_headers, common_headers):
     """Test PUT /photos/{photo_id} successfully."""
     mock_get_item_svc = mocker.patch('services.firestore_service.get_item_by_id', new_callable=AsyncMock)
     mock_get_item_svc.return_value = sample_item_with_photo # Item exists with photo
@@ -354,8 +354,9 @@ async def test_update_photo_details_success(client: TestClient, mocker, common_h
     mock_generate_url = mocker.patch('services.gcs_service.generate_signed_url', new_callable=AsyncMock)
     mock_generate_url.return_value = f"https://fake-signed-url.com/{EXISTING_PHOTO_ID}.png"
 
+    headers = {**common_headers, **auth_headers}
     response = client.put(
-        f"/api/items/{TEST_ITEM_ID_1}/photos/{EXISTING_PHOTO_ID}", json=photo_update_payload, headers=common_headers
+        f"/api/items/{TEST_ITEM_ID_1}/photos/{EXISTING_PHOTO_ID}", json=photo_update_payload, headers=headers
     )
 
     assert response.status_code == status.HTTP_200_OK
@@ -376,14 +377,15 @@ async def test_update_photo_details_success(client: TestClient, mocker, common_h
 
 
 @pytest.mark.asyncio
-async def test_update_photo_details_item_not_found(client: TestClient, mocker, common_headers):
+async def test_update_photo_details_item_not_found(client: TestClient, mocker, auth_headers, common_headers):
     """Test PUT /photos/{photo_id} when item not found."""
     # *** FIX: Mock the underlying service call to return None ***
     mock_get_item_svc = mocker.patch('services.firestore_service.get_item_by_id', new_callable=AsyncMock)
     mock_get_item_svc.return_value = None # Simulate item not found in DB
 
+    headers = {**common_headers, **auth_headers}
     response = client.put(
-        f"/api/items/{TEST_ITEM_ID_1}/photos/{EXISTING_PHOTO_ID}", json=photo_update_payload, headers=common_headers
+        f"/api/items/{TEST_ITEM_ID_1}/photos/{EXISTING_PHOTO_ID}", json=photo_update_payload, headers=headers
     )
 
     # Assert: The _get_item_or_404 dependency should now run, get None, and raise 404
@@ -393,7 +395,7 @@ async def test_update_photo_details_item_not_found(client: TestClient, mocker, c
 
 
 @pytest.mark.asyncio
-async def test_update_photo_details_photo_not_found(client: TestClient, mocker, common_headers):
+async def test_update_photo_details_photo_not_found(client: TestClient, mocker, auth_headers, common_headers):
     """Test PUT /photos/{photo_id} when photo not found in item."""
     mock_get_item_svc = mocker.patch('services.firestore_service.get_item_by_id', new_callable=AsyncMock)
     mock_get_item_svc.return_value = sample_item_with_photo # Item exists
@@ -401,8 +403,9 @@ async def test_update_photo_details_photo_not_found(client: TestClient, mocker, 
     mock_update_details = mocker.patch('services.firestore_service.update_photo_details_in_item', new_callable=AsyncMock)
     mock_update_details.return_value = None # Simulate service returning None for photo not found
 
+    headers = {**common_headers, **auth_headers}
     response = client.put(
-        f"/api/items/{TEST_ITEM_ID_1}/photos/{EXISTING_PHOTO_ID}", json=photo_update_payload, headers=common_headers
+        f"/api/items/{TEST_ITEM_ID_1}/photos/{EXISTING_PHOTO_ID}", json=photo_update_payload, headers=headers
     )
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
@@ -413,22 +416,23 @@ async def test_update_photo_details_photo_not_found(client: TestClient, mocker, 
 
 
 @pytest.mark.asyncio
-async def test_update_photo_details_validation_error(client: TestClient, mocker, common_headers):
+async def test_update_photo_details_validation_error(client: TestClient, mocker, auth_headers, common_headers):
     """Test PUT /photos/{photo_id} with invalid payload type."""
     mock_get_item_svc = mocker.patch('services.firestore_service.get_item_by_id', new_callable=AsyncMock)
     mock_get_item_svc.return_value = sample_item_with_photo
 
     invalid_payload = {"stage": 123} # Stage should be string
 
+    headers = {**common_headers, **auth_headers}
     response = client.put(
-        f"/api/items/{TEST_ITEM_ID_1}/photos/{EXISTING_PHOTO_ID}", json=invalid_payload, headers=common_headers
+        f"/api/items/{TEST_ITEM_ID_1}/photos/{EXISTING_PHOTO_ID}", json=invalid_payload, headers=headers
     )
 
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
 @pytest.mark.asyncio
-async def test_update_photo_details_firestore_error(client: TestClient, mocker, common_headers):
+async def test_update_photo_details_firestore_error(client: TestClient, mocker, auth_headers, common_headers):
     """Test PUT /photos/{photo_id} when firestore service fails."""
     mock_get_item_svc = mocker.patch('services.firestore_service.get_item_by_id', new_callable=AsyncMock)
     mock_get_item_svc.return_value = sample_item_with_photo
@@ -436,12 +440,12 @@ async def test_update_photo_details_firestore_error(client: TestClient, mocker, 
     mock_update_details = mocker.patch('services.firestore_service.update_photo_details_in_item', new_callable=AsyncMock)
     mock_update_details.side_effect = Exception("Firestore update failed")
 
+    headers = {**common_headers, **auth_headers}
     response = client.put(
-        f"/api/items/{TEST_ITEM_ID_1}/photos/{EXISTING_PHOTO_ID}", json=photo_update_payload, headers=common_headers
+        f"/api/items/{TEST_ITEM_ID_1}/photos/{EXISTING_PHOTO_ID}", json=photo_update_payload, headers=headers
     )
 
     assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
     # Check specific detail from the handler in update_photo_details endpoint
     assert response.json()['detail'] == "Failed to update photo details."
     mock_update_details.assert_awaited_once()
-

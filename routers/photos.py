@@ -11,6 +11,7 @@ from models import (
 from services import firestore_service, gcs_service
 # Import the helper from items router to reuse item fetching logic
 from .items import _get_item_or_404, _create_item_response
+from auth import get_current_active_user, User
 
 logger = logging.getLogger(__name__)
 router = APIRouter(
@@ -53,6 +54,7 @@ async def _create_photo_response(photo: Photo) -> PhotoResponse:
     description="Uploads a photo file to GCS (as private object) and adds its metadata to the Firestore item. Returns the photo metadata including a temporary signed URL.",
     responses={
         status.HTTP_201_CREATED: {"description": "Successful Response - Photo uploaded and metadata added."},
+        status.HTTP_401_UNAUTHORIZED: {"model": HTTPError, "description": "Not authenticated"},
         status.HTTP_422_UNPROCESSABLE_ENTITY: {"model": HTTPValidationError, "description": "Validation Error (e.g., missing form fields, invalid file type - though not strictly validated here)"},
         # Inherits 404 (for item_id), 500 from router defaults
     }
@@ -62,7 +64,8 @@ async def upload_photo(
     photo_stage: str = Form(..., description="Stage of the pottery when photo was taken (e.g., Greenware, Bisque)"),
     photo_note: Optional[str] = Form(None, description="Optional note about the photo"),
     file: UploadFile = File(..., description="The photo file to upload"),
-    item: PotteryItem = Depends(_get_item_or_404) # Ensure item exists first
+    item: PotteryItem = Depends(_get_item_or_404), # Ensure item exists first
+    current_user: User = Depends(get_current_active_user)
 ):
     """Handles photo upload, GCS storage, and Firestore metadata update."""
     if not file.content_type:
@@ -143,13 +146,15 @@ async def upload_photo(
     description="Deletes a specific photo from GCS and its metadata from the Firestore item.",
      responses={
         status.HTTP_204_NO_CONTENT: {"description": "No Content - Photo successfully deleted from storage and item metadata."},
+        status.HTTP_401_UNAUTHORIZED: {"model": HTTPError, "description": "Not authenticated"},
         # Inherits 404 (item or photo), 500 from router defaults
     }
 )
 async def delete_photo(
     item_id: str,
     photo_id: str,
-    item: PotteryItem = Depends(_get_item_or_404) # Ensure item exists
+    item: PotteryItem = Depends(_get_item_or_404), # Ensure item exists
+    current_user: User = Depends(get_current_active_user)
 ):
     """Deletes a specific photo associated with an item."""
     # 1. Find the photo metadata in the item
@@ -217,6 +222,7 @@ async def delete_photo(
     description="Updates the metadata (stage, note) of a specific photo within an item in Firestore. Does not involve GCS file operations. Returns the updated photo metadata with a fresh signed URL.",
     responses={
         status.HTTP_200_OK: {"description": "Successful Response"},
+        status.HTTP_401_UNAUTHORIZED: {"model": HTTPError, "description": "Not authenticated"},
         status.HTTP_422_UNPROCESSABLE_ENTITY: {"model": HTTPValidationError, "description": "Validation Error"},
         # Inherits 404 (item or photo), 500 from router defaults
     }
@@ -225,7 +231,8 @@ async def update_photo_details(
     item_id: str,
     photo_id: str,
     photo_update: PhotoUpdate,
-    item: PotteryItem = Depends(_get_item_or_404) # Ensure item exists
+    item: PotteryItem = Depends(_get_item_or_404), # Ensure item exists
+    current_user: User = Depends(get_current_active_user)
 ):
     """Updates the 'stage' and/or 'imageNote' for a specific photo."""
     # Check if at least one field is being updated
@@ -258,4 +265,3 @@ async def update_photo_details(
     except Exception as e:
         logger.error(f"Unexpected error updating photo {photo_id} details in Firestore for item {item_id}: {e}", exc_info=True)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to update photo details.")
-
