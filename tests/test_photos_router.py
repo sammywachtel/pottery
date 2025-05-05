@@ -43,7 +43,8 @@ sample_item_with_photo = PotteryItem(
     createdDateTime=NOW_UTC,
     createdTimezone="UTC",
     location="Studio",
-    photos=[existing_photo_internal] # Include existing photo
+    photos=[existing_photo_internal], # Include existing photo
+    user_id="admin"
 )
 
 # Sample item with no photos (for upload test)
@@ -54,7 +55,8 @@ sample_item_no_photos = PotteryItem(
     createdDateTime=NOW_UTC,
     createdTimezone="UTC",
     location="Studio",
-    photos=[]
+    photos=[],
+    user_id="admin"
 )
 
 
@@ -121,17 +123,18 @@ async def test_upload_photo_success(client: TestClient, mocker, auth_headers):
     # Compare against the controlled NOW_UTC used in the mock
     assert response_dt == NOW_UTC
 
-    mock_get_item_svc.assert_awaited_once_with(TEST_ITEM_ID_1) # Check service mock
+    mock_get_item_svc.assert_awaited_once_with(TEST_ITEM_ID_1, user_id="admin") # Check service mock
     mock_gcs_upload.assert_awaited_once_with(
         item_id=TEST_ITEM_ID_1, photo_id=TEST_PHOTO_ID_NEW,
         file_content=file_content, content_type='image/jpeg', original_filename='dummy.jpg'
     )
     mock_fs_add_photo.assert_awaited_once()
-    call_args, _ = mock_fs_add_photo.call_args
+    call_args, call_kwargs = mock_fs_add_photo.call_args
     assert call_args[0] == TEST_ITEM_ID_1
     added_photo_arg = call_args[1]
     assert isinstance(added_photo_arg, Photo)
     assert added_photo_arg.id == TEST_PHOTO_ID_NEW
+    assert call_kwargs["user_id"] == "admin"  # Check user_id is passed correctly
 
     mock_generate_url.assert_awaited_once_with(expected_gcs_path)
     mock_uuid.assert_called_once()
@@ -152,7 +155,7 @@ async def test_upload_photo_item_not_found(client: TestClient, mocker, auth_head
     # Assert: The _get_item_or_404 dependency should now run, get None, and raise 404
     assert response.status_code == status.HTTP_404_NOT_FOUND
     assert response.json()['detail'] == f"Pottery item with ID '{TEST_ITEM_ID_1}' not found."
-    mock_get_item_svc.assert_awaited_once_with(TEST_ITEM_ID_1)
+    mock_get_item_svc.assert_awaited_once_with(TEST_ITEM_ID_1, user_id="admin")
 
 @pytest.mark.asyncio
 async def test_upload_photo_validation_error_missing_file(client: TestClient, mocker, auth_headers):
@@ -252,9 +255,9 @@ async def test_delete_photo_success(client: TestClient, mocker, auth_headers):
     response = client.delete(f"/api/items/{TEST_ITEM_ID_1}/photos/{EXISTING_PHOTO_ID}", headers=auth_headers)
 
     assert response.status_code == status.HTTP_204_NO_CONTENT
-    mock_get_item_svc.assert_awaited_once_with(TEST_ITEM_ID_1) # Check service mock
+    mock_get_item_svc.assert_awaited_once_with(TEST_ITEM_ID_1, user_id="admin") # Check service mock
     mock_gcs_delete.assert_awaited_once_with(EXISTING_GCS_PATH)
-    mock_fs_remove_photo.assert_awaited_once_with(TEST_ITEM_ID_1, EXISTING_PHOTO_ID)
+    mock_fs_remove_photo.assert_awaited_once_with(TEST_ITEM_ID_1, EXISTING_PHOTO_ID, user_id="admin")
 
 
 @pytest.mark.asyncio
@@ -269,7 +272,7 @@ async def test_delete_photo_item_not_found(client: TestClient, mocker, auth_head
     # Assert: The _get_item_or_404 dependency should now run, get None, and raise 404
     assert response.status_code == status.HTTP_404_NOT_FOUND
     assert response.json()['detail'] == f"Pottery item with ID '{TEST_ITEM_ID_1}' not found."
-    mock_get_item_svc.assert_awaited_once_with(TEST_ITEM_ID_1)
+    mock_get_item_svc.assert_awaited_once_with(TEST_ITEM_ID_1, user_id="admin")
 
 @pytest.mark.asyncio
 async def test_delete_photo_photo_not_found_in_item(client: TestClient, mocker, auth_headers):
@@ -289,7 +292,7 @@ async def test_delete_photo_photo_not_found_in_item(client: TestClient, mocker, 
     assert response.status_code == status.HTTP_404_NOT_FOUND
     # Detail comes from _get_photo_from_item_or_404 helper in photos router
     assert response.json()['detail'] == f"Photo with ID '{EXISTING_PHOTO_ID}' not found in item '{TEST_ITEM_ID_1}'."
-    mock_get_item_svc.assert_awaited_once_with(TEST_ITEM_ID_1)
+    mock_get_item_svc.assert_awaited_once_with(TEST_ITEM_ID_1, user_id="admin")
     mock_gcs_delete.assert_not_awaited()
     mock_fs_remove_photo.assert_not_awaited()
 
@@ -311,6 +314,7 @@ async def test_delete_photo_gcs_error(client: TestClient, mocker, auth_headers):
     assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
     # *** FIX: Assert correct error detail from router's except Exception block ***
     assert response.json()['detail'] == "Error during photo deletion from storage."
+    mock_get_item_svc.assert_awaited_once_with(TEST_ITEM_ID_1, user_id="admin")
     mock_gcs_delete.assert_awaited_once_with(EXISTING_GCS_PATH)
     mock_fs_remove_photo.assert_not_awaited() # Should not be called if GCS fails
 
@@ -331,8 +335,9 @@ async def test_delete_photo_firestore_error(client: TestClient, mocker, auth_hea
     assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
     # Check specific detail from the handler in delete_photo endpoint
     assert response.json()['detail'] == "Failed to remove photo metadata from item."
+    mock_get_item_svc.assert_awaited_once_with(TEST_ITEM_ID_1, user_id="admin")
     mock_gcs_delete.assert_awaited_once_with(EXISTING_GCS_PATH)
-    mock_fs_remove_photo.assert_awaited_once_with(TEST_ITEM_ID_1, EXISTING_PHOTO_ID)
+    mock_fs_remove_photo.assert_awaited_once_with(TEST_ITEM_ID_1, EXISTING_PHOTO_ID, user_id="admin")
 
 
 # --- PUT /api/items/{item_id}/photos/{photo_id} ---
@@ -365,13 +370,14 @@ async def test_update_photo_details_success(client: TestClient, mocker, auth_hea
     assert json_response["stage"] == photo_update_payload["stage"]
     assert json_response["signedUrl"] is not None
 
-    mock_get_item_svc.assert_awaited_once_with(TEST_ITEM_ID_1) # Check service mock
+    mock_get_item_svc.assert_awaited_once_with(TEST_ITEM_ID_1, user_id="admin") # Check service mock
     mock_update_details.assert_awaited_once()
-    call_args, _ = mock_update_details.call_args
+    call_args, call_kwargs = mock_update_details.call_args
     assert call_args[0] == TEST_ITEM_ID_1
     assert call_args[1] == EXISTING_PHOTO_ID
     assert isinstance(call_args[2], PhotoUpdate)
     assert call_args[2].stage == photo_update_payload["stage"]
+    assert call_kwargs["user_id"] == "admin"  # Check user_id is passed correctly
 
     mock_generate_url.assert_awaited_once_with(EXISTING_GCS_PATH)
 
@@ -391,7 +397,7 @@ async def test_update_photo_details_item_not_found(client: TestClient, mocker, a
     # Assert: The _get_item_or_404 dependency should now run, get None, and raise 404
     assert response.status_code == status.HTTP_404_NOT_FOUND
     assert response.json()['detail'] == f"Pottery item with ID '{TEST_ITEM_ID_1}' not found."
-    mock_get_item_svc.assert_awaited_once_with(TEST_ITEM_ID_1)
+    mock_get_item_svc.assert_awaited_once_with(TEST_ITEM_ID_1, user_id="admin")
 
 
 @pytest.mark.asyncio
@@ -411,8 +417,8 @@ async def test_update_photo_details_photo_not_found(client: TestClient, mocker, 
     assert response.status_code == status.HTTP_404_NOT_FOUND
     # Detail comes from the handler in update_photo_details endpoint
     assert response.json()['detail'] == f"Photo with ID '{EXISTING_PHOTO_ID}' not found in item '{TEST_ITEM_ID_1}'."
-    mock_get_item_svc.assert_awaited_once_with(TEST_ITEM_ID_1)
-    mock_update_details.assert_awaited_once()
+    mock_get_item_svc.assert_awaited_once_with(TEST_ITEM_ID_1, user_id="admin")
+    mock_update_details.assert_awaited_once_with(TEST_ITEM_ID_1, EXISTING_PHOTO_ID, ANY, user_id="admin")
 
 
 @pytest.mark.asyncio
@@ -429,6 +435,7 @@ async def test_update_photo_details_validation_error(client: TestClient, mocker,
     )
 
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    # FastAPI validation happens before the endpoint function is called, so get_item_by_id is never awaited
 
 
 @pytest.mark.asyncio
@@ -448,4 +455,5 @@ async def test_update_photo_details_firestore_error(client: TestClient, mocker, 
     assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
     # Check specific detail from the handler in update_photo_details endpoint
     assert response.json()['detail'] == "Failed to update photo details."
-    mock_update_details.assert_awaited_once()
+    mock_get_item_svc.assert_awaited_once_with(TEST_ITEM_ID_1, user_id="admin")
+    mock_update_details.assert_awaited_once_with(TEST_ITEM_ID_1, EXISTING_PHOTO_ID, ANY, user_id="admin")
