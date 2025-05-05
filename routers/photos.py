@@ -51,10 +51,11 @@ async def _create_photo_response(photo: Photo) -> PhotoResponse:
     response_model=PhotoResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Upload Photo for Item",
-    description="Uploads a photo file to GCS (as private object) and adds its metadata to the Firestore item. Returns the photo metadata including a temporary signed URL.",
+    description="Uploads a photo file to GCS (as private object) and adds its metadata to the Firestore item belonging to the authenticated user. Returns the photo metadata including a temporary signed URL.",
     responses={
         status.HTTP_201_CREATED: {"description": "Successful Response - Photo uploaded and metadata added."},
         status.HTTP_401_UNAUTHORIZED: {"model": HTTPError, "description": "Not authenticated"},
+        status.HTTP_403_FORBIDDEN: {"model": HTTPError, "description": "Forbidden - Item belongs to another user"},
         status.HTTP_422_UNPROCESSABLE_ENTITY: {"model": HTTPValidationError, "description": "Validation Error (e.g., missing form fields, invalid file type - though not strictly validated here)"},
         # Inherits 404 (for item_id), 500 from router defaults
     }
@@ -64,10 +65,11 @@ async def upload_photo(
     photo_stage: str = Form(..., description="Stage of the pottery when photo was taken (e.g., Greenware, Bisque)"),
     photo_note: Optional[str] = Form(None, description="Optional note about the photo"),
     file: UploadFile = File(..., description="The photo file to upload"),
-    item: PotteryItem = Depends(_get_item_or_404), # Ensure item exists first
     current_user: User = Depends(get_current_active_user)
 ):
-    """Handles photo upload, GCS storage, and Firestore metadata update."""
+    """Handles photo upload, GCS storage, and Firestore metadata update for items belonging to the authenticated user."""
+    # Get the item, checking ownership
+    item = await _get_item_or_404(item_id, user_id=current_user.username)
     if not file.content_type:
          raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="File content type is missing.")
     # Basic content type check (can be expanded)
@@ -106,10 +108,11 @@ async def upload_photo(
 
     # 3. Add photo metadata to Firestore item
     try:
-        updated_item = await firestore_service.add_photo_to_item(item_id, new_photo)
+        updated_item = await firestore_service.add_photo_to_item(item_id, new_photo, user_id=current_user.username)
         if not updated_item:
              # This might happen if the item was deleted between the initial check and the update
-             logger.error(f"Failed to add photo metadata to item {item_id} (item possibly deleted concurrently).")
+             # or if the item doesn't belong to the user
+             logger.error(f"Failed to add photo metadata to item {item_id} (item possibly deleted concurrently or doesn't belong to user {current_user.username}).")
              # Attempt to clean up the uploaded GCS file
              await gcs_service.delete_photo_from_gcs(gcs_path)
              raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Item {item_id} not found when trying to add photo metadata.")
@@ -143,20 +146,22 @@ async def upload_photo(
     "/{photo_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Delete Photo",
-    description="Deletes a specific photo from GCS and its metadata from the Firestore item.",
+    description="Deletes a specific photo from GCS and its metadata from the Firestore item belonging to the authenticated user.",
      responses={
         status.HTTP_204_NO_CONTENT: {"description": "No Content - Photo successfully deleted from storage and item metadata."},
         status.HTTP_401_UNAUTHORIZED: {"model": HTTPError, "description": "Not authenticated"},
+        status.HTTP_403_FORBIDDEN: {"model": HTTPError, "description": "Forbidden - Item belongs to another user"},
         # Inherits 404 (item or photo), 500 from router defaults
     }
 )
 async def delete_photo(
     item_id: str,
     photo_id: str,
-    item: PotteryItem = Depends(_get_item_or_404), # Ensure item exists
     current_user: User = Depends(get_current_active_user)
 ):
-    """Deletes a specific photo associated with an item."""
+    """Deletes a specific photo associated with an item belonging to the authenticated user."""
+    # Get the item, checking ownership
+    item = await _get_item_or_404(item_id, user_id=current_user.username)
     # 1. Find the photo metadata in the item
     photo_to_delete = await _get_photo_from_item_or_404(item, photo_id)
     gcs_path = photo_to_delete.gcsPath
@@ -177,9 +182,10 @@ async def delete_photo(
 
     # 3. Remove photo metadata from Firestore item
     try:
-        updated_item = await firestore_service.remove_photo_from_item(item_id, photo_id)
+        updated_item = await firestore_service.remove_photo_from_item(item_id, photo_id, user_id=current_user.username)
         if updated_item is None:
-             # This could happen if item was deleted concurrently or if photo was already removed
+             # This could happen if item was deleted concurrently, if photo was already removed,
+             # or if the item doesn't belong to the user
              # Since GCS delete succeeded, maybe log a warning but proceed?
              # Or if item not found, raise 404? Let's assume 404 is more accurate if item is gone.
              # Re-check item existence? For simplicity, assume remove_photo_from_item handles 'not found' appropriately.
@@ -187,7 +193,7 @@ async def delete_photo(
              # If it returns None because photo wasn't found (but item exists), maybe that's okay (idempotent)?
              # The current firestore_service returns the item even if photo wasn't found.
              # Let's check if the item still exists after the call.
-             final_check_item = await firestore_service.get_item_by_id(item_id)
+             final_check_item = await firestore_service.get_item_by_id(item_id, user_id=current_user.username)
              if not final_check_item:
                   logger.warning(f"Item {item_id} disappeared during photo {photo_id} metadata removal.")
                   # GCS is cleaned up, but the state is inconsistent. 500 might be appropriate.
@@ -219,10 +225,11 @@ async def delete_photo(
     "/{photo_id}",
     response_model=PhotoResponse,
     summary="Update Photo Details",
-    description="Updates the metadata (stage, note) of a specific photo within an item in Firestore. Does not involve GCS file operations. Returns the updated photo metadata with a fresh signed URL.",
+    description="Updates the metadata (stage, note) of a specific photo within an item belonging to the authenticated user in Firestore. Does not involve GCS file operations. Returns the updated photo metadata with a fresh signed URL.",
     responses={
         status.HTTP_200_OK: {"description": "Successful Response"},
         status.HTTP_401_UNAUTHORIZED: {"model": HTTPError, "description": "Not authenticated"},
+        status.HTTP_403_FORBIDDEN: {"model": HTTPError, "description": "Forbidden - Item belongs to another user"},
         status.HTTP_422_UNPROCESSABLE_ENTITY: {"model": HTTPValidationError, "description": "Validation Error"},
         # Inherits 404 (item or photo), 500 from router defaults
     }
@@ -231,10 +238,11 @@ async def update_photo_details(
     item_id: str,
     photo_id: str,
     photo_update: PhotoUpdate,
-    item: PotteryItem = Depends(_get_item_or_404), # Ensure item exists
     current_user: User = Depends(get_current_active_user)
 ):
-    """Updates the 'stage' and/or 'imageNote' for a specific photo."""
+    """Updates the 'stage' and/or 'imageNote' for a specific photo within an item belonging to the authenticated user."""
+    # Get the item, checking ownership
+    item = await _get_item_or_404(item_id, user_id=current_user.username)
     # Check if at least one field is being updated
     if photo_update.model_dump(exclude_unset=True) == {}:
          raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No update data provided.")
@@ -243,11 +251,12 @@ async def update_photo_details(
     # await _get_photo_from_item_or_404(item, photo_id) # Or let service handle it
 
     try:
-        updated_photo = await firestore_service.update_photo_details_in_item(item_id, photo_id, photo_update)
+        updated_photo = await firestore_service.update_photo_details_in_item(item_id, photo_id, photo_update, user_id=current_user.username)
 
         if updated_photo is None:
             # This means the photo was not found within the item during the update process
-            logger.warning(f"Photo {photo_id} not found in item {item_id} during update attempt.")
+            # or the item doesn't belong to the user
+            logger.warning(f"Photo {photo_id} not found in item {item_id} during update attempt or item doesn't belong to user {current_user.username}.")
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Photo with ID '{photo_id}' not found in item '{item_id}'."

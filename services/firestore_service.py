@@ -68,13 +68,24 @@ def get_timezone_identifier(dt: Optional[datetime]) -> Optional[str]:
     return None
 
 
-async def get_all_items() -> List[PotteryItem]:
-    """Retrieves all pottery items from Firestore."""
+async def get_all_items(user_id: str = None) -> List[PotteryItem]:
+    """
+    Retrieves pottery items from Firestore.
+    If user_id is provided, only returns items belonging to that user.
+    If user_id is None, returns all items (admin functionality).
+    """
     if not items_collection:
         raise ConnectionError("Firestore client not initialized or collection reference failed.")
     items = []
     try:
-        stream = items_collection.stream()
+        # If user_id is provided, filter by user_id
+        if user_id:
+            query = items_collection.where(filter=FieldFilter("user_id", "==", user_id))
+            stream = query.stream()
+        else:
+            # If no user_id, get all items (admin functionality)
+            stream = items_collection.stream()
+
         async for doc in stream:
             item_data = doc.to_dict()
             if not item_data: # Skip if data is somehow empty
@@ -85,14 +96,18 @@ async def get_all_items() -> List[PotteryItem]:
             item_data['photos'] = [Photo(**p) for p in item_data.get('photos', [])]
             # Firestore returns UTC datetime. Model expects datetime. No conversion needed on read.
             items.append(PotteryItem(**item_data))
-        logger.info(f"Retrieved {len(items)} items from Firestore collection '{settings.firestore_collection}'.")
+
+        if user_id:
+            logger.info(f"Retrieved {len(items)} items for user {user_id} from Firestore collection '{settings.firestore_collection}'.")
+        else:
+            logger.info(f"Retrieved {len(items)} items (all users) from Firestore collection '{settings.firestore_collection}'.")
         return items
     except Exception as e:
         logger.error(f"Error retrieving items from Firestore: {e}", exc_info=True)
         raise
 
-async def create_item(item_create: PotteryItemCreate) -> PotteryItem:
-    """Creates a new pottery item in Firestore."""
+async def create_item(item_create: PotteryItemCreate, user_id: str) -> PotteryItem:
+    """Creates a new pottery item in Firestore associated with the specified user."""
     if not items_collection:
          raise ConnectionError("Firestore client not initialized or collection reference failed.")
     item_data = {}
@@ -100,6 +115,7 @@ async def create_item(item_create: PotteryItemCreate) -> PotteryItem:
         doc_ref = items_collection.document()
         item_data = item_create.model_dump(exclude_unset=True)
         item_data['photos'] = [] # Initialize with empty photos list
+        item_data['user_id'] = user_id  # Associate the item with the user
 
         created_dt = item_create.createdDateTime
         item_data['createdTimezone'] = get_timezone_identifier(created_dt)
@@ -113,14 +129,18 @@ async def create_item(item_create: PotteryItemCreate) -> PotteryItem:
         new_item_data = item_data.copy()
         new_item = PotteryItem(id=doc_ref.id, **new_item_data)
 
-        logger.info(f"Created item with ID: {new_item.id} in collection '{settings.firestore_collection}'.")
+        logger.info(f"Created item with ID: {new_item.id} for user {user_id} in collection '{settings.firestore_collection}'.")
         return new_item
     except Exception as e:
         logger.error(f"Error creating item in Firestore. Data attempted: {item_data}", exc_info=True)
         raise
 
-async def get_item_by_id(item_id: str) -> Optional[PotteryItem]:
-    """Retrieves a single pottery item by its Firestore document ID."""
+async def get_item_by_id(item_id: str, user_id: str = None) -> Optional[PotteryItem]:
+    """
+    Retrieves a single pottery item by its Firestore document ID.
+    If user_id is provided, only returns the item if it belongs to that user.
+    If user_id is None, returns the item regardless of ownership (admin functionality).
+    """
     if not items_collection:
         raise ConnectionError("Firestore client not initialized or collection reference failed.")
     try:
@@ -131,6 +151,12 @@ async def get_item_by_id(item_id: str) -> Optional[PotteryItem]:
             if not item_data:
                  logger.warning(f"Item {item_id} exists but has empty data.")
                  return None
+
+            # Check if the item belongs to the specified user
+            if user_id and item_data.get('user_id') != user_id:
+                logger.warning(f"User {user_id} attempted to access item {item_id} which belongs to user {item_data.get('user_id')}.")
+                return None
+
             item_data['id'] = doc.id
             item_data['photos'] = [Photo(**p) for p in item_data.get('photos', [])]
             # Firestore returns UTC datetime. Model expects datetime. No conversion needed on read.
@@ -143,8 +169,12 @@ async def get_item_by_id(item_id: str) -> Optional[PotteryItem]:
         logger.error(f"Error retrieving item {item_id} from Firestore: {e}", exc_info=True)
         raise
 
-async def update_item_metadata(item_id: str, item_update: PotteryItemBase) -> Optional[PotteryItem]:
-    """Updates metadata fields of an existing pottery item in Firestore."""
+async def update_item_metadata(item_id: str, item_update: PotteryItemBase, user_id: str = None) -> Optional[PotteryItem]:
+    """
+    Updates metadata fields of an existing pottery item in Firestore.
+    If user_id is provided, only updates the item if it belongs to that user.
+    If user_id is None, updates the item regardless of ownership (admin functionality).
+    """
     if not items_collection:
         raise ConnectionError("Firestore client not initialized or collection reference failed.")
     update_data = {}
@@ -153,6 +183,12 @@ async def update_item_metadata(item_id: str, item_update: PotteryItemBase) -> Op
         doc_snapshot = await doc_ref.get()
         if not doc_snapshot.exists:
             logger.warning(f"Attempted to update non-existent item with ID: {item_id}")
+            return None
+
+        # Check if the item belongs to the specified user
+        item_data = doc_snapshot.to_dict()
+        if user_id and item_data.get('user_id') != user_id:
+            logger.warning(f"User {user_id} attempted to update item {item_id} which belongs to user {item_data.get('user_id')}.")
             return None
 
         update_data = item_update.model_dump(exclude_unset=True)
@@ -167,7 +203,8 @@ async def update_item_metadata(item_id: str, item_update: PotteryItemBase) -> Op
         logger.debug(f"Attempting to update item {item_id} with data: {update_data}")
         await doc_ref.update(update_data)
 
-        updated_item = await get_item_by_id(item_id)
+        # Pass the user_id to get_item_by_id to ensure ownership check is consistent
+        updated_item = await get_item_by_id(item_id, user_id)
         if updated_item:
              logger.info(f"Updated metadata for item with ID: {item_id}")
         return updated_item
@@ -176,9 +213,11 @@ async def update_item_metadata(item_id: str, item_update: PotteryItemBase) -> Op
         logger.error(f"Error updating item {item_id} in Firestore. Data attempted: {update_data}", exc_info=True)
         raise
 
-async def delete_item_and_photos(item_id: str) -> bool:
+async def delete_item_and_photos(item_id: str, user_id: str = None) -> bool:
     """
     Deletes a pottery item document from Firestore.
+    If user_id is provided, only deletes the item if it belongs to that user.
+    If user_id is None, deletes the item regardless of ownership (admin functionality).
     Returns True if deleted or not found, False on error.
     Note: Associated GCS photos must be deleted separately by the caller (usually via gcs_service).
     """
@@ -186,6 +225,16 @@ async def delete_item_and_photos(item_id: str) -> bool:
         raise ConnectionError("Firestore client not initialized or collection reference failed.")
     try:
         doc_ref = items_collection.document(item_id)
+
+        # Check if the item belongs to the specified user
+        if user_id:
+            doc_snapshot = await doc_ref.get()
+            if doc_snapshot.exists:
+                item_data = doc_snapshot.to_dict()
+                if item_data and item_data.get('user_id') != user_id:
+                    logger.warning(f"User {user_id} attempted to delete item {item_id} which belongs to user {item_data.get('user_id')}.")
+                    return False
+
         await doc_ref.delete()
         logger.info(f"Deleted item document with ID: {item_id} from collection '{settings.firestore_collection}' (or it didn't exist).")
         return True
@@ -195,11 +244,22 @@ async def delete_item_and_photos(item_id: str) -> bool:
 
 # --- Photo Specific Operations ---
 
-async def add_photo_to_item(item_id: str, photo: Photo) -> Optional[PotteryItem]:
-    """Adds photo metadata to an item's 'photos' array in Firestore."""
+async def add_photo_to_item(item_id: str, photo: Photo, user_id: str = None) -> Optional[PotteryItem]:
+    """
+    Adds photo metadata to an item's 'photos' array in Firestore.
+    If user_id is provided, only adds the photo if the item belongs to that user.
+    If user_id is None, adds the photo regardless of ownership (admin functionality).
+    """
     if not items_collection:
         raise ConnectionError("Firestore client not initialized or collection reference failed.")
     try:
+        # Check if the item exists and belongs to the specified user
+        if user_id:
+            item = await get_item_by_id(item_id, user_id)
+            if not item:
+                logger.warning(f"User {user_id} attempted to add photo to item {item_id} which either doesn't exist or doesn't belong to them.")
+                return None
+
         doc_ref = items_collection.document(item_id)
         photo_data = photo.model_dump()
 
@@ -219,7 +279,8 @@ async def add_photo_to_item(item_id: str, photo: Photo) -> Optional[PotteryItem]
         logger.debug(f"Adding photo data to item {item_id}: {photo_data}")
         await doc_ref.update({"photos": firestore.ArrayUnion([photo_data])})
 
-        updated_item = await get_item_by_id(item_id)
+        # Pass the user_id to get_item_by_id to ensure ownership check is consistent
+        updated_item = await get_item_by_id(item_id, user_id)
         if updated_item:
              logger.info(f"Added photo {photo.id} to item {item_id}")
              return updated_item
@@ -233,11 +294,22 @@ async def add_photo_to_item(item_id: str, photo: Photo) -> Optional[PotteryItem]
              return None
         raise
 
-async def remove_photo_from_item(item_id: str, photo_id: str) -> Optional[PotteryItem]:
-    """Removes photo metadata from an item's 'photos' array in Firestore."""
+async def remove_photo_from_item(item_id: str, photo_id: str, user_id: str = None) -> Optional[PotteryItem]:
+    """
+    Removes photo metadata from an item's 'photos' array in Firestore.
+    If user_id is provided, only removes the photo if the item belongs to that user.
+    If user_id is None, removes the photo regardless of ownership (admin functionality).
+    """
     if not items_collection:
         raise ConnectionError("Firestore client not initialized or collection reference failed.")
     try:
+        # Check if the item exists and belongs to the specified user
+        if user_id:
+            item = await get_item_by_id(item_id, user_id)
+            if not item:
+                logger.warning(f"User {user_id} attempted to remove photo from item {item_id} which either doesn't exist or doesn't belong to them.")
+                return None
+
         doc_ref = items_collection.document(item_id)
         # Get current raw data for accurate comparison needed by ArrayRemove
         doc_snapshot = await doc_ref.get()
@@ -258,12 +330,13 @@ async def remove_photo_from_item(item_id: str, photo_id: str) -> Optional[Potter
         if not photo_found or photo_to_remove_dict is None:
             logger.warning(f"Photo {photo_id} not found within item {item_id} raw data. No update performed.")
             # Fetch item using get_item_by_id to return consistent model object
-            return await get_item_by_id(item_id)
+            return await get_item_by_id(item_id, user_id)
 
         logger.debug(f"Attempting to remove photo dict: {photo_to_remove_dict}")
         await doc_ref.update({"photos": firestore.ArrayRemove([photo_to_remove_dict])})
 
-        updated_item = await get_item_by_id(item_id) # Read back using standard getter
+        # Pass the user_id to get_item_by_id to ensure ownership check is consistent
+        updated_item = await get_item_by_id(item_id, user_id) # Read back using standard getter
         if updated_item:
              logger.info(f"Removed photo {photo_id} from item {item_id}")
              if any(p.id == photo_id for p in updated_item.photos):
@@ -277,18 +350,25 @@ async def remove_photo_from_item(item_id: str, photo_id: str) -> Optional[Potter
         logger.error(f"Error removing photo {photo_id} metadata for item {item_id}: {e}", exc_info=True)
         raise
 
-async def update_photo_details_in_item(item_id: str, photo_id: str, photo_update: PhotoUpdate) -> Optional[Photo]:
-    """Updates metadata (stage, note) of a specific photo within an item's 'photos' array."""
+async def update_photo_details_in_item(item_id: str, photo_id: str, photo_update: PhotoUpdate, user_id: str = None) -> Optional[Photo]:
+    """
+    Updates metadata (stage, note) of a specific photo within an item's 'photos' array.
+    If user_id is provided, only updates the photo if the item belongs to that user.
+    If user_id is None, updates the photo regardless of ownership (admin functionality).
+    """
     if not items_collection:
         raise ConnectionError("Firestore client not initialized or collection reference failed.")
     try:
-        doc_ref = items_collection.document(item_id)
-        # Get the current item data using the standard getter
-        item = await get_item_by_id(item_id)
+        # Check if the item exists and belongs to the specified user
+        item = await get_item_by_id(item_id, user_id)
         if not item:
-            logger.warning(f"Cannot update photo {photo_id}, item {item_id} not found.")
-            return None # Item not found
+            if user_id:
+                logger.warning(f"User {user_id} attempted to update photo in item {item_id} which either doesn't exist or doesn't belong to them.")
+            else:
+                logger.warning(f"Cannot update photo {photo_id}, item {item_id} not found.")
+            return None # Item not found or not owned by user
 
+        doc_ref = items_collection.document(item_id)
         updated_photos_list = []
         target_photo_model: Optional[Photo] = None
         photo_found = False

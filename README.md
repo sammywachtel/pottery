@@ -41,6 +41,7 @@ The application is designed to be containerized using Docker and deployed to Goo
 ├── config.py             # Application settings/configuration
 ├── main.py               # FastAPI app entry point and global handlers
 ├── models.py             # Pydantic data models (incl. internal and response models)
+├── auth.py               # JWT authentication functionality
 ├── pytest.ini            # Pytest configuration (e.g., markers)
 ├── README.md             # This file
 ├── build_and_deploy.sh   # Script to build & deploy image to Cloud Run
@@ -59,8 +60,11 @@ The application is designed to be containerized using Docker and deployed to Goo
     ├── test_main.py        # Unit tests for main app
     ├── test_items_router.py # Unit tests for items router
     ├── test_photos_router.py# Unit tests for photos router
+    ├── test_auth.py        # Unit tests for authentication
     ├── images/             # Directory for test images
-    │   └── crackle.jpeg    # Example test image
+    │   ├── crackle.jpeg    # Example test image
+    │   ├── arthur.jpeg     # Additional test image
+    │   ├── Cardboard Angel Merged_01_00_56_22.jpg # Additional test image
     └── integration/        # Integration tests
         ├── __init__.py
         ├── conftest.py     # Integration test fixtures (e.g., resource cleanup)
@@ -157,16 +161,49 @@ For development and testing, the API comes with a default user:
 
 **Note:** In production, you should change the default credentials and use a secure password.
 
+#### How to Authenticate as Admin
+
+1. **Obtain a JWT Token**:
+   ```bash
+   curl -X POST "http://localhost:8000/api/token" \
+     -H "Content-Type: application/x-www-form-urlencoded" \
+     -d "username=admin&password=admin"
+   ```
+
+   This will return a JSON response with an access token:
+   ```json
+   {
+     "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+     "token_type": "bearer"
+   }
+   ```
+
+2. **Use the Token in Subsequent Requests**:
+   ```bash
+   curl -X GET "http://localhost:8000/api/items" \
+     -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+   ```
+
+3. **Token Expiration**: By default, tokens expire after the time specified in your configuration (default: 30 minutes). After expiration, you'll need to obtain a new token.
+
+### User Data Association
+
+All data in the system (pottery items and photos) is associated with the authenticated user. This means:
+
+* When you create items or upload photos, they are automatically associated with your user account
+* You can only view, update, and delete your own items and photos
+* Admin users can access all items (for administrative purposes)
+
 ### Items and Photos
 * `GET /`: Health check.
-* `GET /api/items`: List all pottery items.
-* `POST /api/items`: Create a new pottery item.
-* `GET /api/items/{item_id}`: Get a specific item by ID.
-* `PUT /api/items/{item_id}`: Update an item's metadata.
-* `DELETE /api/items/{item_id}`: Delete an item and its photos.
-* `POST /api/items/{item_id}/photos`: Upload a photo for an item.
-* `PUT /api/items/{item_id}/photos/{photo_id}`: Update a photo's metadata.
-* `DELETE /api/items/{item_id}/photos/{photo_id}`: Delete a specific photo.
+* `GET /api/items`: List all pottery items belonging to the authenticated user.
+* `POST /api/items`: Create a new pottery item associated with the authenticated user.
+* `GET /api/items/{item_id}`: Get a specific item by ID (if it belongs to the authenticated user).
+* `PUT /api/items/{item_id}`: Update an item's metadata (if it belongs to the authenticated user).
+* `DELETE /api/items/{item_id}`: Delete an item and its photos (if it belongs to the authenticated user).
+* `POST /api/items/{item_id}/photos`: Upload a photo for an item (if it belongs to the authenticated user).
+* `PUT /api/items/{item_id}/photos/{photo_id}`: Update a photo's metadata (if the parent item belongs to the authenticated user).
+* `DELETE /api/items/{item_id}/photos/{photo_id}`: Delete a specific photo (if the parent item belongs to the authenticated user).
 
 All endpoints except the health check (`GET /`) and token endpoint (`POST /api/token`) require authentication using a JWT token in the Authorization header.
 

@@ -72,6 +72,7 @@ class PotteryItem(PotteryItemBase):
     Includes Firestore document ID and internal Photo models. createdDateTime is stored as UTC.
     """
     id: str = Field(..., description="Firestore document ID")
+    user_id: str = Field(..., description="Username of the user who owns this item")
     photos: List[Photo] = Field([], description="List of photo metadata stored for this item")
 
 class PotteryItemResponse(PotteryItemBase):
@@ -81,6 +82,7 @@ class PotteryItemResponse(PotteryItemBase):
     Returns UTC time and original timezone identifier.
     """
     id: str = Field(..., description="Firestore document ID")
+    user_id: str = Field(..., description="Username of the user who owns this item")
     photos: List[PhotoResponse] = Field([], description="List of photo metadata with signed URLs")
 
 # --- Error Schemas (Matching OpenAPI spec) ---

@@ -22,13 +22,16 @@ router = APIRouter(
 )
 
 # --- Helper Function ---
-async def _get_item_or_404(item_id: str) -> PotteryItem:
-    """Helper to get an item or raise HTTPException 404 or 500."""
+async def _get_item_or_404(item_id: str, user_id: str) -> PotteryItem:
+    """
+    Helper to get an item or raise HTTPException 404 or 500.
+    Only returns the item if it belongs to the specified user.
+    """
     try:
         # *** ADDED try...except around service call ***
-        item = await firestore_service.get_item_by_id(item_id)
+        item = await firestore_service.get_item_by_id(item_id, user_id=user_id)
         if not item:
-            logger.warning(f"Item not found attempt for ID: {item_id}")
+            logger.warning(f"Item not found or not owned by user {user_id} for ID: {item_id}")
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Pottery item with ID '{item_id}' not found."
@@ -65,8 +68,8 @@ async def _create_item_response(item: PotteryItem) -> PotteryItemResponse:
 @router.get(
     "/",
     response_model=List[PotteryItemResponse],
-    summary="List All Pottery Items",
-    description="Retrieves a list of all pottery items, including temporary signed URLs for photos.",
+    summary="List User's Pottery Items",
+    description="Retrieves a list of pottery items belonging to the authenticated user, including temporary signed URLs for photos.",
     responses={
         status.HTTP_200_OK: {"description": "Successful Response"},
         status.HTTP_401_UNAUTHORIZED: {"model": HTTPError, "description": "Not authenticated"},
@@ -75,9 +78,10 @@ async def _create_item_response(item: PotteryItem) -> PotteryItemResponse:
     }
 )
 async def get_items(current_user: User = Depends(get_current_active_user)):
-    """Retrieves all pottery items from Firestore and generates signed URLs for their photos."""
+    """Retrieves pottery items belonging to the authenticated user from Firestore and generates signed URLs for their photos."""
     try:
-        items = await firestore_service.get_all_items()
+        # Filter items by the current user's username
+        items = await firestore_service.get_all_items(user_id=current_user.username)
         # Convert each item to its response model with signed URLs using asyncio.gather
         response_tasks = [_create_item_response(item) for item in items]
         response_items = await asyncio.gather(*response_tasks)
@@ -95,7 +99,7 @@ async def get_items(current_user: User = Depends(get_current_active_user)):
     response_model=PotteryItemResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Create New Pottery Item",
-    description="Creates a new pottery item metadata entry in Firestore. Photos should be uploaded separately. Returns the created item (photos list will be empty).",
+    description="Creates a new pottery item metadata entry in Firestore associated with the authenticated user. Photos should be uploaded separately. Returns the created item (photos list will be empty).",
     responses={
         status.HTTP_201_CREATED: {"description": "Successful Response"},
         status.HTTP_401_UNAUTHORIZED: {"model": HTTPError, "description": "Not authenticated"},
@@ -105,9 +109,10 @@ async def get_items(current_user: User = Depends(get_current_active_user)):
     }
 )
 async def create_item(item_create: PotteryItemCreate, current_user: User = Depends(get_current_active_user)):
-    """Creates a new pottery item document in Firestore."""
+    """Creates a new pottery item document in Firestore associated with the authenticated user."""
     try:
-        new_item = await firestore_service.create_item(item_create)
+        # Associate the item with the current user
+        new_item = await firestore_service.create_item(item_create, user_id=current_user.username)
         # The new item initially has no photos, so the response conversion is simple
         response_item = await _create_item_response(new_item) # Will have empty photo list
         return response_item
@@ -123,19 +128,22 @@ async def create_item(item_create: PotteryItemCreate, current_user: User = Depen
     "/{item_id}",
     response_model=PotteryItemResponse,
     summary="Get Single Pottery Item",
-    description="Retrieves a single pottery item by its ID, including temporary signed URLs for photos.",
+    description="Retrieves a single pottery item by its ID belonging to the authenticated user, including temporary signed URLs for photos.",
     responses={
         status.HTTP_200_OK: {"description": "Successful Response"},
         status.HTTP_401_UNAUTHORIZED: {"model": HTTPError, "description": "Not authenticated"},
+        status.HTTP_403_FORBIDDEN: {"model": HTTPError, "description": "Forbidden - Item belongs to another user"},
         status.HTTP_503_SERVICE_UNAVAILABLE: {"model": HTTPError, "description": "Service Unavailable"},
         # Inherits 404, 500 from router defaults (500 now also handled by dependency)
     }
 )
 async def get_item(
-    item: PotteryItem = Depends(_get_item_or_404), # Dependency handles 404/500/503
+    item_id: str,
     current_user: User = Depends(get_current_active_user)
 ):
-    """Retrieves a specific item by ID and generates signed URLs for its photos."""
+    """Retrieves a specific item by ID belonging to the authenticated user and generates signed URLs for its photos."""
+    # Get the item, checking ownership
+    item = await _get_item_or_404(item_id, user_id=current_user.username)
     try:
         # If dependency _get_item_or_404 succeeded, 'item' is valid
         response_item = await _create_item_response(item)
@@ -154,10 +162,11 @@ async def get_item(
     "/{item_id}",
     response_model=PotteryItemResponse,
     summary="Update Pottery Item Metadata",
-    description="Updates an existing pottery item's metadata (name, clay, notes, etc.) in Firestore. Does not handle photo list updates directly. Returns the updated item including photo metadata with fresh signed URLs.",
+    description="Updates an existing pottery item's metadata (name, clay, notes, etc.) in Firestore belonging to the authenticated user. Does not handle photo list updates directly. Returns the updated item including photo metadata with fresh signed URLs.",
     responses={
         status.HTTP_200_OK: {"description": "Successful Response"},
         status.HTTP_401_UNAUTHORIZED: {"model": HTTPError, "description": "Not authenticated"},
+        status.HTTP_403_FORBIDDEN: {"model": HTTPError, "description": "Forbidden - Item belongs to another user"},
         status.HTTP_422_UNPROCESSABLE_ENTITY: {"model": HTTPValidationError, "description": "Validation Error"},
         status.HTTP_503_SERVICE_UNAVAILABLE: {"model": HTTPError, "description": "Service Unavailable"},
         # Inherits 404, 500 from router defaults
@@ -168,12 +177,14 @@ async def update_item(
     item_update: PotteryItemBase, 
     current_user: User = Depends(get_current_active_user)
 ):
-    """Updates the metadata for a specific item."""
+    """Updates the metadata for a specific item belonging to the authenticated user."""
     try:
-        updated_item = await firestore_service.update_item_metadata(item_id, item_update)
+        # Pass the user_id to ensure ownership check
+        updated_item = await firestore_service.update_item_metadata(item_id, item_update, user_id=current_user.username)
         if updated_item is None:
-             # This case happens if the item disappeared between check and update, or if service returns None on not found
-             logger.warning(f"Item {item_id} not found during update operation.")
+             # This case happens if the item disappeared between check and update, 
+             # if service returns None on not found, or if the item doesn't belong to the user
+             logger.warning(f"Item {item_id} not found or not owned by user {current_user.username} during update operation.")
              raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Pottery item with ID '{item_id}' not found."
@@ -195,19 +206,20 @@ async def update_item(
     "/{item_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Delete Pottery Item",
-    description="Deletes a pottery item from Firestore and its associated photos from GCS.",
+    description="Deletes a pottery item belonging to the authenticated user from Firestore and its associated photos from GCS.",
     responses={
         status.HTTP_204_NO_CONTENT: {"description": "No Content - Item and associated photos successfully deleted (or item did not exist)."},
         status.HTTP_401_UNAUTHORIZED: {"model": HTTPError, "description": "Not authenticated"},
+        status.HTTP_403_FORBIDDEN: {"model": HTTPError, "description": "Forbidden - Item belongs to another user"},
         status.HTTP_503_SERVICE_UNAVAILABLE: {"model": HTTPError, "description": "Service Unavailable"},
         # Inherits 404 (if initial check fails), 500 from router defaults
     }
 )
 async def delete_item(item_id: str, current_user: User = Depends(get_current_active_user)):
-    """Deletes an item and all its associated photos."""
+    """Deletes an item belonging to the authenticated user and all its associated photos."""
     # 1. Get item details first to find associated photos
-    # Use the dependency which now handles its own errors
-    item = await _get_item_or_404(item_id) # Handles 404/500/503 for initial fetch
+    # Use the dependency which now handles its own errors and checks ownership
+    item = await _get_item_or_404(item_id, user_id=current_user.username) # Handles 404/500/503 for initial fetch
 
     gcs_paths_to_delete = [photo.gcsPath for photo in item.photos if photo.gcsPath]
 
@@ -225,9 +237,9 @@ async def delete_item(item_id: str, current_user: User = Depends(get_current_act
              logger.error(f"Unexpected error deleting GCS photos for item {item_id}: {e}", exc_info=True)
              raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error during photo deletion.")
 
-    # 3. Delete item from Firestore
+    # 3. Delete item from Firestore (pass user_id to ensure ownership check)
     try:
-        firestore_delete_success = await firestore_service.delete_item_and_photos(item_id)
+        firestore_delete_success = await firestore_service.delete_item_and_photos(item_id, user_id=current_user.username)
         if not firestore_delete_success:
             logger.error(f"Firestore failed to delete item document {item_id}.")
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to delete item metadata after deleting photos.")
