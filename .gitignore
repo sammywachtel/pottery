@@ -1,7 +1,7 @@
 # Environment specific files
-.env
-.env.local
-.env.deploy
-.env.test
+.env*
+!.env.local.example
+!.env.deploy.example
+!.env.test.example
 /.idea
 __pycache__
