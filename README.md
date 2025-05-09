@@ -144,7 +144,7 @@ The application will be accessible at `http://localhost:[LOCAL_PORT]` (default `
 
 Once the container is running, access the interactive API documentation (Swagger UI) in your browser:
 
-* [http://localhost:${LOCAL_PORT:-8000}/api/docs](http://localhost:${LOCAL_PORT:-8000}/api/docs)
+* `http://localhost:LOCAL_PORT:8000/api/docs`
 
 You can also view the ReDoc documentation at `/api/redoc`.
 
