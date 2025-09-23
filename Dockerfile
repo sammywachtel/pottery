@@ -16,8 +16,8 @@ WORKDIR /app
 
 # Install Python dependencies
 # Copy only requirements first to leverage Docker cache
-COPY requirements.txt .
-RUN pip wheel --no-cache-dir --no-deps --wheel-dir /app/wheels -r requirements.txt
+COPY requirements.txt requirements-dev.txt ./
+RUN pip wheel --no-cache-dir --no-deps --wheel-dir /app/wheels -r requirements.txt -r requirements-dev.txt
 
 
 # --- Stage 2: Runtime Stage ---
@@ -35,12 +35,9 @@ WORKDIR /app
 # Install runtime dependencies (if any, e.g., system libraries needed by Python packages)
 # RUN apt-get update && apt-get install -y --no-install-recommends some-runtime-lib && rm -rf /var/lib/apt/lists/*
 
-# Install debugpy for remote debugging
-RUN pip install debugpy
-
 # Copy installed wheels from the builder stage
 COPY --from=builder /app/wheels /wheels
-COPY --from=builder /app/requirements.txt .
+COPY --from=builder /app/requirements.txt /app/requirements-dev.txt ./
 # Install dependencies from wheels
 RUN pip install --no-cache /wheels/*
 
@@ -62,5 +59,5 @@ CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
 
 # For debugging in local docker container
 # Expose the debug port
-# EXPOSE 5678
-# CMD ["python", "-m", "debugpy", "--listen", "0.0.0.0:5678", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080", "--reload"]
+EXPOSE 5678
+# The debug command is now handled by run_docker_local.sh

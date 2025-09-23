@@ -6,6 +6,7 @@ from fastapi import FastAPI, HTTPException, status, Request, Depends
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.middleware.cors import CORSMiddleware
 from google.cloud.exceptions import GoogleCloudError
 from datetime import timedelta
 
@@ -68,6 +69,15 @@ app = FastAPI(
     redoc_url="/api/redoc", # ReDoc UI
     servers=servers_list, # *** FIX: Pass the dynamically created list ***
     lifespan=lifespan
+)
+
+# Add CORS middleware to allow cross-origin requests
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allows all origins
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows all methods
+    allow_headers=["*"],  # Allows all headers
 )
 
 # --- Global Exception Handlers ---

@@ -209,6 +209,10 @@ async def test_photo_upload_get_delete_cycle(client: TestClient, resource_manage
     assert photo_metadata["stage"] == form_data["photo_stage"]
     assert photo_metadata["fileName"] == file_name
     assert photo_metadata["uploadedTimezone"] == "UTC"
+    # Verify that the signed URL is present
+    assert "signedUrl" in photo_metadata
+    assert photo_metadata["signedUrl"] is not None
+    assert photo_metadata["signedUrl"].startswith("https://")
 
     # Verify file exists in GCS directly
     try:
@@ -308,3 +312,7 @@ async def test_photo_update_details(client: TestClient, resource_manager, auth_h
     assert photo_metadata["id"] == photo_id
     assert photo_metadata["stage"] == photo_update_payload["stage"]
     assert photo_metadata["imageNote"] == photo_update_payload["imageNote"]
+    # Verify that the signed URL is present
+    assert "signedUrl" in photo_metadata
+    assert photo_metadata["signedUrl"] is not None
+    assert photo_metadata["signedUrl"].startswith("https://")

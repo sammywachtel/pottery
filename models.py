@@ -41,7 +41,7 @@ class PhotoResponse(PhotoBase):
     Includes signed URL instead of GCS path. Returns UTC time and timezone.
     """
     id: str = Field(..., description="Unique ID for the photo")
-    signedUrl: Optional[AnyHttpUrl] = Field(None, description="Temporary signed URL to access the photo file in GCS. May be null if generation failed.")
+    signedUrl: Optional[str] = Field(None, description="Temporary signed URL to access the photo file in GCS. May be null if generation failed.")
     uploadedAt: datetime = Field(..., description="Timestamp (UTC) when the photo was uploaded")
 
 class PhotoUpdate(BaseModel):

@@ -140,7 +140,67 @@ chmod +x run_docker_local.sh
 ```
 The application will be accessible at `http://localhost:[LOCAL_PORT]` (default `http://localhost:8000`).
 
-### 5. Access API Documentation (Local Docker)
+### 5. Debugging with PyCharm
+
+You can use PyCharm's remote debugger to debug your application running in Docker. The project has already been configured to support this.
+
+#### Step 1: Start the Docker Container in Debug Mode
+
+Run the Docker container with debugging enabled:
+
+```bash
+./run_docker_local.sh --debug
+```
+
+This will:
+- Build the Docker image with debugpy installed
+- Start the container with port 5678 exposed for debugging
+- Launch the application with debugpy in "wait-for-client" mode
+- The application will pause at startup, waiting for the debugger to connect
+
+#### Step 2: Configure PyCharm Remote Debugger
+
+1. In PyCharm, go to **Run** → **Edit Configurations...**
+2. Click the **+** button and select **Python Debug Server**
+3. Configure the debug server:
+   - **Name**: Give it a name like "Docker Debug"
+   - **Host**: localhost
+   - **Port**: 5678 (the debug port exposed in the Docker container)
+   - **Path mappings**: Map your local project directory to `/app` in the container
+     - For example: `/Users/samwachtel/PycharmProjects/potteryapp/pottery-backend` → `/app`
+4. Click **OK** to save the configuration
+
+#### Step 3: Start Debugging
+
+1. Set breakpoints in your code where needed
+2. Select your "Docker Debug" configuration from the dropdown in the top-right corner
+3. Click the debug button (green bug icon) or press Shift+F9
+4. PyCharm will connect to the waiting debugpy server in the Docker container
+5. The application will start running and will pause at your breakpoints
+
+#### Step 4: Debug Your Application
+
+- Use PyCharm's debugging tools to inspect variables, step through code, etc.
+- When you're done debugging, you can stop the debugger in PyCharm
+- To stop the Docker container, press Ctrl+C in the terminal where you started it
+
+#### Troubleshooting
+
+- If the connection fails, make sure:
+  - The Docker container is running in debug mode
+  - Port 5678 is not being used by another application
+  - Your path mappings are correct
+- If breakpoints are not being hit, verify that:
+  - The source files in PyCharm match those in the container
+  - The breakpoints are set in code that actually gets executed
+- If you see a warning about frozen modules, this has been fixed by adding the `-Xfrozen_modules=off` flag to the Python command in the `run_docker_local.sh` script. This flag disables frozen modules, which can cause the debugger to miss breakpoints.
+
+#### Notes
+
+- The debugpy server is configured to wait for a connection before starting the application
+- You can modify the debug port in your `.env.local` file by setting the `DEBUG_PORT` variable
+
+### 6. Access API Documentation (Local Docker)
 
 Once the container is running, access the interactive API documentation (Swagger UI) in your browser:
 

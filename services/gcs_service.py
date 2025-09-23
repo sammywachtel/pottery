@@ -161,6 +161,12 @@ async def generate_signed_urls_for_photos(photos: List[Photo]) -> List[PhotoResp
         # Generate signed URL for the current photo's GCS path
         signed_url = await generate_signed_url(photo.gcsPath)
 
+        # Log the signed URL for debugging
+        if signed_url:
+            logger.debug(f"Generated signed URL for photo {photo.id}: {signed_url[:50]}...")
+        else:
+            logger.warning(f"Failed to generate signed URL for photo {photo.id} with GCS path {photo.gcsPath}")
+
         # Create a dictionary from the internal Photo model
         photo_response_data = photo.model_dump()
 
@@ -170,8 +176,20 @@ async def generate_signed_urls_for_photos(photos: List[Photo]) -> List[PhotoResp
         # Remove the internal gcsPath field as it's not part of the PhotoResponse model
         photo_response_data.pop('gcsPath', None)
 
-        # Create a PhotoResponse object from the dictionary and add it to the list
-        # This now works because PhotoResponse is imported
-        photo_responses.append(PhotoResponse(**photo_response_data))
+        try:
+            # Create a PhotoResponse object from the dictionary and add it to the list
+            photo_response = PhotoResponse(**photo_response_data)
+            photo_responses.append(photo_response)
+        except Exception as e:
+            # Log the error and continue with the next photo
+            logger.error(f"Error creating PhotoResponse for photo {photo.id}: {e}", exc_info=True)
+            # Try creating a PhotoResponse without the signedUrl
+            photo_response_data['signedUrl'] = None
+            try:
+                photo_response = PhotoResponse(**photo_response_data)
+                photo_responses.append(photo_response)
+                logger.info(f"Created PhotoResponse for photo {photo.id} without signedUrl")
+            except Exception as e2:
+                logger.error(f"Error creating PhotoResponse without signedUrl for photo {photo.id}: {e2}", exc_info=True)
 
     return photo_responses

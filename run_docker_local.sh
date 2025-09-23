@@ -2,6 +2,15 @@
 
 # Script to build and run the Docker container locally
 
+# Parse command line arguments
+DEBUG_MODE=false
+while [[ "$#" -gt 0 ]]; do
+  case $1 in
+    --debug) DEBUG_MODE=true; shift ;;
+    *) echo "Unknown parameter: $1"; exit 1 ;;
+  esac
+done
+
 # Load environment variables from .env.local file into the script's environment
 ENV_LOCAL_FILE=".env.local"
 if [ -f "${ENV_LOCAL_FILE}" ]; then
@@ -26,6 +35,8 @@ LOCAL_PORT="${LOCAL_PORT:-8000}"
 # Get the internal container port (should match Dockerfile EXPOSE and CMD)
 # This PORT var is also passed into the container via -e below
 CONTAINER_PORT="${PORT:-8080}"
+# Debug port for PyCharm
+DEBUG_PORT="${DEBUG_PORT:-5678}"
 
 # --- Runtime Variables Needed by the Application Inside the Container ---
 # Ensure required runtime variables are set in the loaded environment
@@ -42,6 +53,8 @@ echo "--- Local Docker Run Configuration ---"
 echo "Host Key Path: ${HOST_KEY_PATH}"
 echo "Local Port: ${LOCAL_PORT}"
 echo "Container Port: ${CONTAINER_PORT}"
+echo "Debug Port: ${DEBUG_PORT}"
+echo "Debug Mode: ${DEBUG_MODE}"
 echo "Image Name: ${IMAGE_NAME}"
 echo "------------------------------------"
 
@@ -54,17 +67,30 @@ echo "Docker build successful."
 
 # Run the Docker container
 echo "Running Docker container..."
-docker run --rm -it \
-  -p "${LOCAL_PORT}":"${CONTAINER_PORT}" \
-  -v "${HOST_KEY_PATH}":"${CONTAINER_KEY_PATH}":ro \
-  -e GOOGLE_APPLICATION_CREDENTIALS="${CONTAINER_KEY_PATH}" \
-  -e GCP_PROJECT_ID="${GCP_PROJECT_ID}" \
-  -e GCS_BUCKET_NAME="${GCS_BUCKET_NAME}" \
-  -e FIRESTORE_COLLECTION="${FIRESTORE_COLLECTION:-pottery_items}" \
-  -e FIRESTORE_DATABASE_ID="${FIRESTORE_DATABASE_ID:-(default)}" \
-  -e SIGNED_URL_EXPIRATION_MINUTES="${SIGNED_URL_EXPIRATION_MINUTES:-15}" \
-  -e PORT="${CONTAINER_PORT}" \
-  "${IMAGE_NAME}"
+
+# Base docker run command with common options
+DOCKER_CMD="docker run --rm -it \
+  -p ${LOCAL_PORT}:${CONTAINER_PORT} \
+  -v ${HOST_KEY_PATH}:${CONTAINER_KEY_PATH}:ro \
+  -e GOOGLE_APPLICATION_CREDENTIALS=${CONTAINER_KEY_PATH} \
+  -e GCP_PROJECT_ID=${GCP_PROJECT_ID} \
+  -e GCS_BUCKET_NAME=${GCS_BUCKET_NAME} \
+  -e FIRESTORE_COLLECTION=${FIRESTORE_COLLECTION:-pottery_items} \
+  -e FIRESTORE_DATABASE_ID=${FIRESTORE_DATABASE_ID:-(default)} \
+  -e SIGNED_URL_EXPIRATION_MINUTES=${SIGNED_URL_EXPIRATION_MINUTES:-15} \
+  -e PORT=${CONTAINER_PORT}"
+
+# Add debug port mapping and command if in debug mode
+if [ "$DEBUG_MODE" = true ]; then
+  echo "Starting container in debug mode..."
+  # Add debug port mapping
+  DOCKER_CMD="${DOCKER_CMD} -p ${DEBUG_PORT}:5678"
+  # Run with debugpy
+  ${DOCKER_CMD} ${IMAGE_NAME} python -Xfrozen_modules=off -m debugpy --listen 0.0.0.0:5678 --wait-for-client -m uvicorn main:app --host 0.0.0.0 --port ${CONTAINER_PORT} --reload
+else
+  # Run normally
+  ${DOCKER_CMD} ${IMAGE_NAME}
+fi
 
 # --rm : Automatically remove the container when it exits
 # -it  : Run interactively so you see logs and can Ctrl+C
