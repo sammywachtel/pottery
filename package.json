@@ -1,0 +1,26 @@
+{
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  },
+  "scripts": {
+    "validate": "./scripts/validate-adaptive.sh",
+    "quality:check": "./scripts/validate-adaptive.sh",
+    "setup:dev": "./setup-dev.sh",
+    "precommit:install": "pre-commit install",
+    "precommit:run": "pre-commit run --all-files",
+    "frontend:dev": "cd frontend && npm run dev",
+    "frontend:build": "cd frontend && npm run build",
+    "frontend:lint": "cd frontend && npm run lint",
+    "frontend:lint:fix": "cd frontend && npm run lint:fix",
+    "frontend:type-check": "cd frontend && npx tsc --noEmit",
+    "frontend:test": "cd frontend && npm test",
+    "backend:dev": "cd backend && uvicorn app.main:app --reload --host 0.0.0.0 --port 8001",
+    "backend:format": "cd backend && black . && isort .",
+    "backend:lint": "cd backend && flake8 . && black --check . && isort --check-only .",
+    "backend:test": "cd backend && python -m pytest",
+    "dev": "concurrently \"npm run frontend:dev\" \"npm run backend:dev\"",
+    "lint": "npm run frontend:lint && npm run backend:lint",
+    "lint:fix": "npm run frontend:lint:fix && npm run backend:format",
+    "test": "npm run frontend:test && npm run backend:test"
+  }
+}

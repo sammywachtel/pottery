@@ -4,17 +4,19 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Pottery Catalog API - A FastAPI application for managing pottery items with photos, using Google Cloud services (Firestore for metadata, Cloud Storage for photos).
+Full-stack pottery catalog application:
+- **backend/** - FastAPI application for managing pottery items with photos, using Google Cloud services (Firestore for metadata, Cloud Storage for photos)
+- **frontend/** - Flutter mobile application (to be implemented)
 
 ## Key Architecture
 
-### Service Layer Pattern
-- **routers/** - FastAPI route handlers (items.py, photos.py)
-- **services/** - Business logic and GCP interactions
+### Backend Service Layer Pattern
+- **backend/routers/** - FastAPI route handlers (items.py, photos.py)
+- **backend/services/** - Business logic and GCP interactions
   - `firestore_service.py` - Firestore CRUD operations
   - `gcs_service.py` - Cloud Storage operations and signed URL generation
-- **models.py** - Pydantic models with separate internal vs response schemas
-- **auth.py** - JWT authentication using OAuth2PasswordBearer
+- **backend/models.py** - Pydantic models with separate internal vs response schemas
+- **backend/auth.py** - JWT authentication using OAuth2PasswordBearer
 
 ### Data Flow
 1. Items stored in Firestore with embedded photo metadata
@@ -26,6 +28,9 @@ Pottery Catalog API - A FastAPI application for managing pottery items with phot
 
 ### Local Development
 ```bash
+# Navigate to backend directory
+cd backend
+
 # Run locally with Docker (reads .env.local)
 ./run_docker_local.sh
 
@@ -38,6 +43,9 @@ python main.py
 
 ### Testing
 ```bash
+# Navigate to backend directory
+cd backend
+
 # Run unit tests only (mocked services)
 pytest -m "not integration"
 
@@ -56,6 +64,9 @@ pytest --cov=. --cov-report=html
 
 ### Deployment
 ```bash
+# Navigate to backend directory
+cd backend
+
 # Deploy to Google Cloud Run (reads .env.deploy)
 ./build_and_deploy.sh
 ```
