@@ -4,16 +4,17 @@ import os
 
 import pytest
 import pytest_asyncio  # Use the specific import for async fixtures
+
+# Load test environment before importing config
+from dotenv import load_dotenv
+from google.auth.exceptions import DefaultCredentialsError
 from google.cloud import firestore  # Use sync client for cleanup simplicity here
 from google.cloud import storage
-from google.auth.exceptions import DefaultCredentialsError
 
 # *** ADDED: Import the correct NotFound exception ***
 from google.cloud.exceptions import NotFound as GoogleNotFound
 
-# Load test environment before importing config
-from dotenv import load_dotenv
-load_dotenv('.env.test')
+load_dotenv(".env.test")
 
 from config import settings  # Assumes config loads TEST settings
 
@@ -28,8 +29,7 @@ def check_gcp_credentials():
     try:
         # Try to create a simple client to test credentials
         firestore.Client(
-            project=settings.gcp_project_id,
-            database=settings.firestore_database_id
+            project=settings.gcp_project_id, database=settings.firestore_database_id
         )
         return True
     except DefaultCredentialsError:
@@ -42,11 +42,14 @@ def check_gcp_credentials():
 # Check for Google Cloud credentials at module level
 _credentials_available = check_gcp_credentials()
 
+
 # Skip all integration tests if credentials are not available
 def pytest_runtest_setup(item):
     """Hook to skip tests based on credential availability."""
     if item.keywords.get("integration") and not _credentials_available:
-        pytest.skip("Google Cloud credentials not available. Set GOOGLE_APPLICATION_CREDENTIALS or run 'gcloud auth application-default login'")
+        pytest.skip(
+            "Google Cloud credentials not available. Set GOOGLE_APPLICATION_CREDENTIALS or run 'gcloud auth application-default login'"
+        )
 
 
 @pytest_asyncio.fixture(scope="function")
@@ -81,8 +84,10 @@ async def resource_manager():
             f"Bucket='{settings.gcs_bucket_name}'"
         )
     except DefaultCredentialsError:
-        logger.warning("Google Cloud credentials not available for cleanup. "
-                      "Resources may need manual cleanup.")
+        logger.warning(
+            "Google Cloud credentials not available for cleanup. "
+            "Resources may need manual cleanup."
+        )
         return
     except Exception as e:
         logger.error(f"ERROR initializing clients during cleanup: {e}")

@@ -17,9 +17,9 @@ from dotenv import load_dotenv
 # Add parent directory to path to import migration modules
 sys.path.append(str(Path(__file__).parent))
 
+from migration.data_validator import DataValidator
 from migration.firestore_exporter import FirestoreExporter
 from migration.supabase_importer import SupabaseImporter
-from migration.data_validator import DataValidator
 
 
 class MigrationOrchestrator:
@@ -54,13 +54,15 @@ class MigrationOrchestrator:
             ("GCP_PROJECT_ID", self.firestore_project),
             ("SUPABASE_URL", self.supabase_url),
             ("SUPABASE_SERVICE_ROLE_KEY", self.service_role_key),
-            ("DATABASE_URL", self.database_url)
+            ("DATABASE_URL", self.database_url),
         ]
 
         missing_vars = [name for name, value in required_vars if not value]
 
         if missing_vars:
-            self.logger.error(f"Missing required environment variables: {', '.join(missing_vars)}")
+            self.logger.error(
+                f"Missing required environment variables: {', '.join(missing_vars)}"
+            )
             raise ValueError(f"Missing configuration: {missing_vars}")
 
         self.logger.info("Configuration validated successfully")
@@ -137,9 +139,7 @@ class MigrationOrchestrator:
 
         try:
             importer = SupabaseImporter(
-                self.supabase_url,
-                self.service_role_key,
-                self.database_url
+                self.supabase_url, self.service_role_key, self.database_url
             )
 
             await importer.create_schema()
@@ -157,16 +157,18 @@ class MigrationOrchestrator:
 
         try:
             importer = SupabaseImporter(
-                self.supabase_url,
-                self.service_role_key,
-                self.database_url
+                self.supabase_url, self.service_role_key, self.database_url
             )
 
             metadata = await importer.import_data(self.data_dir)
 
             print(f"✅ Import completed:")
-            print(f"   - Items: {metadata['items_imported']}/{metadata['source_items']}")
-            print(f"   - Photos: {metadata['photos_imported']}/{metadata['source_photos']}")
+            print(
+                f"   - Items: {metadata['items_imported']}/{metadata['source_items']}"
+            )
+            print(
+                f"   - Photos: {metadata['photos_imported']}/{metadata['source_photos']}"
+            )
 
             # Validate import
             if not await importer.validate_import():
@@ -192,7 +194,7 @@ class MigrationOrchestrator:
                 firestore_collection=self.firestore_collection,
                 supabase_url=self.supabase_url,
                 supabase_service_role_key=self.service_role_key,
-                database_url=self.database_url
+                database_url=self.database_url,
             )
 
             results = await validator.validate_all_data()
@@ -244,13 +246,13 @@ async def main():
     parser.add_argument(
         "command",
         choices=["migrate", "export", "import", "validate"],
-        help="Migration command to run"
+        help="Migration command to run",
     )
     parser.add_argument(
         "--log-level",
         choices=["DEBUG", "INFO", "WARNING", "ERROR"],
         default="INFO",
-        help="Set logging level"
+        help="Set logging level",
     )
 
     args = parser.parse_args()
@@ -258,7 +260,7 @@ async def main():
     # Configure logging
     logging.basicConfig(
         level=getattr(logging, args.log_level),
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     )
 
     try:

@@ -23,7 +23,9 @@ def _ensure_gcs_client():
     global _storage_client, _bucket, _initialization_attempted, _initialization_error
 
     if _initialization_attempted and _initialization_error:
-        raise ConnectionError(f"GCS client failed to initialize: {_initialization_error}")
+        raise ConnectionError(
+            f"GCS client failed to initialize: {_initialization_error}"
+        )
 
     if _storage_client is not None:
         return _storage_client, _bucket

@@ -36,7 +36,9 @@ def _ensure_firestore_client():
     global _db, _items_collection, _initialization_attempted, _initialization_error
 
     if _initialization_attempted and _initialization_error:
-        raise ConnectionError(f"Firestore client failed to initialize: {_initialization_error}")
+        raise ConnectionError(
+            f"Firestore client failed to initialize: {_initialization_error}"
+        )
 
     if _db is not None:
         return _db, _items_collection

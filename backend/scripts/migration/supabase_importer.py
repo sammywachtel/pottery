@@ -21,7 +21,9 @@ from supabase import create_client
 class SupabaseImporter:
     """Imports data into Supabase PostgreSQL database."""
 
-    def __init__(self, supabase_url: str, supabase_service_role_key: str, database_url: str):
+    def __init__(
+        self, supabase_url: str, supabase_service_role_key: str, database_url: str
+    ):
         """
         Initialize Supabase client and database connection.
 
@@ -112,10 +114,10 @@ class SupabaseImporter:
         data_path = Path(data_dir)
 
         # Load exported data
-        with open(data_path / "pottery_items.json", 'r') as f:
+        with open(data_path / "pottery_items.json", "r") as f:
             items_data = json.load(f)
 
-        with open(data_path / "photos.json", 'r') as f:
+        with open(data_path / "photos.json", "r") as f:
             photos_data = json.load(f)
 
         # Import items first (photos reference items)
@@ -131,11 +133,12 @@ class SupabaseImporter:
             "items_imported": items_imported,
             "photos_imported": photos_imported,
             "source_items": len(items_data),
-            "source_photos": len(photos_data)
+            "source_photos": len(photos_data),
         }
 
-        self.logger.info(f"Import completed: {items_imported} items, "
-                        f"{photos_imported} photos")
+        self.logger.info(
+            f"Import completed: {items_imported} items, " f"{photos_imported} photos"
+        )
 
         return metadata
 
@@ -149,20 +152,25 @@ class SupabaseImporter:
                 try:
                     # Prepare item data for PostgreSQL
                     item_record = {
-                        'id': item['id'],
-                        'user_id': item.get('user_id'),
-                        'name': item['name'],
-                        'clay_type': item['clayType'],
-                        'glaze': item.get('glaze'),
-                        'location': item['location'],
-                        'note': item.get('note'),
-                        'created_datetime': item['createdDateTime'],
-                        'created_timezone': item.get('createdTimezone'),
-                        'measurements': json.dumps(item.get('measurements')) if item.get('measurements') else None
+                        "id": item["id"],
+                        "user_id": item.get("user_id"),
+                        "name": item["name"],
+                        "clay_type": item["clayType"],
+                        "glaze": item.get("glaze"),
+                        "location": item["location"],
+                        "note": item.get("note"),
+                        "created_datetime": item["createdDateTime"],
+                        "created_timezone": item.get("createdTimezone"),
+                        "measurements": (
+                            json.dumps(item.get("measurements"))
+                            if item.get("measurements")
+                            else None
+                        ),
                     }
 
                     # Insert using raw SQL for better control
-                    await conn.execute("""
+                    await conn.execute(
+                        """
                         INSERT INTO pottery_items (
                             id, user_id, name, clay_type, glaze, location, note,
                             created_datetime, created_timezone, measurements
@@ -175,16 +183,16 @@ class SupabaseImporter:
                             note = EXCLUDED.note,
                             updated_at = NOW()
                     """,
-                        item_record['id'],
-                        item_record['user_id'],
-                        item_record['name'],
-                        item_record['clay_type'],
-                        item_record['glaze'],
-                        item_record['location'],
-                        item_record['note'],
-                        item_record['created_datetime'],
-                        item_record['created_timezone'],
-                        item_record['measurements']
+                        item_record["id"],
+                        item_record["user_id"],
+                        item_record["name"],
+                        item_record["clay_type"],
+                        item_record["glaze"],
+                        item_record["location"],
+                        item_record["note"],
+                        item_record["created_datetime"],
+                        item_record["created_timezone"],
+                        item_record["measurements"],
                     )
 
                     imported_count += 1
@@ -207,7 +215,8 @@ class SupabaseImporter:
             for photo in photos_data:
                 try:
                     # Insert photo record
-                    await conn.execute("""
+                    await conn.execute(
+                        """
                         INSERT INTO photos (
                             id, item_id, user_id, stage, image_note, file_name,
                             storage_path, uploaded_at, uploaded_timezone
@@ -219,15 +228,15 @@ class SupabaseImporter:
                             storage_path = EXCLUDED.storage_path,
                             updated_at = NOW()
                     """,
-                        photo['id'],
-                        photo['item_id'],
-                        photo['user_id'],
-                        photo['stage'],
-                        photo.get('image_note'),
-                        photo.get('file_name'),
-                        photo['storage_path'],
-                        photo['uploaded_at'],
-                        photo.get('uploaded_timezone')
+                        photo["id"],
+                        photo["item_id"],
+                        photo["user_id"],
+                        photo["stage"],
+                        photo.get("image_note"),
+                        photo.get("file_name"),
+                        photo["storage_path"],
+                        photo["uploaded_at"],
+                        photo.get("uploaded_timezone"),
                     )
 
                     imported_count += 1
@@ -255,36 +264,48 @@ class SupabaseImporter:
             items_count = await conn.fetchval("SELECT COUNT(*) FROM pottery_items")
             photos_count = await conn.fetchval("SELECT COUNT(*) FROM photos")
 
-            self.logger.info(f"Found {items_count} items and {photos_count} photos in database")
+            self.logger.info(
+                f"Found {items_count} items and {photos_count} photos in database"
+            )
 
             # Check foreign key integrity
-            orphaned_photos = await conn.fetchval("""
+            orphaned_photos = await conn.fetchval(
+                """
                 SELECT COUNT(*) FROM photos p
                 LEFT JOIN pottery_items i ON p.item_id = i.id
                 WHERE i.id IS NULL
-            """)
+            """
+            )
 
             if orphaned_photos > 0:
                 self.logger.error(f"Found {orphaned_photos} orphaned photos")
                 return False
 
             # Check required fields
-            items_missing_required = await conn.fetchval("""
+            items_missing_required = await conn.fetchval(
+                """
                 SELECT COUNT(*) FROM pottery_items
                 WHERE name IS NULL OR clay_type IS NULL OR location IS NULL OR user_id IS NULL
-            """)
+            """
+            )
 
             if items_missing_required > 0:
-                self.logger.error(f"Found {items_missing_required} items with missing required fields")
+                self.logger.error(
+                    f"Found {items_missing_required} items with missing required fields"
+                )
                 return False
 
-            photos_missing_required = await conn.fetchval("""
+            photos_missing_required = await conn.fetchval(
+                """
                 SELECT COUNT(*) FROM photos
                 WHERE item_id IS NULL OR user_id IS NULL OR stage IS NULL OR storage_path IS NULL
-            """)
+            """
+            )
 
             if photos_missing_required > 0:
-                self.logger.error(f"Found {photos_missing_required} photos with missing required fields")
+                self.logger.error(
+                    f"Found {photos_missing_required} photos with missing required fields"
+                )
                 return False
 
             self.logger.info("Import validation passed")
@@ -301,6 +322,7 @@ class SupabaseImporter:
 async def main():
     """Main function to run the import."""
     import os
+
     from dotenv import load_dotenv
 
     # Load environment variables
@@ -349,4 +371,5 @@ async def main():
 
 if __name__ == "__main__":
     import sys
+
     sys.exit(asyncio.run(main()))

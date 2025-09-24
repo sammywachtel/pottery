@@ -19,13 +19,15 @@ from supabase import create_client
 class DataValidator:
     """Validates data consistency between Firestore and Supabase."""
 
-    def __init__(self,
-                 firestore_project: str,
-                 firestore_database: str,
-                 firestore_collection: str,
-                 supabase_url: str,
-                 supabase_service_role_key: str,
-                 database_url: str):
+    def __init__(
+        self,
+        firestore_project: str,
+        firestore_database: str,
+        firestore_collection: str,
+        supabase_url: str,
+        supabase_service_role_key: str,
+        database_url: str,
+    ):
         """
         Initialize validator with both database connections.
 
@@ -39,8 +41,7 @@ class DataValidator:
         """
         # Firestore client
         self.firestore_db = firestore.Client(
-            project=firestore_project,
-            database=firestore_database
+            project=firestore_project, database=firestore_database
         )
         self.collection_name = firestore_collection
 
@@ -62,16 +63,18 @@ class DataValidator:
             "items_validation": await self._validate_pottery_items(),
             "photos_validation": await self._validate_photos(),
             "foreign_key_validation": await self._validate_foreign_keys(),
-            "count_validation": await self._validate_counts()
+            "count_validation": await self._validate_counts(),
         }
 
         # Overall validation status
-        validation_results["overall_status"] = all([
-            validation_results["items_validation"]["status"] == "passed",
-            validation_results["photos_validation"]["status"] == "passed",
-            validation_results["foreign_key_validation"]["status"] == "passed",
-            validation_results["count_validation"]["status"] == "passed"
-        ])
+        validation_results["overall_status"] = all(
+            [
+                validation_results["items_validation"]["status"] == "passed",
+                validation_results["photos_validation"]["status"] == "passed",
+                validation_results["foreign_key_validation"]["status"] == "passed",
+                validation_results["count_validation"]["status"] == "passed",
+            ]
+        )
 
         return validation_results
 
@@ -86,28 +89,30 @@ class DataValidator:
         for doc in docs:
             item_data = doc.to_dict()
             firestore_items[doc.id] = {
-                'name': item_data['name'],
-                'clay_type': item_data['clayType'],
-                'glaze': item_data.get('glaze'),
-                'location': item_data['location'],
-                'user_id': item_data.get('user_id')
+                "name": item_data["name"],
+                "clay_type": item_data["clayType"],
+                "glaze": item_data.get("glaze"),
+                "location": item_data["location"],
+                "user_id": item_data.get("user_id"),
             }
 
         # Get Supabase items
         conn = await asyncpg.connect(self.database_url)
         try:
-            supabase_rows = await conn.fetch("""
+            supabase_rows = await conn.fetch(
+                """
                 SELECT id, name, clay_type, glaze, location, user_id
                 FROM pottery_items
-            """)
+            """
+            )
 
             supabase_items = {
-                str(row['id']): {
-                    'name': row['name'],
-                    'clay_type': row['clay_type'],
-                    'glaze': row['glaze'],
-                    'location': row['location'],
-                    'user_id': row['user_id']
+                str(row["id"]): {
+                    "name": row["name"],
+                    "clay_type": row["clay_type"],
+                    "glaze": row["glaze"],
+                    "location": row["location"],
+                    "user_id": row["user_id"],
                 }
                 for row in supabase_rows
             }
@@ -129,19 +134,23 @@ class DataValidator:
             sb_item = supabase_items[item_id]
 
             if fs_item != sb_item:
-                data_mismatches.append({
-                    'item_id': item_id,
-                    'firestore': fs_item,
-                    'supabase': sb_item
-                })
+                data_mismatches.append(
+                    {"item_id": item_id, "firestore": fs_item, "supabase": sb_item}
+                )
 
         return {
-            "status": "passed" if not missing_in_supabase and not extra_in_supabase and not data_mismatches else "failed",
+            "status": (
+                "passed"
+                if not missing_in_supabase
+                and not extra_in_supabase
+                and not data_mismatches
+                else "failed"
+            ),
             "firestore_count": len(firestore_items),
             "supabase_count": len(supabase_items),
             "missing_in_supabase": list(missing_in_supabase),
             "extra_in_supabase": list(extra_in_supabase),
-            "data_mismatches": data_mismatches
+            "data_mismatches": data_mismatches,
         }
 
     async def _validate_photos(self) -> Dict:
@@ -154,35 +163,37 @@ class DataValidator:
 
         for doc in docs:
             item_data = doc.to_dict()
-            if 'photos' in item_data:
-                for photo in item_data['photos']:
-                    photo_id = photo.get('id')
+            if "photos" in item_data:
+                for photo in item_data["photos"]:
+                    photo_id = photo.get("id")
                     if photo_id:
                         firestore_photos[photo_id] = {
-                            'item_id': doc.id,
-                            'stage': photo.get('stage'),
-                            'image_note': photo.get('imageNote'),
-                            'file_name': photo.get('fileName'),
-                            'storage_path': photo.get('gcsPath'),
-                            'user_id': item_data.get('user_id')
+                            "item_id": doc.id,
+                            "stage": photo.get("stage"),
+                            "image_note": photo.get("imageNote"),
+                            "file_name": photo.get("fileName"),
+                            "storage_path": photo.get("gcsPath"),
+                            "user_id": item_data.get("user_id"),
                         }
 
         # Get Supabase photos
         conn = await asyncpg.connect(self.database_url)
         try:
-            supabase_rows = await conn.fetch("""
+            supabase_rows = await conn.fetch(
+                """
                 SELECT id, item_id, stage, image_note, file_name, storage_path, user_id
                 FROM photos
-            """)
+            """
+            )
 
             supabase_photos = {
-                str(row['id']): {
-                    'item_id': str(row['item_id']),
-                    'stage': row['stage'],
-                    'image_note': row['image_note'],
-                    'file_name': row['file_name'],
-                    'storage_path': row['storage_path'],
-                    'user_id': row['user_id']
+                str(row["id"]): {
+                    "item_id": str(row["item_id"]),
+                    "stage": row["stage"],
+                    "image_note": row["image_note"],
+                    "file_name": row["file_name"],
+                    "storage_path": row["storage_path"],
+                    "user_id": row["user_id"],
                 }
                 for row in supabase_rows
             }
@@ -204,19 +215,23 @@ class DataValidator:
             sb_photo = supabase_photos[photo_id]
 
             if fs_photo != sb_photo:
-                data_mismatches.append({
-                    'photo_id': photo_id,
-                    'firestore': fs_photo,
-                    'supabase': sb_photo
-                })
+                data_mismatches.append(
+                    {"photo_id": photo_id, "firestore": fs_photo, "supabase": sb_photo}
+                )
 
         return {
-            "status": "passed" if not missing_in_supabase and not extra_in_supabase and not data_mismatches else "failed",
+            "status": (
+                "passed"
+                if not missing_in_supabase
+                and not extra_in_supabase
+                and not data_mismatches
+                else "failed"
+            ),
             "firestore_count": len(firestore_photos),
             "supabase_count": len(supabase_photos),
             "missing_in_supabase": list(missing_in_supabase),
             "extra_in_supabase": list(extra_in_supabase),
-            "data_mismatches": data_mismatches
+            "data_mismatches": data_mismatches,
         }
 
     async def _validate_foreign_keys(self) -> Dict:
@@ -226,12 +241,14 @@ class DataValidator:
         conn = await asyncpg.connect(self.database_url)
         try:
             # Check for orphaned photos
-            orphaned_photos = await conn.fetch("""
+            orphaned_photos = await conn.fetch(
+                """
                 SELECT p.id, p.item_id
                 FROM photos p
                 LEFT JOIN pottery_items i ON p.item_id = i.id
                 WHERE i.id IS NULL
-            """)
+            """
+            )
 
             # Check for photos without items
             photos_without_items = len(orphaned_photos)
@@ -239,7 +256,7 @@ class DataValidator:
             return {
                 "status": "passed" if photos_without_items == 0 else "failed",
                 "orphaned_photos_count": photos_without_items,
-                "orphaned_photo_ids": [str(row['id']) for row in orphaned_photos]
+                "orphaned_photo_ids": [str(row["id"]) for row in orphaned_photos],
             }
 
         finally:
@@ -250,19 +267,23 @@ class DataValidator:
         self.logger.info("Validating record counts...")
 
         # Firestore counts
-        firestore_items = list(self.firestore_db.collection(self.collection_name).stream())
+        firestore_items = list(
+            self.firestore_db.collection(self.collection_name).stream()
+        )
         firestore_item_count = len(firestore_items)
 
         firestore_photo_count = 0
         for doc in firestore_items:
             item_data = doc.to_dict()
-            if 'photos' in item_data:
-                firestore_photo_count += len(item_data['photos'])
+            if "photos" in item_data:
+                firestore_photo_count += len(item_data["photos"])
 
         # Supabase counts
         conn = await asyncpg.connect(self.database_url)
         try:
-            supabase_item_count = await conn.fetchval("SELECT COUNT(*) FROM pottery_items")
+            supabase_item_count = await conn.fetchval(
+                "SELECT COUNT(*) FROM pottery_items"
+            )
             supabase_photo_count = await conn.fetchval("SELECT COUNT(*) FROM photos")
         finally:
             await conn.close()
@@ -278,7 +299,7 @@ class DataValidator:
             "items_match": items_match,
             "firestore_photos": firestore_photo_count,
             "supabase_photos": supabase_photo_count,
-            "photos_match": photos_match
+            "photos_match": photos_match,
         }
 
     def print_validation_report(self, results: Dict):
@@ -295,38 +316,48 @@ class DataValidator:
         # Items validation
         items = results["items_validation"]
         print(f"\n📦 Pottery Items:")
-        print(f"  Status: {'✅ PASSED' if items['status'] == 'passed' else '❌ FAILED'}")
+        print(
+            f"  Status: {'✅ PASSED' if items['status'] == 'passed' else '❌ FAILED'}"
+        )
         print(f"  Firestore: {items['firestore_count']} items")
         print(f"  Supabase: {items['supabase_count']} items")
 
-        if items['missing_in_supabase']:
-            print(f"  ⚠️  Missing in Supabase: {len(items['missing_in_supabase'])} items")
+        if items["missing_in_supabase"]:
+            print(
+                f"  ⚠️  Missing in Supabase: {len(items['missing_in_supabase'])} items"
+            )
 
-        if items['data_mismatches']:
+        if items["data_mismatches"]:
             print(f"  ⚠️  Data mismatches: {len(items['data_mismatches'])} items")
 
         # Photos validation
         photos = results["photos_validation"]
         print(f"\n📸 Photos:")
-        print(f"  Status: {'✅ PASSED' if photos['status'] == 'passed' else '❌ FAILED'}")
+        print(
+            f"  Status: {'✅ PASSED' if photos['status'] == 'passed' else '❌ FAILED'}"
+        )
         print(f"  Firestore: {photos['firestore_count']} photos")
         print(f"  Supabase: {photos['supabase_count']} photos")
 
-        if photos['missing_in_supabase']:
-            print(f"  ⚠️  Missing in Supabase: {len(photos['missing_in_supabase'])} photos")
+        if photos["missing_in_supabase"]:
+            print(
+                f"  ⚠️  Missing in Supabase: {len(photos['missing_in_supabase'])} photos"
+            )
 
         # Foreign keys validation
         fks = results["foreign_key_validation"]
         print(f"\n🔗 Foreign Key Integrity:")
         print(f"  Status: {'✅ PASSED' if fks['status'] == 'passed' else '❌ FAILED'}")
 
-        if fks['orphaned_photos_count'] > 0:
+        if fks["orphaned_photos_count"] > 0:
             print(f"  ⚠️  Orphaned photos: {fks['orphaned_photos_count']}")
 
         # Counts validation
         counts = results["count_validation"]
         print(f"\n🔢 Count Validation:")
-        print(f"  Status: {'✅ PASSED' if counts['status'] == 'passed' else '❌ FAILED'}")
+        print(
+            f"  Status: {'✅ PASSED' if counts['status'] == 'passed' else '❌ FAILED'}"
+        )
         print(f"  Items match: {'✅' if counts['items_match'] else '❌'}")
         print(f"  Photos match: {'✅' if counts['photos_match'] else '❌'}")
 
@@ -334,6 +365,7 @@ class DataValidator:
 async def main():
     """Main function to run validation."""
     import os
+
     from dotenv import load_dotenv
 
     # Load environment variables
@@ -362,7 +394,7 @@ async def main():
         firestore_collection=firestore_collection,
         supabase_url=supabase_url,
         supabase_service_role_key=service_role_key,
-        database_url=database_url
+        database_url=database_url,
     )
 
     try:
@@ -380,4 +412,5 @@ async def main():
 
 if __name__ == "__main__":
     import sys
+
     sys.exit(asyncio.run(main()))

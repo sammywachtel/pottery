@@ -24,8 +24,7 @@ class FirestoreExporter:
     def __init__(self):
         """Initialize Firestore client."""
         self.db = firestore.Client(
-            project=settings.gcp_project_id,
-            database=settings.firestore_database_id
+            project=settings.gcp_project_id, database=settings.firestore_database_id
         )
         self.collection_name = settings.firestore_collection
         self.logger = logging.getLogger(__name__)
@@ -47,14 +46,14 @@ class FirestoreExporter:
         items_data = self._export_pottery_items()
         items_file = output_path / "pottery_items.json"
 
-        with open(items_file, 'w', encoding='utf-8') as f:
+        with open(items_file, "w", encoding="utf-8") as f:
             json.dump(items_data, f, indent=2, default=str)
 
         # Extract and export photos
         photos_data = self._extract_photos_from_items(items_data)
         photos_file = output_path / "photos.json"
 
-        with open(photos_file, 'w', encoding='utf-8') as f:
+        with open(photos_file, "w", encoding="utf-8") as f:
             json.dump(photos_data, f, indent=2, default=str)
 
         # Export metadata
@@ -65,18 +64,17 @@ class FirestoreExporter:
             "collection": self.collection_name,
             "total_items": len(items_data),
             "total_photos": len(photos_data),
-            "files_created": [
-                str(items_file),
-                str(photos_file)
-            ]
+            "files_created": [str(items_file), str(photos_file)],
         }
 
         metadata_file = output_path / "export_metadata.json"
-        with open(metadata_file, 'w', encoding='utf-8') as f:
+        with open(metadata_file, "w", encoding="utf-8") as f:
             json.dump(metadata, f, indent=2)
 
-        self.logger.info(f"Export completed: {metadata['total_items']} items, "
-                        f"{metadata['total_photos']} photos")
+        self.logger.info(
+            f"Export completed: {metadata['total_items']} items, "
+            f"{metadata['total_photos']} photos"
+        )
 
         return metadata
 
@@ -89,17 +87,17 @@ class FirestoreExporter:
 
         for doc in docs:
             item_data = doc.to_dict()
-            item_data['id'] = doc.id  # Include Firestore document ID
+            item_data["id"] = doc.id  # Include Firestore document ID
 
             # Convert Firestore timestamps to ISO format
-            if 'createdDateTime' in item_data:
-                item_data['createdDateTime'] = item_data['createdDateTime'].isoformat()
+            if "createdDateTime" in item_data:
+                item_data["createdDateTime"] = item_data["createdDateTime"].isoformat()
 
             # Process photos if they exist
-            if 'photos' in item_data:
-                for photo in item_data['photos']:
-                    if 'uploadedAt' in photo:
-                        photo['uploadedAt'] = photo['uploadedAt'].isoformat()
+            if "photos" in item_data:
+                for photo in item_data["photos"]:
+                    if "uploadedAt" in photo:
+                        photo["uploadedAt"] = photo["uploadedAt"].isoformat()
 
             items.append(item_data)
 
@@ -111,21 +109,21 @@ class FirestoreExporter:
         photos = []
 
         for item in items_data:
-            item_id = item['id']
-            user_id = item.get('user_id')
+            item_id = item["id"]
+            user_id = item.get("user_id")
 
-            if 'photos' in item:
-                for photo in item['photos']:
+            if "photos" in item:
+                for photo in item["photos"]:
                     photo_record = {
-                        'id': photo.get('id'),
-                        'item_id': item_id,
-                        'user_id': user_id,
-                        'stage': photo.get('stage'),
-                        'image_note': photo.get('imageNote'),
-                        'file_name': photo.get('fileName'),
-                        'storage_path': photo.get('gcsPath'),
-                        'uploaded_at': photo.get('uploadedAt'),
-                        'uploaded_timezone': photo.get('uploadedTimezone')
+                        "id": photo.get("id"),
+                        "item_id": item_id,
+                        "user_id": user_id,
+                        "stage": photo.get("stage"),
+                        "image_note": photo.get("imageNote"),
+                        "file_name": photo.get("fileName"),
+                        "storage_path": photo.get("gcsPath"),
+                        "uploaded_at": photo.get("uploadedAt"),
+                        "uploaded_timezone": photo.get("uploadedTimezone"),
                     }
                     photos.append(photo_record)
 
@@ -145,11 +143,7 @@ class FirestoreExporter:
         output_path = Path(output_dir)
 
         # Check if all files exist
-        required_files = [
-            "pottery_items.json",
-            "photos.json",
-            "export_metadata.json"
-        ]
+        required_files = ["pottery_items.json", "photos.json", "export_metadata.json"]
 
         for filename in required_files:
             filepath = output_path / filename
@@ -159,33 +153,37 @@ class FirestoreExporter:
 
         # Load and validate data
         try:
-            with open(output_path / "pottery_items.json", 'r') as f:
+            with open(output_path / "pottery_items.json", "r") as f:
                 items = json.load(f)
 
-            with open(output_path / "photos.json", 'r') as f:
+            with open(output_path / "photos.json", "r") as f:
                 photos = json.load(f)
 
-            with open(output_path / "export_metadata.json", 'r') as f:
+            with open(output_path / "export_metadata.json", "r") as f:
                 metadata = json.load(f)
 
             # Validate counts match metadata
-            if len(items) != metadata['total_items']:
+            if len(items) != metadata["total_items"]:
                 self.logger.error("Item count mismatch in metadata")
                 return False
 
-            if len(photos) != metadata['total_photos']:
+            if len(photos) != metadata["total_photos"]:
                 self.logger.error("Photo count mismatch in metadata")
                 return False
 
             # Validate required fields
             for item in items:
-                if not all(field in item for field in ['id', 'user_id', 'name']):
-                    self.logger.error(f"Missing required fields in item: {item.get('id')}")
+                if not all(field in item for field in ["id", "user_id", "name"]):
+                    self.logger.error(
+                        f"Missing required fields in item: {item.get('id')}"
+                    )
                     return False
 
             for photo in photos:
-                if not all(field in photo for field in ['id', 'item_id', 'user_id']):
-                    self.logger.error(f"Missing required fields in photo: {photo.get('id')}")
+                if not all(field in photo for field in ["id", "item_id", "user_id"]):
+                    self.logger.error(
+                        f"Missing required fields in photo: {photo.get('id')}"
+                    )
                     return False
 
             self.logger.info("Export validation passed")
@@ -225,4 +223,5 @@ async def main():
 
 if __name__ == "__main__":
     import sys
+
     sys.exit(asyncio.run(main()))

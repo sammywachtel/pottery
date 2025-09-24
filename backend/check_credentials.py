@@ -8,17 +8,18 @@ from pathlib import Path
 
 # Load test environment
 from dotenv import load_dotenv
-load_dotenv('.env.test')
+
+load_dotenv(".env.test")
 
 print("🔍 Checking Google Cloud Credentials Configuration")
 print("=" * 60)
 
 # Check environment variables
 print("\n📋 Environment Variables:")
-gcp_project = os.getenv('GCP_PROJECT_ID')
-gcs_bucket = os.getenv('GCS_BUCKET_NAME')
-host_key_path = os.getenv('HOST_KEY_PATH')
-google_creds = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
+gcp_project = os.getenv("GCP_PROJECT_ID")
+gcs_bucket = os.getenv("GCS_BUCKET_NAME")
+host_key_path = os.getenv("HOST_KEY_PATH")
+google_creds = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
 
 print(f"GCP_PROJECT_ID: {gcp_project}")
 print(f"GCS_BUCKET_NAME: {gcs_bucket}")
@@ -40,7 +41,9 @@ else:
 if google_creds:
     creds_path = Path(google_creds)
     if creds_path.exists():
-        print(f"✅ GOOGLE_APPLICATION_CREDENTIALS points to existing file: {google_creds}")
+        print(
+            f"✅ GOOGLE_APPLICATION_CREDENTIALS points to existing file: {google_creds}"
+        )
     else:
         print(f"❌ GOOGLE_APPLICATION_CREDENTIALS file NOT FOUND: {google_creds}")
 else:
@@ -50,14 +53,14 @@ else:
 # Try to authenticate
 print("\n🔐 Testing Authentication:")
 try:
-    from google.cloud import firestore
     from google.auth.exceptions import DefaultCredentialsError
+    from google.cloud import firestore
 
     try:
         # Try to create a client
         client = firestore.Client(
             project=gcp_project,
-            database=os.getenv('FIRESTORE_DATABASE_ID', '(default)')
+            database=os.getenv("FIRESTORE_DATABASE_ID", "(default)"),
         )
         print("✅ Successfully authenticated with Google Cloud!")
         print("   Integration tests should run normally")
