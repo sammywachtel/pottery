@@ -1,23 +1,52 @@
 # tests/integration/conftest.py
 import logging
+import os
 
+import pytest
 import pytest_asyncio  # Use the specific import for async fixtures
 from google.cloud import firestore  # Use sync client for cleanup simplicity here
 from google.cloud import storage
+from google.auth.exceptions import DefaultCredentialsError
 
 # *** ADDED: Import the correct NotFound exception ***
 from google.cloud.exceptions import NotFound as GoogleNotFound
+
+# Load test environment before importing config
+from dotenv import load_dotenv
+load_dotenv('.env.test')
 
 from config import settings  # Assumes config loads TEST settings
 
 logger = logging.getLogger(__name__)
 
-# Ensure settings point to a TEST environment before running tests!
-# You might add checks here, e.g.:
-# if "prod" in settings.gcp_project_id or "prod" in settings.gcs_bucket_name:
-#     pytest.exit(
-#         "ERROR: Integration tests configured against non-test environment!", 1
-#     )
+
+def check_gcp_credentials():
+    """
+    Check if Google Cloud credentials are available for integration tests.
+    Returns True if credentials are available, False otherwise.
+    """
+    try:
+        # Try to create a simple client to test credentials
+        firestore.Client(
+            project=settings.gcp_project_id,
+            database=settings.firestore_database_id
+        )
+        return True
+    except DefaultCredentialsError:
+        return False
+    except Exception:
+        # Other exceptions might indicate credentials are available but other issues exist
+        return True
+
+
+# Check for Google Cloud credentials at module level
+_credentials_available = check_gcp_credentials()
+
+# Skip all integration tests if credentials are not available
+def pytest_runtest_setup(item):
+    """Hook to skip tests based on credential availability."""
+    if item.keywords.get("integration") and not _credentials_available:
+        pytest.skip("Google Cloud credentials not available. Set GOOGLE_APPLICATION_CREDENTIALS or run 'gcloud auth application-default login'")
 
 
 @pytest_asyncio.fixture(scope="function")
@@ -51,8 +80,12 @@ async def resource_manager():
             f"DB='{settings.firestore_database_id}', "
             f"Bucket='{settings.gcs_bucket_name}'"
         )
+    except DefaultCredentialsError:
+        logger.warning("Google Cloud credentials not available for cleanup. "
+                      "Resources may need manual cleanup.")
+        return
     except Exception as e:
-        logger.error(f"ERROR initializing clients during cleanup: {e}", exc_info=True)
+        logger.error(f"ERROR initializing clients during cleanup: {e}")
         # If clients fail, we can't clean up, so just log and exit cleanup
         return
 

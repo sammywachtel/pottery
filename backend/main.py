@@ -41,17 +41,9 @@ async def lifespan(app: FastAPI):
     """
     # --- Startup Logic ---
     logger.info("Application starting up...")
-    # Check if Firestore/GCS clients initialized correctly during import
-    # Note: The clients are initialized when the service modules are imported.
-    if not firestore_service.db or not gcs_service.bucket:
-        logger.critical(
-            "FATAL: Firestore or GCS client failed to initialize during "
-            "module import. Application may not function correctly."
-        )
-        # Optionally raise an error to prevent startup if critical
-        # raise RuntimeError("Failed to initialize backend services.")
-    else:
-        logger.info("Firestore and GCS clients appear to be initialized.")
+    # Services now use lazy initialization - clients will be created on first use
+    # This allows the application to start even without Google Cloud credentials
+    logger.info("Backend services configured for lazy initialization.")
     logger.info("Application startup complete.")
 
     yield  # Application runs while yielded

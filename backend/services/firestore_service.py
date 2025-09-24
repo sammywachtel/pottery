@@ -24,24 +24,40 @@ from models import Photo, PhotoUpdate, PotteryItem, PotteryItemBase, PotteryItem
 
 logger = logging.getLogger(__name__)
 
-# Initialize Firestore client
-db = None
-items_collection = None
-try:
-    db = firestore.AsyncClient(
-        project=settings.gcp_project_id,
-        database=settings.firestore_database_id,  # Use the configured database ID
-    )
-    items_collection = db.collection(settings.firestore_collection)
-    logger.info(
-        f"Firestore client initialized for project {settings.gcp_project_id}, "
-        f"database '{settings.firestore_database_id}', "
-        f"collection '{settings.firestore_collection}'"
-    )
-except Exception as e:
-    logger.error(f"Failed to initialize Firestore client: {e}", exc_info=True)
-    db = None
-    items_collection = None
+# Lazy initialization - clients created on first use
+_db = None
+_items_collection = None
+_initialization_attempted = False
+_initialization_error = None
+
+
+def _ensure_firestore_client():
+    """Ensure Firestore client is initialized. Raises ConnectionError if failed."""
+    global _db, _items_collection, _initialization_attempted, _initialization_error
+
+    if _initialization_attempted and _initialization_error:
+        raise ConnectionError(f"Firestore client failed to initialize: {_initialization_error}")
+
+    if _db is not None:
+        return _db, _items_collection
+
+    _initialization_attempted = True
+    try:
+        _db = firestore.AsyncClient(
+            project=settings.gcp_project_id,
+            database=settings.firestore_database_id,
+        )
+        _items_collection = _db.collection(settings.firestore_collection)
+        logger.info(
+            f"Firestore client initialized for project {settings.gcp_project_id}, "
+            f"database '{settings.firestore_database_id}', "
+            f"collection '{settings.firestore_collection}'"
+        )
+        return _db, _items_collection
+    except Exception as e:
+        _initialization_error = str(e)
+        logger.error(f"Failed to initialize Firestore client: {e}", exc_info=True)
+        raise ConnectionError(f"Firestore client initialization failed: {e}")
 
 
 # --- Helper to extract timezone info ---
@@ -80,10 +96,7 @@ async def get_all_items(user_id: str = None) -> List[PotteryItem]:
     If user_id is provided, only returns items belonging to that user.
     If user_id is None, returns all items (admin functionality).
     """
-    if not items_collection:
-        raise ConnectionError(
-            "Firestore client not initialized or collection reference failed."
-        )
+    db, items_collection = _ensure_firestore_client()
     items = []
     try:
         # If user_id is provided, filter by user_id
@@ -124,10 +137,7 @@ async def get_all_items(user_id: str = None) -> List[PotteryItem]:
 
 async def create_item(item_create: PotteryItemCreate, user_id: str) -> PotteryItem:
     """Creates a new pottery item in Firestore associated with the specified user."""
-    if not items_collection:
-        raise ConnectionError(
-            "Firestore client not initialized or collection reference failed."
-        )
+    db, items_collection = _ensure_firestore_client()
     item_data = {}
     try:
         doc_ref = items_collection.document()
@@ -166,10 +176,7 @@ async def get_item_by_id(item_id: str, user_id: str = None) -> Optional[PotteryI
     If user_id is provided, only returns the item if it belongs to that user.
     If user_id is None, returns the item regardless of ownership (admin functionality).
     """
-    if not items_collection:
-        raise ConnectionError(
-            "Firestore client not initialized or collection reference failed."
-        )
+    db, items_collection = _ensure_firestore_client()
     try:
         doc_ref = items_collection.document(item_id)
         doc = await doc_ref.get()
@@ -214,10 +221,7 @@ async def update_item_metadata(
     If user_id is provided, only updates the item if it belongs to that user.
     If user_id is None, updates the item regardless of ownership (admin functionality).
     """
-    if not items_collection:
-        raise ConnectionError(
-            "Firestore client not initialized or collection reference failed."
-        )
+    db, items_collection = _ensure_firestore_client()
     update_data = {}
     try:
         doc_ref = items_collection.document(item_id)
@@ -272,10 +276,7 @@ async def delete_item_and_photos(item_id: str, user_id: str = None) -> bool:
     Note: Associated GCS photos must be deleted separately by the caller
     (usually via gcs_service).
     """
-    if not items_collection:
-        raise ConnectionError(
-            "Firestore client not initialized or collection reference failed."
-        )
+    db, items_collection = _ensure_firestore_client()
     try:
         doc_ref = items_collection.document(item_id)
 
@@ -315,10 +316,7 @@ async def add_photo_to_item(
     If user_id is provided, only adds the photo if the item belongs to that user.
     If user_id is None, adds the photo regardless of ownership (admin functionality).
     """
-    if not items_collection:
-        raise ConnectionError(
-            "Firestore client not initialized or collection reference failed."
-        )
+    db, items_collection = _ensure_firestore_client()
     try:
         # Check if the item exists and belongs to the specified user
         if user_id:
@@ -386,10 +384,7 @@ async def remove_photo_from_item(
     If user_id is provided, only removes the photo if the item belongs to that user.
     If user_id is None, removes the photo regardless of ownership (admin functionality).
     """
-    if not items_collection:
-        raise ConnectionError(
-            "Firestore client not initialized or collection reference failed."
-        )
+    db, items_collection = _ensure_firestore_client()
     try:
         # Check if the item exists and belongs to the specified user
         if user_id:
@@ -463,10 +458,7 @@ async def update_photo_details_in_item(
     If user_id is provided, only updates the photo if the item belongs to that user.
     If user_id is None, updates the photo regardless of ownership (admin functionality).
     """
-    if not items_collection:
-        raise ConnectionError(
-            "Firestore client not initialized or collection reference failed."
-        )
+    db, items_collection = _ensure_firestore_client()
     try:
         # Check if the item exists and belongs to the specified user
         item = await get_item_by_id(item_id, user_id)

@@ -11,18 +11,36 @@ from models import Photo, PhotoResponse
 
 logger = logging.getLogger(__name__)
 
-# Initialize GCS client
-try:
-    storage_client = storage.Client(project=settings.gcp_project_id)
-    bucket = storage_client.bucket(settings.gcs_bucket_name)
-    logger.info(
-        f"GCS client initialized for project {settings.gcp_project_id}, "
-        f"bucket {settings.gcs_bucket_name}"
-    )
-except Exception as e:
-    logger.error(f"Failed to initialize GCS client: {e}", exc_info=True)
-    storage_client = None
-    bucket = None
+# Lazy initialization - clients created on first use
+_storage_client = None
+_bucket = None
+_initialization_attempted = False
+_initialization_error = None
+
+
+def _ensure_gcs_client():
+    """Ensure GCS client is initialized. Raises ConnectionError if failed."""
+    global _storage_client, _bucket, _initialization_attempted, _initialization_error
+
+    if _initialization_attempted and _initialization_error:
+        raise ConnectionError(f"GCS client failed to initialize: {_initialization_error}")
+
+    if _storage_client is not None:
+        return _storage_client, _bucket
+
+    _initialization_attempted = True
+    try:
+        _storage_client = storage.Client(project=settings.gcp_project_id)
+        _bucket = _storage_client.bucket(settings.gcs_bucket_name)
+        logger.info(
+            f"GCS client initialized for project {settings.gcp_project_id}, "
+            f"bucket {settings.gcs_bucket_name}"
+        )
+        return _storage_client, _bucket
+    except Exception as e:
+        _initialization_error = str(e)
+        logger.error(f"Failed to initialize GCS client: {e}", exc_info=True)
+        raise ConnectionError(f"GCS client initialization failed: {e}")
 
 
 def _get_gcs_path(
@@ -52,8 +70,7 @@ async def upload_photo_to_gcs(
     original_filename: Optional[str],
 ) -> str:
     """Uploads photo content to GCS and returns the GCS path."""
-    if not bucket:
-        raise ConnectionError("GCS client not initialized.")
+    storage_client, bucket = _ensure_gcs_client()
 
     gcs_path = _get_gcs_path(item_id, photo_id, original_filename)
     blob = bucket.blob(gcs_path)
@@ -86,8 +103,7 @@ async def upload_photo_to_gcs(
 
 async def delete_photo_from_gcs(gcs_path: str) -> bool:
     """Deletes a photo object from GCS."""
-    if not bucket:
-        raise ConnectionError("GCS client not initialized.")
+    storage_client, bucket = _ensure_gcs_client()
 
     blob = bucket.blob(gcs_path)
     try:
@@ -112,8 +128,7 @@ async def delete_multiple_photos_from_gcs(gcs_paths: List[str]) -> bool:
     """Deletes multiple photo objects from GCS. Returns True if all
     deletions succeeded or blobs didn't exist.
     """
-    if not bucket:
-        raise ConnectionError("GCS client not initialized.")
+    storage_client, bucket = _ensure_gcs_client()
     if not gcs_paths:
         return True  # Nothing to delete
 
@@ -153,8 +168,7 @@ async def delete_multiple_photos_from_gcs(gcs_paths: List[str]) -> bool:
 
 async def generate_signed_url(gcs_path: str) -> Optional[str]:
     """Generates a temporary signed URL for accessing a GCS object."""
-    if not bucket:
-        raise ConnectionError("GCS client not initialized.")
+    storage_client, bucket = _ensure_gcs_client()
 
     blob = bucket.blob(gcs_path)
     expiration_time = timedelta(minutes=settings.signed_url_expiration_minutes)
