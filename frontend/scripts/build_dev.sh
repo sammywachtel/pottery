@@ -105,6 +105,17 @@ case "${1:-debug}" in
   "debug"|"")
     echo "🔨 Building debug version for development..."
     cleanup_old_app
+
+    # Opening move: Check if running on web/chrome - use localhost for Firebase auth
+    # For mobile devices, keep using local IP to connect to Docker container
+    DETECTED_DEVICE=$(flutter devices 2>/dev/null | grep -i chrome | head -1 || echo "")
+    if [ -n "$DETECTED_DEVICE" ] && [[ "$API_BASE_URL" == *"$LOCAL_IP"* ]]; then
+      # Main play: Running on Chrome with local IP - switch to localhost for Firebase
+      echo "ℹ️  Detected Chrome browser - using localhost for Firebase compatibility"
+      API_BASE_URL=$(echo "$API_BASE_URL" | sed "s/$LOCAL_IP/localhost/g")
+      echo "   Updated API URL: $API_BASE_URL"
+    fi
+
     flutter run \
       --flavor $FLAVOR \
       --dart-define=ENVIRONMENT=$ENVIRONMENT \
