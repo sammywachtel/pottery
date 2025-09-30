@@ -3,6 +3,8 @@
 # Fix Signed URL Generation in Cloud Run
 # This script configures the Cloud Run service to use a service account key
 # for generating signed URLs for Cloud Storage
+# Usage: ./fix-signed-urls.sh [--env=<environment>]
+# Environments: dev (default), prod
 
 set -e
 
@@ -10,7 +12,47 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 BACKEND_DIR="$PROJECT_ROOT/backend"
 
-echo "🔧 Fixing Signed URL Generation for Cloud Run"
+# Opening move: parse environment argument
+ENVIRONMENT="dev"  # Default to development
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --env=*)
+      ENVIRONMENT="${1#*=}"
+      shift
+      ;;
+    --help|-h)
+      echo "Usage: $0 [--env=<environment>]"
+      echo "Environments: dev (default), prod"
+      echo "Examples:"
+      echo "  $0                # Fix dev environment"
+      echo "  $0 --env=dev      # Fix dev environment"
+      echo "  $0 --env=prod     # Fix production"
+      exit 0
+      ;;
+    *)
+      echo "Unknown option: $1"
+      echo "Use --help for usage information"
+      exit 1
+      ;;
+  esac
+done
+
+# Main play: set environment-specific configuration
+case $ENVIRONMENT in
+  dev|development)
+    echo "🔧 Fixing Signed URL Generation for DEVELOPMENT Cloud Run"
+    SERVICE_NAME="pottery-api-dev"
+    ;;
+  prod|production)
+    echo "🔧 Fixing Signed URL Generation for PRODUCTION Cloud Run"
+    SERVICE_NAME="pottery-api-prod"
+    ;;
+  *)
+    echo "Error: Invalid environment '$ENVIRONMENT'. Use 'dev' or 'prod'."
+    exit 1
+    ;;
+esac
+
 echo "============================================="
 
 # Configuration
@@ -55,19 +97,17 @@ gcloud secrets add-iam-policy-binding $SECRET_NAME \
     --role="roles/secretmanager.secretAccessor" \
     --project=$PROJECT_ID
 
-# Step 4: Update Cloud Run services to mount the secret
-echo "🚀 Updating Cloud Run services..."
+# Step 4: Update Cloud Run service to mount the secret
+echo "🚀 Updating Cloud Run service: $SERVICE_NAME..."
 
-# Update development service
-echo "Updating pottery-api-dev..."
-gcloud run services update pottery-api-dev \
+gcloud run services update $SERVICE_NAME \
     --region=us-central1 \
     --project=$PROJECT_ID \
     --update-secrets="/tmp/gcp_key.json=${SECRET_NAME}:latest" \
     --update-env-vars="GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp_key.json,FIREBASE_CREDENTIALS_FILE=/tmp/gcp_key.json"
 
 echo ""
-echo "✅ Signed URL generation fixed!"
+echo "✅ Signed URL generation fixed for $SERVICE_NAME ($ENVIRONMENT environment)!"
 echo ""
 echo "📋 What was done:"
 echo "   1. Created/verified service account key"

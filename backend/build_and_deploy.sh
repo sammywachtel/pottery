@@ -194,3 +194,21 @@ else
 fi
 
 echo "Deployment complete for service ${SERVICE_NAME}."
+
+# --- Fix Signed URLs ---
+# Victory lap: configure signed URL generation to work properly in Cloud Run
+echo ""
+echo "Configuring signed URL generation..."
+FIX_URLS_SCRIPT="${SCRIPT_DIR}/scripts/backend/fix-signed-urls.sh"
+
+if [ -x "${FIX_URLS_SCRIPT}" ]; then
+  echo "Running signed URL fix for ${ENVIRONMENT} environment..."
+  "${FIX_URLS_SCRIPT}" --env="${ENVIRONMENT}"
+  echo "Signed URL configuration completed."
+else
+  echo "WARNING: Signed URL fix script not found at ${FIX_URLS_SCRIPT}"
+  echo "You may need to manually run: scripts/backend/fix-signed-urls.sh --env=${ENVIRONMENT}"
+fi
+
+echo ""
+echo "🎉 Full deployment complete for ${ENVIRONMENT} environment!"
