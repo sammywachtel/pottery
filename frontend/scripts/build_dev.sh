@@ -109,11 +109,14 @@ case "${1:-debug}" in
     # Opening move: Check if running on web/chrome - use localhost for Firebase auth
     # For mobile devices, keep using local IP to connect to Docker container
     DETECTED_DEVICE=$(flutter devices 2>/dev/null | grep -i chrome | head -1 || echo "")
-    if [ -n "$DETECTED_DEVICE" ] && [[ "$API_BASE_URL" == *"$LOCAL_IP"* ]]; then
+    if [ -n "$DETECTED_DEVICE" ] && [ -n "$LOCAL_IP" ] && [[ "$API_BASE_URL" == *"$LOCAL_IP"* ]]; then
       # Main play: Running on Chrome with local IP - switch to localhost for Firebase
       echo "ℹ️  Detected Chrome browser - using localhost for Firebase compatibility"
-      API_BASE_URL=$(echo "$API_BASE_URL" | sed "s/$LOCAL_IP/localhost/g")
+      API_BASE_URL="${API_BASE_URL//$LOCAL_IP/localhost}"
       echo "   Updated API URL: $API_BASE_URL"
+    elif [ -n "$DETECTED_DEVICE" ] && [[ "$API_BASE_URL" == *"localhost"* ]]; then
+      # Victory lap: Already using localhost, just inform the user
+      echo "ℹ️  Running on Chrome with localhost (Firebase compatible)"
     fi
 
     flutter run \
