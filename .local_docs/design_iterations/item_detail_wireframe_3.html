@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Item Detail Wireframe - Variation 3: Comparison Table Layout</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: white;
+            color: black;
+            line-height: 1.4;
+            padding: 20px;
+            max-width: 480px;
+            margin: 0 auto;
+        }
+
+        /* Wireframe text styles */
+        .wireframe-h1 {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .wireframe-h2 {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 24px 0 12px 0;
+            text-transform: uppercase;
+        }
+
+        .wireframe-label {
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .wireframe-body {
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        /* Layout components */
+        .wireframe-header {
+            border: 2px solid black;
+            padding: 16px;
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .status-badge {
+            border: 2px solid black;
+            background: white;
+            padding: 4px 12px;
+            font-weight: bold;
+            font-size: 11px;
+            text-transform: uppercase;
+            display: inline-block;
+            margin-top: 8px;
+        }
+
+        .stage-dots {
+            display: inline-flex;
+            gap: 6px;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+
+        .stage-dot {
+            width: 12px;
+            height: 12px;
+            border: 2px solid black;
+            border-radius: 50%;
+            background: white;
+        }
+
+        .stage-dot.active {
+            background: black;
+        }
+
+        .icon-button {
+            border: 2px solid black;
+            background: white;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .detail-section {
+            margin-bottom: 24px;
+        }
+
+        .detail-row {
+            display: flex;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .detail-row .label {
+            width: 100px;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .detail-row .value {
+            flex: 1;
+        }
+
+        .notes-box {
+            border: 2px solid black;
+            padding: 12px;
+            background: white;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        /* Photo gallery section - Compact cards */
+        .photo-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .photo-header-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .photo-count-badge {
+            border: 2px solid black;
+            background: white;
+            padding: 2px 8px;
+            font-weight: bold;
+            font-size: 11px;
+        }
+
+        .view-all-link {
+            font-size: 12px;
+            text-decoration: underline;
+            font-weight: bold;
+        }
+
+        .photo-scroll-container {
+            border: 2px solid black;
+            padding: 12px;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+
+        .photo-card-compact {
+            display: inline-block;
+            width: 160px;
+            vertical-align: top;
+            margin-right: 12px;
+            border: 2px solid black;
+            background: white;
+        }
+
+        .photo-placeholder-compact {
+            height: 120px;
+            background: repeating-linear-gradient(
+                45deg,
+                white,
+                white 10px,
+                black 10px,
+                black 12px
+            );
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+            border-bottom: 2px solid black;
+        }
+
+        .photo-info-compact {
+            padding: 8px;
+        }
+
+        .photo-stage-compact {
+            font-weight: bold;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+
+        .photo-note-compact {
+            font-size: 10px;
+            margin-top: 2px;
+            color: #333;
+            white-space: normal;
+            line-height: 1.3;
+        }
+
+        /* Measurements comparison table */
+        .measurements-comparison {
+            border: 2px solid black;
+            background: white;
+            overflow-x: auto;
+        }
+
+        .measurements-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .measurements-table th {
+            background: black;
+            color: white;
+            padding: 10px 8px;
+            text-align: left;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+            border: 2px solid black;
+        }
+
+        .measurements-table th:first-child {
+            width: 80px;
+        }
+
+        .measurements-table td {
+            padding: 10px 8px;
+            font-size: 13px;
+            border: 2px solid black;
+        }
+
+        .measurements-table tr:nth-child(even) {
+            background: white;
+        }
+
+        .dimension-label {
+            font-weight: bold;
+        }
+
+        .dimension-value {
+            font-weight: normal;
+        }
+
+        .dimension-value.empty {
+            color: #999;
+            font-style: italic;
+        }
+
+        .shrinkage-note {
+            border: 2px solid black;
+            padding: 8px;
+            margin-top: 8px;
+            font-size: 11px;
+            background: white;
+        }
+
+        .shrinkage-note strong {
+            text-transform: uppercase;
+        }
+
+        /* Floating action button */
+        .fab {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            border: 2px solid black;
+            background: white;
+            padding: 12px 20px;
+            font-weight: bold;
+            font-size: 14px;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- HEADER SECTION -->
+    <div class="wireframe-header">
+        <div style="flex: 1;">
+            <div class="wireframe-h1">LARGE BOWL WITH HANDLES</div>
+            <div>
+                <span class="status-badge">BISQUE</span>
+                <span class="stage-dots">
+                    <span class="stage-dot active"></span>
+                    <span class="stage-dot active"></span>
+                    <span class="stage-dot"></span>
+                </span>
+            </div>
+        </div>
+        <div class="icon-button">✎</div>
+    </div>
+
+    <!-- DETAILS SECTION -->
+    <div class="detail-section">
+        <h2 class="wireframe-h2">Details</h2>
+        <div class="detail-row">
+            <span class="label">Clay Type</span>
+            <span class="value">Stoneware B-Mix</span>
+        </div>
+        <div class="detail-row">
+            <span class="label">Location</span>
+            <span class="value">Shelf 3-A</span>
+        </div>
+        <div class="detail-row">
+            <span class="label">Created</span>
+            <span class="value">Jan 15, 2025 2:30 PM</span>
+        </div>
+        <div class="detail-row">
+            <span class="label">Glaze</span>
+            <span class="value">Celadon Green</span>
+        </div>
+    </div>
+
+    <!-- NOTES SECTION -->
+    <div class="detail-section">
+        <h2 class="wireframe-h2">Notes</h2>
+        <div class="notes-box">
+            This bowl features two decorative handles attached at the rim. The handles were pulled and attached while clay was still leather hard. Some minor cracking noted at attachment points - monitor during firing.
+        </div>
+    </div>
+
+    <!-- PHOTOS SECTION (MOVED BEFORE MEASUREMENTS - COMPACT) -->
+    <div class="detail-section">
+        <div class="photo-header">
+            <div class="photo-header-left">
+                <h2 class="wireframe-h2" style="margin: 0;">Photos</h2>
+                <span class="photo-count-badge">4</span>
+            </div>
+            <span class="view-all-link">VIEW ALL →</span>
+        </div>
+        <div class="photo-scroll-container">
+            <div class="photo-card-compact">
+                <div class="photo-placeholder-compact">[IMAGE]</div>
+                <div class="photo-info-compact">
+                    <div class="photo-stage-compact">Greenware</div>
+                    <div class="photo-note-compact">Fresh off wheel</div>
+                </div>
+            </div>
+            <div class="photo-card-compact">
+                <div class="photo-placeholder-compact">[IMAGE]</div>
+                <div class="photo-info-compact">
+                    <div class="photo-stage-compact">Greenware</div>
+                    <div class="photo-note-compact">Handles attached</div>
+                </div>
+            </div>
+            <div class="photo-card-compact">
+                <div class="photo-placeholder-compact">[IMAGE]</div>
+                <div class="photo-info-compact">
+                    <div class="photo-stage-compact">Bisque</div>
+                    <div class="photo-note-compact">First firing</div>
+                </div>
+            </div>
+            <div class="photo-card-compact">
+                <div class="photo-placeholder-compact">[IMAGE]</div>
+                <div class="photo-info-compact">
+                    <div class="photo-stage-compact">Bisque</div>
+                    <div class="photo-note-compact">Handle detail</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MEASUREMENTS SECTION (COMPARISON TABLE) -->
+    <div class="detail-section">
+        <h2 class="wireframe-h2">Measurements</h2>
+        <div class="measurements-comparison">
+            <table class="measurements-table">
+                <thead>
+                    <tr>
+                        <th>Dimension</th>
+                        <th>Greenware</th>
+                        <th>Bisque</th>
+                        <th>Final</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="dimension-label">Height</td>
+                        <td class="dimension-value">8.5"</td>
+                        <td class="dimension-value">8.0"</td>
+                        <td class="dimension-value empty">—</td>
+                    </tr>
+                    <tr>
+                        <td class="dimension-label">Width</td>
+                        <td class="dimension-value">6.0"</td>
+                        <td class="dimension-value">5.7"</td>
+                        <td class="dimension-value empty">—</td>
+                    </tr>
+                    <tr>
+                        <td class="dimension-label">Depth</td>
+                        <td class="dimension-value">6.0"</td>
+                        <td class="dimension-value">5.7"</td>
+                        <td class="dimension-value empty">—</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="shrinkage-note">
+            <strong>Shrinkage:</strong> Greenware → Bisque = 5.9% height, 5.0% width/depth
+        </div>
+    </div>
+
+    <!-- FLOATING ACTION BUTTON -->
+    <div class="fab">
+        ☁ UPLOAD PHOTO
+    </div>
+
+    <!-- DESIGN NOTES -->
+    <div style="margin-top: 40px; padding-top: 20px; border-top: 2px dashed black; font-size: 12px;">
+        <h3 style="font-weight: bold; margin-bottom: 8px;">VARIATION 3: COMPARISON TABLE LAYOUT</h3>
+        <p style="margin-bottom: 8px;"><strong>Key Features:</strong></p>
+        <ul style="margin-left: 20px; line-height: 1.6;">
+            <li>Photos section moved BEFORE measurements with compact card design</li>
+            <li>Smaller photo cards (160px) to save vertical space</li>
+            <li>"View All" link for expanding to full photo gallery</li>
+            <li>Table-based measurements layout for direct stage comparison</li>
+            <li>Horizontal reading: compare same dimension across all stages</li>
+            <li>Black header row clearly identifies each stage column</li>
+            <li>Automatic shrinkage calculation displayed below table</li>
+            <li>Most space-efficient layout for users tracking dimensional changes</li>
+            <li>Easy to spot patterns (e.g., consistent shrinkage across dimensions)</li>
+        </ul>
+        <p style="margin-top: 12px;"><strong>Best For:</strong> Potters who carefully track shrinkage rates and dimensional changes. The table format makes it trivial to compare measurements horizontally and calculate percentages. Compact photos keep the page from becoming too long.</p>
+        <p style="margin-top: 8px;"><strong>Bonus:</strong> The shrinkage calculation could be automated by the app, providing valuable data for the potter's records and future planning.</p>
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pottery Catalog - Photo Management</title>
+    <style>
+        /* Design System Tokens */
+        :root {
+            /* Primary Colors */
+            --clay-primary: oklch(55% 0.08 45);
+            --clay-primary-light: oklch(70% 0.06 45);
+            --clay-primary-dark: oklch(40% 0.10 45);
+
+            /* Stage Colors */
+            --greenware: oklch(60% 0.12 140);
+            --greenware-light: oklch(75% 0.10 140);
+            --bisque: oklch(70% 0.08 65);
+            --bisque-light: oklch(80% 0.06 65);
+            --final: oklch(55% 0.10 240);
+            --final-light: oklch(70% 0.08 240);
+
+            /* Neutral Colors */
+            --surface: oklch(98% 0.005 45);
+            --surface-variant: oklch(92% 0.01 45);
+            --surface-container: oklch(95% 0.008 45);
+            --on-surface: oklch(20% 0.02 45);
+            --on-surface-variant: oklch(45% 0.03 45);
+            --outline: oklch(65% 0.02 45);
+
+            /* Spacing */
+            --space-1: 0.25rem;
+            --space-2: 0.5rem;
+            --space-3: 0.75rem;
+            --space-4: 1rem;
+            --space-5: 1.25rem;
+            --space-6: 1.5rem;
+            --space-8: 2rem;
+
+            /* Radius */
+            --radius-sm: 0.375rem;
+            --radius-md: 0.5rem;
+            --radius-lg: 0.75rem;
+            --radius-xl: 1rem;
+            --radius-full: 9999px;
+
+            /* Shadows */
+            --shadow-clay: 0 2px 6px oklch(0% 0 0 / 0.16);
+            --shadow-ceramic: 0 4px 12px oklch(0% 0 0 / 0.15);
+
+            /* Touch targets */
+            --touch-target-min: 44px;
+        }
+
+        /* Base Styles */
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            line-height: 1.5;
+            margin: 0;
+            padding: 0;
+            background: var(--surface);
+            color: var(--on-surface);
+        }
+
+        /* Header Navigation */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: var(--space-4) var(--space-5);
+            background: var(--surface);
+            border-bottom: 1px solid var(--outline);
+            box-shadow: var(--shadow-clay);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+        }
+
+        .btn-back {
+            width: var(--touch-target-min);
+            height: var(--touch-target-min);
+            padding: 0;
+            border: none;
+            background: none;
+            color: var(--clay-primary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            border-radius: var(--radius-full);
+            transition: background-color 0.2s ease;
+        }
+
+        .btn-back:hover {
+            background: var(--surface-variant);
+        }
+
+        .header-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--on-surface);
+        }
+
+        .btn-done {
+            padding: var(--space-2) var(--space-4);
+            border-radius: var(--radius-md);
+            background: var(--clay-primary);
+            color: var(--surface);
+            border: none;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-done:hover {
+            background: var(--clay-primary-dark);
+        }
+
+        /* Stage Selection */
+        .stage-selector {
+            padding: var(--space-5);
+            background: var(--surface-container);
+            border-bottom: 1px solid var(--outline);
+        }
+
+        .stage-selector-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: var(--space-4);
+            color: var(--on-surface);
+        }
+
+        .stage-tabs {
+            display: flex;
+            gap: var(--space-2);
+            overflow-x: auto;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .stage-tabs::-webkit-scrollbar {
+            display: none;
+        }
+
+        .stage-tab {
+            padding: var(--space-3) var(--space-4);
+            border-radius: var(--radius-lg);
+            font-size: 0.875rem;
+            font-weight: 500;
+            border: 1px solid var(--outline);
+            background: var(--surface);
+            color: var(--on-surface);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            min-height: var(--touch-target-min);
+        }
+
+        .stage-tab:hover {
+            background: var(--surface-variant);
+        }
+
+        .stage-tab.active.greenware {
+            background: var(--greenware);
+            color: white;
+            border-color: var(--greenware);
+        }
+
+        .stage-tab.active.bisque {
+            background: var(--bisque);
+            color: var(--on-surface);
+            border-color: var(--bisque);
+        }
+
+        .stage-tab.active.final {
+            background: var(--final);
+            color: white;
+            border-color: var(--final);
+        }
+
+        /* Photo Grid */
+        .photo-section {
+            padding: var(--space-5);
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: var(--space-4);
+        }
+
+        .section-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--on-surface);
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+        }
+
+        .stage-badge {
+            width: 24px;
+            height: 24px;
+            border-radius: var(--radius-full);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.625rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .stage-greenware {
+            background: var(--greenware);
+            color: white;
+        }
+
+        .stage-bisque {
+            background: var(--bisque);
+            color: var(--on-surface);
+        }
+
+        .stage-final {
+            background: var(--final);
+            color: white;
+        }
+
+        .photo-count {
+            font-size: 0.875rem;
+            color: var(--on-surface-variant);
+        }
+
+        .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: var(--space-4);
+            margin-bottom: var(--space-6);
+        }
+
+        .photo-slot {
+            aspect-ratio: 1;
+            border-radius: var(--radius-md);
+            background: var(--surface-variant);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: var(--on-surface-variant);
+            border: 2px dashed var(--outline);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .photo-slot:hover {
+            border-color: var(--clay-primary);
+            background: var(--clay-primary-light);
+            transform: translateY(-2px);
+        }
+
+        .photo-slot.has-photo {
+            background: var(--surface);
+            border: none;
+            box-shadow: var(--shadow-clay);
+        }
+
+        .photo-slot.has-photo:hover {
+            box-shadow: var(--shadow-ceramic);
+        }
+
+        .photo-slot.add-photo {
+            border-style: dashed;
+            border-width: 2px;
+        }
+
+        .photo-slot.add-photo:hover {
+            border-color: var(--clay-primary);
+            background: var(--clay-primary-light);
+        }
+
+        .photo-overlay {
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: oklch(0% 0 0 / 0.6);
+            color: white;
+            border-radius: 0 0 0 var(--radius-md);
+            padding: var(--space-1) var(--space-2);
+            font-size: 0.75rem;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .photo-slot.has-photo:hover .photo-overlay {
+            opacity: 1;
+        }
+
+        /* Camera Actions */
+        .camera-actions {
+            background: var(--surface-container);
+            border-radius: var(--radius-lg);
+            padding: var(--space-6);
+            border: 1px solid var(--outline);
+            text-align: center;
+        }
+
+        .camera-actions-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: var(--space-4);
+            color: var(--on-surface);
+        }
+
+        .camera-buttons {
+            display: grid;
+            gap: var(--space-4);
+        }
+
+        .camera-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-3);
+            padding: var(--space-4) var(--space-6);
+            border-radius: var(--radius-lg);
+            font-size: 1rem;
+            font-weight: 500;
+            border: 1px solid var(--outline);
+            background: var(--surface);
+            color: var(--on-surface);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-height: 60px;
+        }
+
+        .camera-btn:hover {
+            background: var(--surface-variant);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-clay);
+        }
+
+        .camera-btn-icon {
+            font-size: 1.5rem;
+        }
+
+        .camera-btn-text {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .camera-btn-title {
+            font-weight: 600;
+        }
+
+        .camera-btn-subtitle {
+            font-size: 0.875rem;
+            color: var(--on-surface-variant);
+        }
+
+        /* Progress Indicator */
+        .progress-section {
+            padding: var(--space-5);
+            background: var(--surface-container);
+            border-top: 1px solid var(--outline);
+            margin-top: var(--space-8);
+        }
+
+        .progress-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: var(--space-4);
+            color: var(--on-surface);
+        }
+
+        .progress-bar {
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+        }
+
+        .progress-stage {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            padding: var(--space-2) var(--space-3);
+            border-radius: var(--radius-md);
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .progress-stage.complete {
+            background: var(--greenware-light);
+            color: var(--greenware);
+        }
+
+        .progress-stage.active {
+            background: var(--clay-primary-light);
+            color: var(--clay-primary-dark);
+        }
+
+        .progress-stage.pending {
+            background: var(--surface-variant);
+            color: var(--on-surface-variant);
+        }
+
+        .progress-connector {
+            height: 2px;
+            width: 20px;
+            background: var(--outline);
+        }
+
+        .progress-connector.complete {
+            background: var(--greenware);
+        }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            .photo-section {
+                padding: var(--space-4);
+            }
+
+            .stage-selector {
+                padding: var(--space-4);
+            }
+
+            .camera-actions {
+                padding: var(--space-5);
+            }
+
+            .camera-buttons {
+                gap: var(--space-3);
+            }
+
+            .camera-btn {
+                padding: var(--space-3) var(--space-4);
+                min-height: 56px;
+            }
+
+            .photo-grid {
+                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+                gap: var(--space-3);
+            }
+        }
+
+        /* Upload Animation */
+        @keyframes uploadPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .photo-slot.uploading {
+            animation: uploadPulse 1s infinite;
+            border-color: var(--clay-primary);
+            background: var(--clay-primary-light);
+        }
+
+        /* Hidden file input */
+        .file-input {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-left">
+            <button class="btn-back" aria-label="Back to item detail">
+                ←
+            </button>
+            <h1 class="header-title">Add Photos</h1>
+        </div>
+        <button class="btn-done">Done</button>
+    </header>
+
+    <!-- Stage Selection -->
+    <section class="stage-selector">
+        <h2 class="stage-selector-title">Select pottery stage for photos:</h2>
+        <div class="stage-tabs">
+            <button class="stage-tab active greenware" data-stage="greenware">
+                <span>🌱</span>
+                <div>
+                    <div>Greenware</div>
+                    <div style="font-size: 0.75rem; color: inherit; opacity: 0.8;">Unfired clay</div>
+                </div>
+            </button>
+            <button class="stage-tab bisque" data-stage="bisque">
+                <span>🔥</span>
+                <div>
+                    <div>Bisque</div>
+                    <div style="font-size: 0.75rem; color: inherit; opacity: 0.8;">First firing</div>
+                </div>
+            </button>
+            <button class="stage-tab final" data-stage="final">
+                <span>✨</span>
+                <div>
+                    <div>Final</div>
+                    <div style="font-size: 0.75rem; color: inherit; opacity: 0.8;">Glazed & finished</div>
+                </div>
+            </button>
+        </div>
+    </section>
+
+    <!-- Current Photos -->
+    <section class="photo-section">
+        <div class="section-header">
+            <div class="section-title">
+                <span class="stage-badge stage-greenware">G</span>
+                <span>Greenware Photos</span>
+            </div>
+            <span class="photo-count">2 of 8 photos</span>
+        </div>
+
+        <div class="photo-grid">
+            <!-- Existing Photos -->
+            <div class="photo-slot has-photo">
+                🏺
+                <div class="photo-overlay">
+                    <button style="background: none; border: none; color: white; cursor: pointer;">×</button>
+                </div>
+            </div>
+
+            <div class="photo-slot has-photo">
+                📸
+                <div class="photo-overlay">
+                    <button style="background: none; border: none; color: white; cursor: pointer;">×</button>
+                </div>
+            </div>
+
+            <!-- Add Photo Slots -->
+            <div class="photo-slot add-photo" onclick="openCamera()">
+                <div style="text-align: center;">
+                    <div style="font-size: 1.5rem; margin-bottom: var(--space-1);">+</div>
+                    <div style="font-size: 0.75rem; color: var(--on-surface-variant);">Add Photo</div>
+                </div>
+            </div>
+
+            <div class="photo-slot add-photo" onclick="openCamera()">
+                <div style="text-align: center;">
+                    <div style="font-size: 1.5rem; margin-bottom: var(--space-1);">+</div>
+                    <div style="font-size: 0.75rem; color: var(--on-surface-variant);">Add Photo</div>
+                </div>
+            </div>
+
+            <div class="photo-slot add-photo" onclick="openCamera()">
+                <div style="text-align: center;">
+                    <div style="font-size: 1.5rem; margin-bottom: var(--space-1);">+</div>
+                    <div style="font-size: 0.75rem; color: var(--on-surface-variant);">Add Photo</div>
+                </div>
+            </div>
+
+            <div class="photo-slot add-photo" onclick="openCamera()">
+                <div style="text-align: center;">
+                    <div style="font-size: 1.5rem; margin-bottom: var(--space-1);">+</div>
+                    <div style="font-size: 0.75rem; color: var(--on-surface-variant);">Add Photo</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Camera Actions -->
+    <section class="photo-section">
+        <div class="camera-actions">
+            <h3 class="camera-actions-title">Add New Photos</h3>
+            <div class="camera-buttons">
+                <button class="camera-btn" onclick="takePhoto()">
+                    <span class="camera-btn-icon">📷</span>
+                    <div class="camera-btn-text">
+                        <span class="camera-btn-title">Take Photo</span>
+                        <span class="camera-btn-subtitle">Use camera to capture new photo</span>
+                    </div>
+                </button>
+
+                <button class="camera-btn" onclick="chooseFromGallery()">
+                    <span class="camera-btn-icon">📁</span>
+                    <div class="camera-btn-text">
+                        <span class="camera-btn-title">Choose from Gallery</span>
+                        <span class="camera-btn-subtitle">Select existing photos</span>
+                    </div>
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Progress Section -->
+    <section class="progress-section">
+        <h3 class="progress-title">Photo Collection Progress</h3>
+        <div class="progress-bar">
+            <div class="progress-stage complete">
+                <span class="stage-badge stage-greenware">G</span>
+                <span>2 photos</span>
+                <span>✓</span>
+            </div>
+            <div class="progress-connector complete"></div>
+            <div class="progress-stage active">
+                <span class="stage-badge stage-bisque">B</span>
+                <span>0 photos</span>
+            </div>
+            <div class="progress-connector"></div>
+            <div class="progress-stage pending">
+                <span class="stage-badge stage-final">F</span>
+                <span>0 photos</span>
+            </div>
+        </div>
+
+        <div style="margin-top: var(--space-4); padding: var(--space-4); background: var(--surface); border-radius: var(--radius-md); border: 1px solid var(--outline);">
+            <h4 style="font-size: 0.875rem; font-weight: 600; margin-bottom: var(--space-2); color: var(--on-surface);">
+                📸 Photo Tips for Greenware Stage
+            </h4>
+            <ul style="margin: 0; padding-left: var(--space-4); color: var(--on-surface-variant); font-size: 0.875rem; line-height: 1.4;">
+                <li>Capture the overall form and proportions</li>
+                <li>Show surface texture and clay body</li>
+                <li>Include detail shots of decorative elements</li>
+                <li>Document size with reference objects</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- Hidden file input -->
+    <input type="file" class="file-input" id="photo-input" accept="image/*" capture="camera" multiple>
+
+    <script>
+        // Stage switching functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const stageTabs = document.querySelectorAll('.stage-tab');
+            const sectionTitle = document.querySelector('.section-title');
+            const photoCount = document.querySelector('.photo-count');
+            const progressBar = document.querySelector('.progress-bar');
+            const photoTips = document.querySelector('.progress-section div:last-child h4');
+            const tipsContent = document.querySelector('.progress-section div:last-child ul');
+
+            // Mock data for different stages
+            const stageData = {
+                greenware: {
+                    badge: 'stage-greenware',
+                    badgeText: 'G',
+                    title: 'Greenware Photos',
+                    count: '2 of 8 photos',
+                    tips: '📸 Photo Tips for Greenware Stage',
+                    tipsList: [
+                        'Capture the overall form and proportions',
+                        'Show surface texture and clay body',
+                        'Include detail shots of decorative elements',
+                        'Document size with reference objects'
+                    ]
+                },
+                bisque: {
+                    badge: 'stage-bisque',
+                    badgeText: 'B',
+                    title: 'Bisque Photos',
+                    count: '0 of 6 photos',
+                    tips: '🔥 Photo Tips for Bisque Stage',
+                    tipsList: [
+                        'Document color changes from firing',
+                        'Show any warping or firing effects',
+                        'Capture surface texture differences',
+                        'Note any cracks or firing issues'
+                    ]
+                },
+                final: {
+                    badge: 'stage-final',
+                    badgeText: 'F',
+                    title: 'Final Photos',
+                    count: '0 of 10 photos',
+                    tips: '✨ Photo Tips for Final Stage',
+                    tipsList: [
+                        'Show glaze application and effects',
+                        'Capture final colors and finish',
+                        'Include beauty shots for portfolio',
+                        'Document any glaze defects or successes'
+                    ]
+                }
+            };
+
+            function updateStageContent(stage) {
+                const data = stageData[stage];
+                const stageBadge = sectionTitle.querySelector('.stage-badge');
+                const stageTitle = sectionTitle.querySelector('span:last-child');
+
+                // Update section header
+                stageBadge.className = `stage-badge ${data.badge}`;
+                stageBadge.textContent = data.badgeText;
+                stageTitle.textContent = data.title;
+                photoCount.textContent = data.count;
+
+                // Update tips section
+                photoTips.textContent = data.tips;
+                tipsContent.innerHTML = data.tipsList.map(tip => `<li>${tip}</li>`).join('');
+
+                // Update progress bar
+                updateProgressBar(stage);
+
+                // Simulate different photo grids for each stage
+                updatePhotoGrid(stage);
+            }
+
+            function updateProgressBar(activeStage) {
+                const stages = progressBar.querySelectorAll('.progress-stage');
+                const connectors = progressBar.querySelectorAll('.progress-connector');
+
+                stages.forEach((stage, index) => {
+                    stage.className = 'progress-stage';
+                    if (index === 0) {
+                        stage.classList.add('complete');
+                    } else if ((activeStage === 'bisque' && index === 1) ||
+                               (activeStage === 'final' && index === 2)) {
+                        stage.classList.add('active');
+                    } else {
+                        stage.classList.add('pending');
+                    }
+                });
+
+                connectors.forEach((connector, index) => {
+                    connector.className = 'progress-connector';
+                    if (index === 0) {
+                        connector.classList.add('complete');
+                    }
+                });
+            }
+
+            function updatePhotoGrid(stage) {
+                const photoGrid = document.querySelector('.photo-grid');
+                const hasPhotoSlots = photoGrid.querySelectorAll('.photo-slot.has-photo');
+                const addPhotoSlots = photoGrid.querySelectorAll('.photo-slot.add-photo');
+
+                // Simple simulation - show different numbers of photos per stage
+                const photoCount = stage === 'greenware' ? 2 : 0;
+
+                hasPhotoSlots.forEach((slot, index) => {
+                    slot.style.display = index < photoCount ? 'flex' : 'none';
+                });
+            }
+
+            // Stage tab click handlers
+            stageTabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    // Remove active class from all tabs
+                    stageTabs.forEach(t => t.classList.remove('active'));
+                    // Add active class to clicked tab
+                    this.classList.add('active');
+
+                    // Update content
+                    const stage = this.dataset.stage;
+                    updateStageContent(stage);
+                });
+            });
+
+            // Back button
+            document.querySelector('.btn-back').addEventListener('click', function() {
+                console.log('Navigate back to item detail');
+            });
+
+            // Done button
+            document.querySelector('.btn-done').addEventListener('click', function() {
+                console.log('Save photos and navigate back');
+            });
+
+            // Photo deletion
+            document.querySelectorAll('.photo-overlay button').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    if (confirm('Delete this photo?')) {
+                        this.closest('.photo-slot').remove();
+                    }
+                });
+            });
+        });
+
+        // Camera functions
+        function takePhoto() {
+            // In a real app, this would open the camera
+            const input = document.getElementById('photo-input');
+            input.setAttribute('capture', 'camera');
+            input.click();
+        }
+
+        function chooseFromGallery() {
+            // In a real app, this would open the photo gallery
+            const input = document.getElementById('photo-input');
+            input.removeAttribute('capture');
+            input.click();
+        }
+
+        function openCamera() {
+            takePhoto();
+        }
+
+        // File input change handler
+        document.getElementById('photo-input').addEventListener('change', function(e) {
+            const files = e.target.files;
+            if (files.length > 0) {
+                // Simulate upload process
+                simulatePhotoUpload(files);
+            }
+        });
+
+        function simulatePhotoUpload(files) {
+            const addPhotoSlots = document.querySelectorAll('.photo-slot.add-photo');
+
+            Array.from(files).forEach((file, index) => {
+                if (addPhotoSlots[index]) {
+                    const slot = addPhotoSlots[index];
+
+                    // Show uploading state
+                    slot.classList.add('uploading');
+                    slot.innerHTML = '<div>📤<br><small>Uploading...</small></div>';
+
+                    // Simulate upload delay
+                    setTimeout(() => {
+                        slot.classList.remove('uploading', 'add-photo');
+                        slot.classList.add('has-photo');
+                        slot.innerHTML = '📸<div class="photo-overlay"><button style="background: none; border: none; color: white; cursor: pointer;">×</button></div>';
+
+                        // Update photo count
+                        const photoCount = document.querySelector('.photo-count');
+                        const current = parseInt(photoCount.textContent.split(' ')[0]);
+                        photoCount.textContent = `${current + 1} of 8 photos`;
+                    }, 1000 + (index * 500));
+                }
+            });
+        }
+    </script>
+</body>
+</html>

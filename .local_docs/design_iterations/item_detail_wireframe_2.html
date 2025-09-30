@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Item Detail Wireframe - Variation 2: 2-Column Responsive Measurements</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: white;
+            color: black;
+            line-height: 1.4;
+            padding: 20px;
+            max-width: 480px;
+            margin: 0 auto;
+        }
+
+        /* Wireframe text styles */
+        .wireframe-h1 {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .wireframe-h2 {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 24px 0 12px 0;
+            text-transform: uppercase;
+        }
+
+        .wireframe-label {
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .wireframe-body {
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        /* Layout components */
+        .wireframe-header {
+            border: 2px solid black;
+            padding: 16px;
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .status-badge {
+            border: 2px solid black;
+            background: white;
+            padding: 4px 12px;
+            font-weight: bold;
+            font-size: 11px;
+            text-transform: uppercase;
+            display: inline-block;
+            margin-top: 8px;
+        }
+
+        .stage-dots {
+            display: inline-flex;
+            gap: 6px;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+
+        .stage-dot {
+            width: 12px;
+            height: 12px;
+            border: 2px solid black;
+            border-radius: 50%;
+            background: white;
+        }
+
+        .stage-dot.active {
+            background: black;
+        }
+
+        .icon-button {
+            border: 2px solid black;
+            background: white;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .detail-section {
+            margin-bottom: 24px;
+        }
+
+        .detail-row {
+            display: flex;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .detail-row .label {
+            width: 100px;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .detail-row .value {
+            flex: 1;
+        }
+
+        .notes-box {
+            border: 2px solid black;
+            padding: 12px;
+            background: white;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        /* Photo gallery section - Enhanced prominence */
+        .photo-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .photo-count-badge {
+            border: 2px solid black;
+            background: black;
+            color: white;
+            padding: 2px 8px;
+            font-weight: bold;
+            font-size: 11px;
+        }
+
+        .photo-gallery-wrapper {
+            border: 3px solid black;
+            padding: 16px;
+            background: white;
+        }
+
+        .photo-scroll-container {
+            overflow-x: auto;
+            white-space: nowrap;
+            margin: -4px;
+            padding: 4px;
+        }
+
+        .photo-card {
+            display: inline-block;
+            width: 220px;
+            vertical-align: top;
+            margin-right: 12px;
+            border: 2px solid black;
+            background: white;
+        }
+
+        .photo-placeholder {
+            height: 180px;
+            background: repeating-linear-gradient(
+                45deg,
+                white,
+                white 10px,
+                black 10px,
+                black 12px
+            );
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 16px;
+            border-bottom: 2px solid black;
+        }
+
+        .photo-info {
+            padding: 12px;
+        }
+
+        .photo-stage {
+            font-weight: bold;
+            font-size: 15px;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+        }
+
+        .photo-note {
+            font-size: 12px;
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+
+        .photo-date {
+            font-size: 10px;
+            color: #666;
+            text-transform: uppercase;
+        }
+
+        .photo-menu {
+            border: 2px solid black;
+            background: white;
+            padding: 2px 6px;
+            float: right;
+            font-weight: bold;
+        }
+
+        /* Measurements grid - 2 columns with third below */
+        .measurements-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .measurement-card {
+            border: 2px solid black;
+            padding: 16px;
+            background: white;
+        }
+
+        .measurement-card.span-full {
+            grid-column: 1 / -1;
+        }
+
+        .measurement-stage-title {
+            font-weight: bold;
+            font-size: 15px;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+            text-align: left;
+            border-bottom: 2px solid black;
+            padding-bottom: 8px;
+        }
+
+        .measurement-item {
+            font-size: 13px;
+            margin-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .measurement-item .dim-label {
+            font-weight: bold;
+        }
+
+        .measurement-item .dim-value {
+            font-weight: normal;
+        }
+
+        .measurement-empty {
+            font-size: 12px;
+            color: #666;
+            font-style: italic;
+            text-align: center;
+            padding: 8px 0;
+        }
+
+        /* Floating action button */
+        .fab {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            border: 3px solid black;
+            background: white;
+            padding: 14px 24px;
+            font-weight: bold;
+            font-size: 14px;
+            text-transform: uppercase;
+        }
+
+        @media (max-width: 360px) {
+            .measurements-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .measurement-card.span-full {
+                grid-column: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- HEADER SECTION -->
+    <div class="wireframe-header">
+        <div style="flex: 1;">
+            <div class="wireframe-h1">LARGE BOWL WITH HANDLES</div>
+            <div>
+                <span class="status-badge">BISQUE</span>
+                <span class="stage-dots">
+                    <span class="stage-dot active"></span>
+                    <span class="stage-dot active"></span>
+                    <span class="stage-dot"></span>
+                </span>
+            </div>
+        </div>
+        <div class="icon-button">✎</div>
+    </div>
+
+    <!-- DETAILS SECTION -->
+    <div class="detail-section">
+        <h2 class="wireframe-h2">Details</h2>
+        <div class="detail-row">
+            <span class="label">Clay Type</span>
+            <span class="value">Stoneware B-Mix</span>
+        </div>
+        <div class="detail-row">
+            <span class="label">Location</span>
+            <span class="value">Shelf 3-A</span>
+        </div>
+        <div class="detail-row">
+            <span class="label">Created</span>
+            <span class="value">Jan 15, 2025 2:30 PM</span>
+        </div>
+        <div class="detail-row">
+            <span class="label">Glaze</span>
+            <span class="value">Celadon Green</span>
+        </div>
+    </div>
+
+    <!-- NOTES SECTION -->
+    <div class="detail-section">
+        <h2 class="wireframe-h2">Notes</h2>
+        <div class="notes-box">
+            This bowl features two decorative handles attached at the rim. The handles were pulled and attached while clay was still leather hard. Some minor cracking noted at attachment points - monitor during firing.
+        </div>
+    </div>
+
+    <!-- PHOTOS SECTION (MOVED BEFORE MEASUREMENTS - ENHANCED) -->
+    <div class="detail-section">
+        <div class="photo-header">
+            <h2 class="wireframe-h2" style="margin: 0;">Photos</h2>
+            <span class="photo-count-badge">4</span>
+        </div>
+        <div class="photo-gallery-wrapper">
+            <div class="photo-scroll-container">
+                <div class="photo-card">
+                    <div class="photo-placeholder">[IMAGE]</div>
+                    <div class="photo-info">
+                        <div class="photo-stage">
+                            Greenware
+                            <span class="photo-menu">⋮</span>
+                        </div>
+                        <div class="photo-note">Fresh off the wheel, leather hard</div>
+                        <div class="photo-date">Uploaded: Jan 15, 2:45 PM</div>
+                    </div>
+                </div>
+                <div class="photo-card">
+                    <div class="photo-placeholder">[IMAGE]</div>
+                    <div class="photo-info">
+                        <div class="photo-stage">
+                            Greenware
+                            <span class="photo-menu">⋮</span>
+                        </div>
+                        <div class="photo-note">Handles attached and smoothed</div>
+                        <div class="photo-date">Uploaded: Jan 16, 10:20 AM</div>
+                    </div>
+                </div>
+                <div class="photo-card">
+                    <div class="photo-placeholder">[IMAGE]</div>
+                    <div class="photo-info">
+                        <div class="photo-stage">
+                            Bisque
+                            <span class="photo-menu">⋮</span>
+                        </div>
+                        <div class="photo-note">After first firing - no cracks!</div>
+                        <div class="photo-date">Uploaded: Jan 22, 3:15 PM</div>
+                    </div>
+                </div>
+                <div class="photo-card">
+                    <div class="photo-placeholder">[IMAGE]</div>
+                    <div class="photo-info">
+                        <div class="photo-stage">
+                            Bisque
+                            <span class="photo-menu">⋮</span>
+                        </div>
+                        <div class="photo-note">Close-up of handle detail</div>
+                        <div class="photo-date">Uploaded: Jan 22, 3:18 PM</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MEASUREMENTS SECTION (2-COLUMN RESPONSIVE GRID) -->
+    <div class="detail-section">
+        <h2 class="wireframe-h2">Measurements</h2>
+        <div class="measurements-grid">
+            <!-- Greenware Card - Top Left -->
+            <div class="measurement-card">
+                <div class="measurement-stage-title">Greenware</div>
+                <div class="measurement-item">
+                    <span class="dim-label">Height:</span>
+                    <span class="dim-value">8.5"</span>
+                </div>
+                <div class="measurement-item">
+                    <span class="dim-label">Width:</span>
+                    <span class="dim-value">6.0"</span>
+                </div>
+                <div class="measurement-item">
+                    <span class="dim-label">Depth:</span>
+                    <span class="dim-value">6.0"</span>
+                </div>
+            </div>
+
+            <!-- Bisque Card - Top Right -->
+            <div class="measurement-card">
+                <div class="measurement-stage-title">Bisque</div>
+                <div class="measurement-item">
+                    <span class="dim-label">Height:</span>
+                    <span class="dim-value">8.0"</span>
+                </div>
+                <div class="measurement-item">
+                    <span class="dim-label">Width:</span>
+                    <span class="dim-value">5.7"</span>
+                </div>
+                <div class="measurement-item">
+                    <span class="dim-label">Depth:</span>
+                    <span class="dim-value">5.7"</span>
+                </div>
+            </div>
+
+            <!-- Final Card - Bottom Full Width -->
+            <div class="measurement-card span-full">
+                <div class="measurement-stage-title">Final</div>
+                <div class="measurement-empty">
+                    No measurements recorded yet - waiting for final firing
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FLOATING ACTION BUTTON -->
+    <div class="fab">
+        ☁ UPLOAD PHOTO
+    </div>
+
+    <!-- DESIGN NOTES -->
+    <div style="margin-top: 40px; padding-top: 20px; border-top: 2px dashed black; font-size: 12px;">
+        <h3 style="font-weight: bold; margin-bottom: 8px;">VARIATION 2: 2-COLUMN RESPONSIVE MEASUREMENTS</h3>
+        <p style="margin-bottom: 8px;"><strong>Key Features:</strong></p>
+        <ul style="margin-left: 20px; line-height: 1.6;">
+            <li>Photos section moved BEFORE measurements with ENHANCED prominence (heavier border)</li>
+            <li>Larger photo cards (220px) with taller images (180px height)</li>
+            <li>2-column grid for measurements with better mobile optimization</li>
+            <li>First two stages (Greenware/Bisque) side-by-side</li>
+            <li>Third stage (Final) spans full width below, emphasizing completed state</li>
+            <li>Empty state message when measurements not yet recorded</li>
+            <li>More spacious measurement cards with justified dimension layout</li>
+            <li>Responsive: collapses gracefully to single column on very narrow screens</li>
+        </ul>
+        <p style="margin-top: 12px;"><strong>Best For:</strong> Mobile-first design that balances space efficiency with readability. The 2-column + 1 full-width layout creates natural visual flow and emphasizes the final stage as the "completion" goal.</p>
+    </div>
+
+</body>
+</html>

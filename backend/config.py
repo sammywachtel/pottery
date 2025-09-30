@@ -17,6 +17,9 @@ class Settings(BaseSettings):
     Application configuration settings loaded ONLY from environment variables.
     """
 
+    # --- Environment Configuration ---
+    environment: str = Field("development", validation_alias="ENVIRONMENT")
+
     # --- Google Cloud Configuration ---
     gcp_project_id: str = Field(..., validation_alias="GCP_PROJECT_ID")
     gcs_bucket_name: str = Field(..., validation_alias="GCS_BUCKET_NAME")
@@ -32,15 +35,73 @@ class Settings(BaseSettings):
         15, validation_alias="SIGNED_URL_EXPIRATION_MINUTES"
     )
 
-    # --- Authentication Configuration ---
-    # Secret key for JWT token signing (generate a secure key in production)
-    jwt_secret_key: str = Field(
-        "YOUR_SECRET_KEY_HERE", validation_alias="JWT_SECRET_KEY"
+    # --- Firebase Authentication Configuration ---
+    firebase_project_id: Optional[str] = Field(
+        None, validation_alias="FIREBASE_PROJECT_ID"
     )
-    jwt_algorithm: str = Field("HS256", validation_alias="JWT_ALGORITHM")
-    jwt_access_token_expire_minutes: int = Field(
-        30, validation_alias="JWT_ACCESS_TOKEN_EXPIRE_MINUTES"
+    firebase_credentials_file: Optional[str] = Field(
+        None, validation_alias="FIREBASE_CREDENTIALS_FILE"
     )
+    # Frontend-only settings (not used by backend)
+    firebase_api_key: Optional[str] = Field(None, validation_alias="FIREBASE_API_KEY")
+    firebase_auth_domain: Optional[str] = Field(
+        None, validation_alias="FIREBASE_AUTH_DOMAIN"
+    )
+
+    # --- JWT Configuration (for test endpoint only) ---
+    jwt_secret_key: Optional[str] = Field(None, validation_alias="JWT_SECRET_KEY")
+
+    @property
+    def is_development(self) -> bool:
+        """Check if running in development environment."""
+        return self.environment.lower() in ("development", "dev")
+
+    @property
+    def is_production(self) -> bool:
+        """Check if running in production environment."""
+        return self.environment.lower() in ("production", "prod")
+
+    @property
+    def debug_enabled(self) -> bool:
+        """Check if debug mode should be enabled."""
+        return self.is_development
+
+    @property
+    def firebase_enabled(self) -> bool:
+        """Check if Firebase configuration is complete for backend use.
+
+        Firebase is enabled when:
+        1. FIREBASE_PROJECT_ID is set
+        2. Credentials are available (service account file or ADC)
+
+        Note: FIREBASE_API_KEY and FIREBASE_AUTH_DOMAIN are frontend-only settings.
+        """
+        import os
+
+        # Opening move: check if project ID is set
+        if not self.firebase_project_id:
+            return False
+
+        # Main play: check if credentials are available
+        # Either via explicit service account file or ADC (default credentials)
+        if self.firebase_credentials_file and os.path.exists(
+            self.firebase_credentials_file
+        ):
+            return True
+
+        # Victory lap: check for ADC (Google Cloud SDK or service account in environment)
+        # This is automatically available in Cloud Run or when gcloud is configured
+        try:
+            # Check for Application Default Credentials environment variable
+            if os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"):
+                return True
+            # Or if running in Google Cloud environment (Cloud Run, Compute Engine, etc.)
+            if os.environ.get("GOOGLE_CLOUD_PROJECT") or os.environ.get("GCP_PROJECT"):
+                return True
+        except Exception:
+            pass
+
+        return False
 
     # --- Cloud Run / Server Configuration ---
     # Read the PORT environment variable (set by Cloud Run or Docker -p)
@@ -78,6 +139,10 @@ settings = Settings()
 # Example usage (optional, for testing):
 if __name__ == "__main__":
     print("Configuration loaded from environment:")
+    print(f"Environment: {settings.environment}")
+    print(f"Is Development: {settings.is_development}")
+    print(f"Is Production: {settings.is_production}")
+    print(f"Debug Enabled: {settings.debug_enabled}")
     print(f"GCP Project ID: {settings.gcp_project_id}")
     print(f"GCS Bucket Name: {settings.gcs_bucket_name}")
     print(f"Firestore Collection: {settings.firestore_collection}")

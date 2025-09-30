@@ -257,6 +257,71 @@ pre-commit run --all-files
 5. Deploy to dev environment for testing
 6. Merge after review and testing
 
+## 🏗️ Infrastructure Management
+
+### CORS Configuration for GCS Bucket
+
+The application automatically manages Google Cloud Storage (GCS) bucket CORS configuration to enable Flutter web apps and other browser clients to display images.
+
+**Quick Setup:**
+```bash
+# Local development CORS
+./scripts/manage-cors.sh apply local
+
+# Production CORS
+./scripts/manage-cors.sh apply prod
+
+# Check current CORS settings
+./scripts/manage-cors.sh status
+```
+
+**Automatic Integration:**
+- `./run_docker_local.sh` - Automatically applies local CORS config
+- `./build_and_deploy.sh` - Automatically applies production CORS config
+- `npm run infra:setup` - Manual infrastructure setup
+
+**Configuration Files:**
+- `infrastructure/cors-config.local.json` - Local development (localhost origins)
+- `infrastructure/cors-config.prod.json` - Production (specific domains)
+- `infrastructure/cors-config.json` - Default/testing (permissive)
+
+**Testing CORS:**
+```bash
+# Test CORS configuration
+./scripts/test-cors.sh
+
+# Test specific bucket/origin
+./scripts/test-cors.sh my-bucket http://localhost:3000
+```
+
+**Available NPM Scripts:**
+```bash
+npm run infra:setup           # Full infrastructure setup
+npm run infra:cors:local      # Apply local CORS config
+npm run infra:cors:prod       # Apply production CORS config
+npm run infra:cors:status     # Check current CORS config
+npm run infra:cors:remove     # Remove all CORS rules
+```
+
+**Troubleshooting CORS Issues:**
+1. **Images not loading in Flutter app:**
+   - Check browser console for CORS errors
+   - Verify CORS applied: `./scripts/manage-cors.sh status`
+   - Clear browser cache (Ctrl+F5 or incognito mode)
+   - Test with: `./scripts/test-cors.sh`
+
+2. **Wrong origin errors:**
+   - Update `infrastructure/cors-config.*.json` files
+   - Reapply config: `./scripts/manage-cors.sh apply [environment]`
+   - Wait 2-5 minutes for changes to propagate
+
+3. **Authentication errors:**
+   - Ensure gcloud is authenticated: `gcloud auth login`
+   - Check project: `gcloud config get-value project`
+   - Verify bucket permissions: `gsutil iam get gs://your-bucket`
+
+See `infrastructure/README.md` for complete documentation.
+
 ## 🔍 Troubleshooting
 
 ### Common Issues

@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏺 Pottery Catalog - Whimsical Demo</title>
+    <style>
+        /* Base Pottery Design System (from existing components) */
+        :root {
+            --clay-primary: oklch(55% 0.08 45);
+            --clay-primary-light: oklch(70% 0.06 45);
+            --clay-primary-dark: oklch(40% 0.10 45);
+            --kiln-secondary: oklch(65% 0.15 35);
+            --kiln-secondary-light: oklch(75% 0.12 35);
+            --greenware: oklch(60% 0.12 140);
+            --greenware-light: oklch(75% 0.10 140);
+            --bisque: oklch(70% 0.08 65);
+            --bisque-light: oklch(80% 0.06 65);
+            --final: oklch(55% 0.10 240);
+            --final-light: oklch(70% 0.08 240);
+            --surface: oklch(98% 0.005 45);
+            --surface-variant: oklch(92% 0.01 45);
+            --surface-container: oklch(95% 0.008 45);
+            --on-surface: oklch(20% 0.02 45);
+            --on-surface-variant: oklch(45% 0.03 45);
+            --outline: oklch(65% 0.02 45);
+            --space-1: 0.25rem;
+            --space-2: 0.5rem;
+            --space-3: 0.75rem;
+            --space-4: 1rem;
+            --space-5: 1.25rem;
+            --space-6: 1.5rem;
+            --space-8: 2rem;
+            --radius-sm: 0.375rem;
+            --radius-md: 0.5rem;
+            --radius-lg: 0.75rem;
+            --radius-full: 9999px;
+            --shadow-clay: 0 2px 6px oklch(0% 0 0 / 0.16);
+            --shadow-ceramic: 0 4px 12px oklch(0% 0 0 / 0.15);
+            --touch-target-min: 44px;
+        }
+
+        /* Base styles */
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: var(--surface);
+            color: var(--on-surface);
+            line-height: 1.5;
+        }
+
+        /* Existing pottery components */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: var(--space-4) var(--space-5);
+            background: var(--surface);
+            border-bottom: 1px solid var(--outline);
+            box-shadow: var(--shadow-clay);
+        }
+
+        .header-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--clay-primary-dark);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-2);
+            padding: var(--space-3) var(--space-5);
+            border-radius: var(--radius-md);
+            font-weight: 500;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-height: var(--touch-target-min);
+        }
+
+        .btn-primary {
+            background: var(--clay-primary);
+            color: var(--surface);
+            box-shadow: var(--shadow-clay);
+        }
+
+        .btn-primary:hover {
+            background: var(--clay-primary-dark);
+            transform: translateY(-1px);
+        }
+
+        .btn-icon {
+            width: var(--touch-target-min);
+            height: var(--touch-target-min);
+            padding: 0;
+            border-radius: var(--radius-full);
+            background: var(--surface);
+            color: var(--on-surface);
+            border: 1px solid var(--outline);
+            font-size: 1.125rem;
+        }
+
+        .pottery-card {
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            padding: var(--space-4);
+            box-shadow: var(--shadow-clay);
+            border: 1px solid var(--outline);
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .pottery-card:hover {
+            box-shadow: var(--shadow-ceramic);
+            transform: translateY(-2px);
+        }
+
+        .pottery-card-image {
+            width: 100%;
+            aspect-ratio: 1;
+            border-radius: var(--radius-md);
+            background: var(--surface-variant);
+            margin-bottom: var(--space-3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            color: var(--on-surface-variant);
+        }
+
+        .pottery-card-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: var(--space-2);
+        }
+
+        .pottery-card-meta {
+            font-size: 0.875rem;
+            color: var(--on-surface-variant);
+            margin-bottom: var(--space-1);
+        }
+
+        .pottery-card-stages {
+            display: flex;
+            gap: var(--space-2);
+            margin-top: var(--space-3);
+        }
+
+        .stage-badge {
+            width: 28px;
+            height: 28px;
+            border-radius: var(--radius-full);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.625rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .stage-greenware {
+            background: var(--greenware);
+            color: white;
+        }
+
+        .stage-bisque {
+            background: var(--bisque);
+            color: var(--on-surface);
+        }
+
+        .stage-final {
+            background: var(--final);
+            color: white;
+        }
+
+        .stage-empty {
+            background: var(--surface-variant);
+            color: var(--on-surface-variant);
+            border: 1px dashed var(--outline);
+        }
+
+        .demo-section {
+            padding: var(--space-6);
+            border-bottom: 1px solid var(--outline);
+        }
+
+        .demo-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: var(--space-4);
+            color: var(--clay-primary-dark);
+        }
+
+        .demo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: var(--space-4);
+        }
+
+        .demo-buttons {
+            display: flex;
+            gap: var(--space-3);
+            flex-wrap: wrap;
+            margin: var(--space-4) 0;
+        }
+
+        .fab {
+            position: fixed;
+            bottom: var(--space-6);
+            right: var(--space-6);
+            width: 56px;
+            height: 56px;
+            border-radius: var(--radius-full);
+            background: var(--clay-primary);
+            color: var(--surface);
+            border: none;
+            box-shadow: var(--shadow-ceramic);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            z-index: 100;
+        }
+
+        #upload-demo {
+            border: 2px dashed var(--outline);
+            padding: var(--space-8);
+            text-align: center;
+            border-radius: var(--radius-lg);
+            background: var(--surface-container);
+        }
+
+        .loading-demo {
+            display: flex;
+            gap: var(--space-6);
+            align-items: center;
+            flex-wrap: wrap;
+            margin: var(--space-4) 0;
+        }
+
+        .demo-instructions {
+            background: var(--surface-container);
+            padding: var(--space-4);
+            border-radius: var(--radius-md);
+            margin: var(--space-4) 0;
+            border-left: 4px solid var(--clay-primary);
+        }
+
+        .demo-instructions h4 {
+            margin: 0 0 var(--space-2) 0;
+            color: var(--clay-primary-dark);
+        }
+
+        .demo-instructions ul {
+            margin: 0;
+            padding-left: var(--space-4);
+        }
+    </style>
+
+    <!-- Include Whimsical Enhancements CSS -->
+    <link rel="stylesheet" href="pottery-whimsy-enhancements.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <h1 class="header-title pottery-interactive">🏺 Pottery Whimsy Demo</h1>
+        <div>
+            <button class="btn-icon pottery-wheel-button" onclick="refreshDemo()">
+                🔄
+            </button>
+            <button class="btn-icon clay-bounce" onclick="showEasterEggHints()">
+                🎯
+            </button>
+        </div>
+    </header>
+
+    <!-- Loading States Demo -->
+    <section class="demo-section">
+        <h2 class="demo-title">🔄 Pottery-Themed Loading States</h2>
+        <p>Experience loading animations that celebrate the pottery process:</p>
+
+        <div class="loading-demo">
+            <div>
+                <div class="pottery-spinner"></div>
+                <p style="text-align: center; margin-top: var(--space-2); font-size: 0.75rem;">
+                    Pottery Wheel
+                </p>
+            </div>
+
+            <div>
+                <div class="clay-formation-loader"></div>
+                <p style="text-align: center; margin-top: var(--space-2); font-size: 0.75rem;">
+                    Clay Formation
+                </p>
+            </div>
+
+            <div>
+                <div class="kiln-loader"></div>
+                <p style="text-align: center; margin-top: var(--space-2); font-size: 0.75rem;">
+                    Kiln Firing
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Empty States Demo -->
+    <section class="demo-section">
+        <h2 class="demo-title">🌱 Delightful Empty States</h2>
+        <p>Empty states that encourage rather than discourage:</p>
+
+        <div class="demo-grid">
+            <div class="pottery-empty-state empty-all">
+                <div class="pottery-empty-icon">🏺</div>
+                <div class="pottery-pun-message">Your pottery journey starts with a single pinch! 🏺</div>
+                <p class="pottery-empty-subtext">Create your first pottery item to begin building your catalog</p>
+                <button class="btn btn-primary clay-bounce" onclick="simulateItemCreation()">Create First Item</button>
+            </div>
+
+            <div class="pottery-empty-state empty-photos">
+                <div class="pottery-empty-icon">📸</div>
+                <div class="pottery-pun-message">Every masterpiece deserves its moment! 📸</div>
+                <p class="pottery-empty-subtext">Add photos to document your pottery's journey through the stages</p>
+                <button class="btn btn-primary clay-bounce" onclick="simulatePhotoUpload()">Add Photos</button>
+            </div>
+        </div>
+
+        <div class="demo-instructions">
+            <h4>🤫 Easter Egg: Long Press Secret</h4>
+            <p>Try holding down on any empty state for 2 seconds to reveal a hidden potter's message!</p>
+        </div>
+    </section>
+
+    <!-- Interactive Pottery Cards -->
+    <section class="demo-section">
+        <h2 class="demo-title">🏺 Interactive Pottery Cards</h2>
+        <p>Click cards and stage badges to experience micro-interactions:</p>
+
+        <div class="demo-grid">
+            <div class="pottery-card clay-bounce ceramic-touch">
+                <div class="pottery-card-image">🏺</div>
+                <h3 class="pottery-card-title">Ceramic Vase</h3>
+                <div class="pottery-card-meta">🏺 Stoneware Clay</div>
+                <div class="pottery-card-meta">🎨 Celadon Glaze</div>
+                <div class="pottery-card-stages">
+                    <span class="stage-badge stage-greenware" title="Greenware complete">G</span>
+                    <span class="stage-badge stage-bisque" title="Bisque complete">B</span>
+                    <span class="stage-badge stage-final" title="Final complete">F</span>
+                </div>
+            </div>
+
+            <div class="pottery-card clay-bounce ceramic-touch">
+                <div class="pottery-card-image">🍵</div>
+                <h3 class="pottery-card-title">Tea Bowl</h3>
+                <div class="pottery-card-meta">🏺 Porcelain Clay</div>
+                <div class="pottery-card-meta">🎨 In Progress</div>
+                <div class="pottery-card-stages stage-transition">
+                    <span class="stage-badge stage-greenware" title="Greenware complete">G</span>
+                    <span class="stage-badge stage-bisque" title="Bisque complete">B</span>
+                    <span class="stage-badge stage-empty" title="Final pending">F</span>
+                </div>
+            </div>
+
+            <div class="pottery-card clay-bounce ceramic-touch">
+                <div class="pottery-card-image">🥣</div>
+                <h3 class="pottery-card-title">Serving Bowl</h3>
+                <div class="pottery-card-meta">🏺 Earthenware Clay</div>
+                <div class="pottery-card-meta">🎨 Just Started</div>
+                <div class="pottery-card-stages">
+                    <span class="stage-badge stage-greenware" title="Greenware complete">G</span>
+                    <span class="stage-badge stage-empty" title="Bisque pending">B</span>
+                    <span class="stage-badge stage-empty" title="Final pending">F</span>
+                </div>
+            </div>
+
+            <div class="pottery-card clay-bounce ceramic-touch">
+                <div class="pottery-card-image">🍽️</div>
+                <h3 class="pottery-card-title">Dinner Plate</h3>
+                <div class="pottery-card-meta">🏺 Stoneware Clay</div>
+                <div class="pottery-card-meta">🎨 Ready for Final</div>
+                <div class="pottery-card-stages">
+                    <span class="stage-badge stage-greenware" title="Greenware complete">G</span>
+                    <span class="stage-badge stage-empty" title="Bisque pending">B</span>
+                    <span class="stage-badge stage-empty" title="Final pending">F</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="demo-instructions">
+            <h4>🎯 Easter Egg: Click Sequence</h4>
+            <p>Try clicking the pottery cards in this pattern: 1st, 3rd, 2nd, 4th to unlock "Potter's Eye"!</p>
+        </div>
+    </section>
+
+    <!-- Success Celebrations Demo -->
+    <section class="demo-section">
+        <h2 class="demo-title">🎉 Success Celebrations</h2>
+        <p>Buttons that celebrate pottery achievements:</p>
+
+        <div class="demo-buttons">
+            <button class="btn btn-primary success-messages greenware clay-bounce" onclick="celebrateGreenware()">
+                🌱 Complete Greenware Stage
+            </button>
+            <button class="btn btn-primary success-messages bisque clay-bounce" onclick="celebrateBisque()">
+                🔥 Complete Bisque Firing
+            </button>
+            <button class="btn btn-primary success-messages final clay-bounce" onclick="celebrateFinal()">
+                ✨ Complete Final Firing
+            </button>
+            <button class="btn btn-primary success-messages photo clay-bounce" onclick="celebratePhoto()">
+                📸 Upload Photo
+            </button>
+        </div>
+
+        <div class="demo-buttons">
+            <button class="btn btn-primary clay-bounce" onclick="simulateStageAdvancement()">
+                ⬆️ Advance Pottery Stage
+            </button>
+            <button class="btn btn-primary clay-bounce" onclick="triggerUploadDemo()">
+                📁 Demo Upload Progress
+            </button>
+        </div>
+    </section>
+
+    <!-- Photo Upload Magic Demo -->
+    <section class="demo-section">
+        <h2 class="demo-title">📸 Photo Upload Magic</h2>
+        <p>Experience the delightful photo upload process:</p>
+
+        <div id="upload-demo" class="pottery-drop-zone clay-working">
+            <div class="pottery-empty-icon">📸</div>
+            <p><strong>Drop pottery photos here or click to browse</strong></p>
+            <p style="color: var(--on-surface-variant); font-size: 0.875rem;">
+                Try dragging a file over this area to see the magic!
+            </p>
+            <input type="file" accept="image/*" multiple style="display: none;" onchange="handleFileUpload(event)">
+            <br><br>
+            <button class="btn btn-primary clay-bounce" onclick="document.querySelector('input[type=file]').click()">
+                Choose Files
+            </button>
+        </div>
+
+        <div id="upload-progress-container" style="margin-top: var(--space-4);"></div>
+    </section>
+
+    <!-- Easter Eggs Demo -->
+    <section class="demo-section">
+        <h2 class="demo-title">🥚 Hidden Easter Eggs</h2>
+        <p>Discover hidden delights for pottery enthusiasts:</p>
+
+        <div class="demo-instructions">
+            <h4>🎯 Available Easter Eggs:</h4>
+            <ul>
+                <li><strong>Pottery Konami Code:</strong> Press ↑ ↑ ↓ ↓ C L A Y on your keyboard</li>
+                <li><strong>Shake Detection:</strong> Shake your mobile device to make pottery dance</li>
+                <li><strong>Long Press Secret:</strong> Hold empty states for 2 seconds</li>
+                <li><strong>Click Sequence:</strong> Click pottery cards in pattern 1→3→2→4</li>
+            </ul>
+            <button class="btn btn-primary clay-bounce" onclick="showAllEasterEggs()">
+                🎉 Trigger All Easter Eggs
+            </button>
+        </div>
+    </section>
+
+    <!-- Process Flow Demo -->
+    <section class="demo-section">
+        <h2 class="demo-title">🔄 Pottery Process Flow</h2>
+        <p>Watch the pottery journey come to life:</p>
+
+        <div style="text-align: center; padding: var(--space-6);">
+            <div style="display: flex; align-items: center; justify-content: center; gap: var(--space-4); flex-wrap: wrap;">
+                <div style="text-align: center;">
+                    <div class="stage-badge stage-greenware" style="width: 40px; height: 40px; font-size: 0.875rem;">
+                        🌱
+                    </div>
+                    <p style="margin: var(--space-2) 0 0 0; font-size: 0.75rem;">Greenware</p>
+                </div>
+
+                <div style="color: var(--on-surface-variant);">→</div>
+
+                <div style="text-align: center;">
+                    <div class="stage-badge stage-bisque" style="width: 40px; height: 40px; font-size: 0.875rem;">
+                        🔥
+                    </div>
+                    <p style="margin: var(--space-2) 0 0 0; font-size: 0.75rem;">Bisque</p>
+                </div>
+
+                <div style="color: var(--on-surface-variant);">→</div>
+
+                <div style="text-align: center;">
+                    <div class="stage-badge stage-final" style="width: 40px; height: 40px; font-size: 0.875rem;">
+                        ✨
+                    </div>
+                    <p style="margin: var(--space-2) 0 0 0; font-size: 0.75rem;">Final</p>
+                </div>
+            </div>
+
+            <div class="pottery-process-indicator" style="margin: var(--space-6) auto; width: 200px;"></div>
+
+            <button class="btn btn-primary clay-bounce" onclick="animateProcessFlow()">
+                🏺 Watch Pottery Journey
+            </button>
+        </div>
+    </section>
+
+    <!-- Floating Action Button -->
+    <button class="fab pottery-wheel-button pottery-interactive" onclick="createNewPottery()">
+        +
+    </button>
+
+    <!-- Include Whimsical Interactions JavaScript -->
+    <script src="pottery-whimsy-interactions.js"></script>
+
+    <!-- Demo-specific JavaScript -->
+    <script>
+        // Demo-specific functions to trigger whimsical behaviors
+
+        function refreshDemo() {
+            window.potteryWhimsy.showSuccessToast('🔄 Demo refreshed! All pottery pieces are happy to see you again! 🏺');
+        }
+
+        function showEasterEggHints() {
+            window.potteryWhimsy.showSuccessToast('🎯 Try the Pottery Konami Code: ↑ ↑ ↓ ↓ C L A Y', 5000);
+        }
+
+        function simulateItemCreation() {
+            const loadingContainer = document.createElement('div');
+            loadingContainer.innerHTML = '<div class="clay-formation-loader"></div>';
+
+            const button = event.target;
+            const parent = button.parentNode;
+            parent.appendChild(loadingContainer);
+            button.disabled = true;
+            button.textContent = 'Creating...';
+
+            setTimeout(() => {
+                loadingContainer.remove();
+                window.potteryWhimsy.showSuccessToast('🏺 New pottery item created! Your journey in clay begins! ✨', 4000);
+                button.disabled = false;
+                button.textContent = 'Create First Item';
+            }, 3000);
+        }
+
+        function simulatePhotoUpload() {
+            window.potteryWhimsy.triggerPhotoUpload('demo-photo.jpg', 'greenware');
+        }
+
+        function celebrateGreenware() {
+            window.potteryWhimsy.triggerSuccess('greenware', { itemName: 'Demo Piece' });
+        }
+
+        function celebrateBisque() {
+            window.potteryWhimsy.triggerSuccess('bisque', { itemName: 'Demo Piece' });
+        }
+
+        function celebrateFinal() {
+            window.potteryWhimsy.triggerSuccess('final', { itemName: 'Demo Piece' });
+        }
+
+        function celebratePhoto() {
+            window.potteryWhimsy.triggerPhotoUpload('beautiful-pottery.jpg', 'final');
+        }
+
+        function simulateStageAdvancement() {
+            const badges = document.querySelectorAll('.stage-badge.stage-empty');
+            if (badges.length > 0) {
+                const badge = badges[0];
+                badge.classList.remove('stage-empty');
+
+                if (badge.classList.contains('stage-bisque')) {
+                    badge.classList.add('stage-bisque');
+                    badge.textContent = 'B';
+                    window.potteryWhimsy.triggerStageComplete('bisque', 'demo-item');
+                } else if (badge.classList.contains('stage-final')) {
+                    badge.classList.add('stage-final');
+                    badge.textContent = 'F';
+                    window.potteryWhimsy.triggerStageComplete('final', 'demo-item');
+                }
+
+                badge.classList.add('stage-graduation-celebration');
+                setTimeout(() => {
+                    badge.classList.remove('stage-graduation-celebration');
+                }, 1500);
+            } else {
+                window.potteryWhimsy.showSuccessToast('🏺 All stages complete! This pottery piece is a masterpiece! 🏆');
+            }
+        }
+
+        function triggerUploadDemo() {
+            const progressContainer = document.getElementById('upload-progress-container');
+
+            // Trigger upload start
+            document.dispatchEvent(new CustomEvent('pottery:uploadStart', {
+                detail: { progressContainer }
+            }));
+
+            // Simulate progress
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += 20;
+
+                document.dispatchEvent(new CustomEvent('pottery:uploadProgress', {
+                    detail: { progress, progressContainer }
+                }));
+
+                if (progress >= 100) {
+                    clearInterval(interval);
+
+                    setTimeout(() => {
+                        document.dispatchEvent(new CustomEvent('pottery:uploadComplete', {
+                            detail: {
+                                progressContainer,
+                                fileName: 'demo-pottery-masterpiece.jpg'
+                            }
+                        }));
+                    }, 500);
+                }
+            }, 800);
+        }
+
+        function handleFileUpload(event) {
+            const files = event.target.files;
+            if (files.length > 0) {
+                window.potteryWhimsy.showSuccessToast(`📸 Selected ${files.length} beautiful photo${files.length > 1 ? 's' : ''}! Ready to upload.`);
+                setTimeout(triggerUploadDemo, 1000);
+            }
+        }
+
+        function showAllEasterEggs() {
+            // Trigger all easter eggs in sequence
+            setTimeout(() => window.potteryWhimsy.triggerPotteryKonamiEasterEgg(), 500);
+            setTimeout(() => window.potteryWhimsy.triggerShakeEasterEgg(), 2000);
+            setTimeout(() => {
+                window.potteryWhimsy.showSuccessToast('🎉 All Easter eggs activated! Your pottery is celebrating! 🏺✨');
+            }, 3500);
+        }
+
+        function animateProcessFlow() {
+            const badges = document.querySelectorAll('.demo-section:last-child .stage-badge');
+            badges.forEach((badge, index) => {
+                setTimeout(() => {
+                    badge.style.animation = 'pottery-celebration 1s ease-out';
+                    setTimeout(() => {
+                        badge.style.animation = '';
+                    }, 1000);
+                }, index * 800);
+            });
+
+            setTimeout(() => {
+                window.potteryWhimsy.showSuccessToast('🏺 The pottery journey is complete! From clay to masterpiece! ✨');
+            }, 3000);
+        }
+
+        function createNewPottery() {
+            window.potteryWhimsy.showSuccessToast('🏺 Ready to create something beautiful? Let your imagination run wild with clay! ✨', 4000);
+        }
+
+        // Setup file drop demo
+        const uploadDemo = document.getElementById('upload-demo');
+        const fileInput = document.querySelector('input[type="file"]');
+
+        uploadDemo.addEventListener('click', (e) => {
+            if (e.target === uploadDemo || e.target.tagName === 'P') {
+                fileInput.click();
+            }
+        });
+
+        // Welcome message
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                window.potteryWhimsy.showSuccessToast('🏺 Welcome to the Pottery Whimsy Demo! Click around and discover the magic! ✨', 5000);
+            }, 1000);
+        });
+
+        // Add instruction tooltips
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🏺 Pottery Whimsy Demo loaded!');
+            console.log('🎯 Try these interactions:');
+            console.log('  - Click any pottery card or button');
+            console.log('  - Hover over stage badges');
+            console.log('  - Try the Konami code: ↑ ↑ ↓ ↓ C L A Y');
+            console.log('  - Long press empty states');
+            console.log('  - Click pottery cards in sequence: 1→3→2→4');
+        });
+    </script>
+</body>
+</html>

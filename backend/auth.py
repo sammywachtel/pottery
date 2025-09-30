@@ -1,155 +1,200 @@
 """Authentication module for the Pottery Catalog API.
 
-This module provides authentication functionality using JWT tokens.
+This module provides Firebase authentication functionality.
 It includes:
-- User model
-- Token models
-- Token generation and verification functions
+- User model (updated for Firebase)
+- Firebase token verification
 - Dependencies for protecting routes
+- User profile synchronization
 """
 
-from datetime import datetime, timedelta
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from jose import JWTError, jwt
-from passlib.context import CryptContext
 from pydantic import BaseModel
 
 from config import settings
-
-# JWT settings from config
-SECRET_KEY = settings.jwt_secret_key
-ALGORITHM = settings.jwt_algorithm
-ACCESS_TOKEN_EXPIRE_MINUTES = settings.jwt_access_token_expire_minutes
-
-# Password hashing
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+from core.firebase import extract_user_info, initialize_firebase, verify_firebase_token
+from services.user_profile_service import get_user_profile_service
 
 # OAuth2 scheme for token extraction from requests
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/token")
+# Firebase tokens are used for authentication
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
 
 # --- Models ---
 
 
-class Token(BaseModel):
-    """Token response model."""
-
-    access_token: str
-    token_type: str
-
-
-class TokenData(BaseModel):
-    """Token data model for decoded JWT payload."""
-
-    username: Optional[str] = None
-
-
 class User(BaseModel):
-    """User model."""
+    """User model for Firebase authentication."""
 
-    username: str
+    uid: str  # Firebase user ID
     email: Optional[str] = None
-    full_name: Optional[str] = None
-    disabled: Optional[bool] = None
+    name: Optional[str] = None  # Display name
+    picture: Optional[str] = None  # Profile picture URL
+    email_verified: bool = False
+    is_admin: bool = False
+
+    @property
+    def username(self) -> str:
+        """Compatibility property for existing code that expects username."""
+        return self.uid
+
+    @property
+    def full_name(self) -> Optional[str]:
+        """Compatibility property for existing code that expects full_name."""
+        return self.name
+
+    @property
+    def disabled(self) -> bool:
+        """Compatibility property for existing code that expects disabled."""
+        return not self.email_verified
 
 
-class UserInDB(User):
-    """User model as stored in the database, including hashed password."""
-
-    hashed_password: str
+# --- Firebase Helper Functions ---
 
 
-# --- Helper Functions ---
+def initialize_auth() -> None:
+    """Initialize Firebase authentication.
+
+    This should be called during application startup.
+    """
+    try:
+        # Opening move: check if Firebase is enabled
+        if not settings.firebase_enabled:
+            import logging
+
+            logger = logging.getLogger(__name__)
+            logger.warning(
+                "Firebase authentication not configured - "
+                "falling back to legacy authentication. "
+                "Set FIREBASE_PROJECT_ID and ensure Application Default Credentials "
+                "are available to enable Firebase authentication."
+            )
+            return
+
+        # Main play: initialize Firebase if configured
+        initialize_firebase()
+    except Exception as e:
+        # This looks odd, but it saves us from startup failures in dev
+        # Firebase will be initialized on first token verification
+        import logging
+
+        logger = logging.getLogger(__name__)
+        logger.warning(f"Firebase initialization deferred: {e}")
 
 
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verify a password against a hash."""
-    return pwd_context.verify(plain_password, hashed_password)
+async def create_or_update_user_profile(
+    firebase_user_info: Dict[str, Any]
+) -> Dict[str, Any]:
+    """Create or update user profile in Firestore.
+
+    Args:
+        firebase_user_info: User information from Firebase token
+
+    Returns:
+        Dict containing user profile data
+    """
+    user_service = get_user_profile_service()
+    return await user_service.sync_user_profile(firebase_user_info)
 
 
-def get_password_hash(password: str) -> str:
-    """Generate a hash for a password."""
-    return pwd_context.hash(password)
-
-
-def create_access_token(
-    data: Dict[str, Any], expires_delta: Optional[timedelta] = None
-) -> str:
-    """Create a new JWT access token."""
-    to_encode = data.copy()
-
-    if expires_delta:
-        expire = datetime.utcnow() + expires_delta
-    else:
-        expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
-
-
-# --- User Authentication ---
-
-# This is a simple in-memory user database for demonstration
-# In production, you would use a real database
-fake_users_db = {
-    "admin": {
-        "username": "admin",
-        "full_name": "Administrator",
-        "email": "admin@example.com",
-        "hashed_password": get_password_hash("admin"),  # In production, use strong pwd
-        "disabled": False,
-    }
-}
-
-
-def authenticate_user(username: str, password: str) -> Union[UserInDB, bool]:
-    """Authenticate a user by username and password."""
-    user = get_user(fake_users_db, username)
-    if not user:
-        return False
-    if not verify_password(password, user.hashed_password):
-        return False
-    return user
-
-
-def get_user(db, username: str) -> Optional[UserInDB]:
-    """Get a user from the database by username."""
-    if username in db:
-        user_dict = db[username]
-        return UserInDB(**user_dict)
-    return None
+# --- Firebase User Authentication ---
 
 
 async def get_current_user(token: str = Depends(oauth2_scheme)) -> User:
-    """Get the current user from the JWT token."""
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
+    """Get the current user from Firebase ID token.
+
+    Args:
+        token: Firebase ID token from Authorization header
+
+    Returns:
+        User: The authenticated user with profile information
+
+    Raises:
+        HTTPException: If token verification fails
+    """
+    # Opening move: check if Firebase is enabled
+    if not settings.firebase_enabled:
+        raise HTTPException(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED,
+            detail="Firebase authentication not configured. Set FIREBASE_PROJECT_ID to enable authentication.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        username: str = payload.get("sub")
-        if username is None:
-            raise credentials_exception
-        token_data = TokenData(username=username)
-    except JWTError:
-        raise credentials_exception
+        # Main play: verify Firebase token
+        decoded_token = verify_firebase_token(token)
+        firebase_user_info = extract_user_info(decoded_token)
+        user_profile = await create_or_update_user_profile(firebase_user_info)
 
-    user = get_user(fake_users_db, username=token_data.username)
-    if user is None:
-        raise credentials_exception
-    return user
+        # Victory lap: create User model instance
+        user = User(
+            uid=firebase_user_info["uid"],
+            email=firebase_user_info.get("email"),
+            name=firebase_user_info.get("name"),
+            picture=firebase_user_info.get("picture"),
+            email_verified=firebase_user_info.get("email_verified", False),
+            is_admin=user_profile.get("isAdmin", False),
+        )
+        return user
+
+    except HTTPException:
+        # Re-raise Firebase authentication errors
+        raise
+    except Exception as e:
+        import logging
+
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error getting current user via Firebase: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
 
 async def get_current_active_user(
     current_user: User = Depends(get_current_user),
 ) -> User:
-    """Get the current active user."""
-    if current_user.disabled:
-        raise HTTPException(status_code=400, detail="Inactive user")
+    """Get the current active user.
+
+    Args:
+        current_user: The authenticated user from get_current_user
+
+    Returns:
+        User: The active user
+
+    Raises:
+        HTTPException: If user account is disabled
+    """
+    # Time to tackle the tricky bit: check if user is disabled
+    # For Firebase users, we consider them disabled if email is not verified
+    if not current_user.email_verified:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email verification required",
+        )
+    return current_user
+
+
+async def get_admin_user(
+    current_user: User = Depends(get_current_active_user),
+) -> User:
+    """Get the current user and verify admin privileges.
+
+    Args:
+        current_user: The authenticated active user
+
+    Returns:
+        User: The admin user
+
+    Raises:
+        HTTPException: If user is not an admin
+    """
+    if not current_user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Admin privileges required"
+        )
     return current_user

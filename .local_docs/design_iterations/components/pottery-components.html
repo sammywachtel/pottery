@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pottery Catalog - Component Library</title>
+    <style>
+        /* Design System Tokens */
+        :root {
+            /* Primary Colors - Ceramic Earth Tones */
+            --clay-primary: oklch(55% 0.08 45);
+            --clay-primary-light: oklch(70% 0.06 45);
+            --clay-primary-dark: oklch(40% 0.10 45);
+
+            /* Stage Colors */
+            --greenware: oklch(60% 0.12 140);
+            --greenware-light: oklch(75% 0.10 140);
+            --bisque: oklch(70% 0.08 65);
+            --bisque-light: oklch(80% 0.06 65);
+            --final: oklch(55% 0.10 240);
+            --final-light: oklch(70% 0.08 240);
+
+            /* Neutral Colors */
+            --surface: oklch(98% 0.005 45);
+            --surface-variant: oklch(92% 0.01 45);
+            --surface-container: oklch(95% 0.008 45);
+            --on-surface: oklch(20% 0.02 45);
+            --on-surface-variant: oklch(45% 0.03 45);
+            --outline: oklch(65% 0.02 45);
+
+            /* Spacing */
+            --space-1: 0.25rem;
+            --space-2: 0.5rem;
+            --space-3: 0.75rem;
+            --space-4: 1rem;
+            --space-5: 1.25rem;
+            --space-6: 1.5rem;
+            --space-8: 2rem;
+
+            /* Radius */
+            --radius-sm: 0.375rem;
+            --radius-md: 0.5rem;
+            --radius-lg: 0.75rem;
+            --radius-xl: 1rem;
+            --radius-full: 9999px;
+
+            /* Shadows */
+            --shadow-clay: 0 2px 6px oklch(0% 0 0 / 0.16);
+            --shadow-ceramic: 0 4px 12px oklch(0% 0 0 / 0.15);
+
+            /* Touch targets */
+            --touch-target-min: 44px;
+        }
+
+        /* Base Styles */
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            line-height: 1.5;
+            margin: 0;
+            padding: var(--space-4);
+            background: var(--surface);
+            color: var(--on-surface);
+        }
+
+        .demo-section {
+            margin-bottom: var(--space-8);
+            padding: var(--space-6);
+            border: 1px solid var(--outline);
+            border-radius: var(--radius-lg);
+            background: var(--surface-container);
+        }
+
+        .demo-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: var(--space-4);
+            color: var(--clay-primary-dark);
+        }
+
+        .demo-grid {
+            display: grid;
+            gap: var(--space-4);
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        }
+
+        /* 1. Pottery Item Cards */
+        .pottery-card {
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            padding: var(--space-4);
+            box-shadow: var(--shadow-clay);
+            border: 1px solid var(--outline);
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .pottery-card:hover {
+            box-shadow: var(--shadow-ceramic);
+            transform: translateY(-2px);
+        }
+
+        .pottery-card-image {
+            width: 100%;
+            aspect-ratio: 1;
+            border-radius: var(--radius-md);
+            background: var(--surface-variant);
+            margin-bottom: var(--space-3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            color: var(--on-surface-variant);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .pottery-card-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: var(--space-2);
+            color: var(--on-surface);
+        }
+
+        .pottery-card-meta {
+            font-size: 0.875rem;
+            color: var(--on-surface-variant);
+            margin-bottom: var(--space-1);
+        }
+
+        .pottery-card-stages {
+            display: flex;
+            gap: var(--space-2);
+            margin-top: var(--space-3);
+        }
+
+        /* Stage Badges */
+        .stage-badge {
+            padding: var(--space-1) var(--space-2);
+            border-radius: var(--radius-full);
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+        }
+
+        .stage-greenware {
+            background: var(--greenware);
+            color: white;
+        }
+
+        .stage-bisque {
+            background: var(--bisque);
+            color: var(--on-surface);
+        }
+
+        .stage-final {
+            background: var(--final);
+            color: white;
+        }
+
+        .stage-empty {
+            background: var(--surface-variant);
+            color: var(--on-surface-variant);
+            border: 1px dashed var(--outline);
+        }
+
+        /* 2. Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-2);
+            padding: var(--space-3) var(--space-5);
+            border-radius: var(--radius-md);
+            font-weight: 500;
+            font-size: 1rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-height: var(--touch-target-min);
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: var(--clay-primary);
+            color: var(--surface);
+            box-shadow: var(--shadow-clay);
+        }
+
+        .btn-primary:hover {
+            background: var(--clay-primary-dark);
+            box-shadow: var(--shadow-ceramic);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: var(--surface);
+            color: var(--clay-primary);
+            border: 1px solid var(--clay-primary);
+        }
+
+        .btn-secondary:hover {
+            background: var(--clay-primary-light);
+            color: var(--surface);
+        }
+
+        .btn-icon {
+            width: var(--touch-target-min);
+            height: var(--touch-target-min);
+            padding: 0;
+            border-radius: var(--radius-full);
+            background: var(--surface);
+            color: var(--on-surface);
+            border: 1px solid var(--outline);
+        }
+
+        .btn-icon:hover {
+            background: var(--surface-variant);
+        }
+
+        .btn-fab {
+            width: 56px;
+            height: 56px;
+            border-radius: var(--radius-full);
+            background: var(--clay-primary);
+            color: var(--surface);
+            box-shadow: var(--shadow-ceramic);
+            font-size: 1.5rem;
+            position: fixed;
+            bottom: var(--space-6);
+            right: var(--space-6);
+        }
+
+        .btn-fab:hover {
+            background: var(--clay-primary-dark);
+            transform: scale(1.05);
+        }
+
+        /* 3. Navigation */
+        .nav-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: var(--space-4) var(--space-5);
+            background: var(--surface);
+            border-bottom: 1px solid var(--outline);
+            box-shadow: var(--shadow-clay);
+        }
+
+        .nav-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--clay-primary-dark);
+        }
+
+        .nav-actions {
+            display: flex;
+            gap: var(--space-2);
+        }
+
+        .search-bar {
+            width: 100%;
+            padding: var(--space-3) var(--space-4);
+            border: 1px solid var(--outline);
+            border-radius: var(--radius-md);
+            background: var(--surface);
+            font-size: 1rem;
+            transition: border-color 0.2s ease;
+        }
+
+        .search-bar:focus {
+            outline: none;
+            border-color: var(--clay-primary);
+            box-shadow: 0 0 0 2px oklch(55% 0.08 45 / 0.2);
+        }
+
+        /* 4. Photo Gallery */
+        .photo-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: var(--space-3);
+            padding: var(--space-4);
+            background: var(--surface-container);
+            border-radius: var(--radius-lg);
+        }
+
+        .photo-slot {
+            aspect-ratio: 1;
+            border-radius: var(--radius-md);
+            background: var(--surface-variant);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: var(--on-surface-variant);
+            border: 2px dashed var(--outline);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .photo-slot:hover {
+            border-color: var(--clay-primary);
+            background: var(--clay-primary-light);
+        }
+
+        .photo-slot.has-photo {
+            background: var(--surface);
+            border: none;
+            box-shadow: var(--shadow-clay);
+        }
+
+        .photo-slot .stage-label {
+            position: absolute;
+            top: var(--space-1);
+            left: var(--space-1);
+            font-size: 0.625rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+        }
+
+        /* 5. Form Components */
+        .form-field {
+            margin-bottom: var(--space-4);
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: var(--space-2);
+            color: var(--on-surface);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: var(--space-3) var(--space-4);
+            border: 1px solid var(--outline);
+            border-radius: var(--radius-md);
+            background: var(--surface);
+            font-size: 1rem;
+            transition: border-color 0.2s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--clay-primary);
+            box-shadow: 0 0 0 2px oklch(55% 0.08 45 / 0.2);
+        }
+
+        .form-select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right var(--space-3) center;
+            background-repeat: no-repeat;
+            background-size: 1rem;
+            padding-right: var(--space-8);
+        }
+
+        .form-textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        /* 6. Status Indicators */
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-2);
+            padding: var(--space-2) var(--space-3);
+            border-radius: var(--radius-md);
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .status-success {
+            background: var(--greenware-light);
+            color: var(--greenware);
+        }
+
+        .status-warning {
+            background: var(--bisque-light);
+            color: var(--bisque);
+        }
+
+        .status-info {
+            background: var(--final-light);
+            color: var(--final);
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .demo-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .pottery-card {
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1 style="text-align: center; color: var(--clay-primary-dark); margin-bottom: var(--space-8);">
+        🏺 Pottery Catalog Component Library
+    </h1>
+
+    <!-- Navigation Components -->
+    <div class="demo-section">
+        <div class="demo-title">Navigation Header</div>
+        <div class="nav-header">
+            <div class="nav-title">Pottery Catalog</div>
+            <div class="nav-actions">
+                <button class="btn-icon">🔍</button>
+                <button class="btn-icon">⚙️</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="demo-section">
+        <div class="demo-title">Search & Filter</div>
+        <input type="text" class="search-bar" placeholder="🔍 Search pottery items...">
+        <div style="margin-top: var(--space-4); display: flex; gap: var(--space-2); flex-wrap: wrap;">
+            <button class="btn btn-secondary">All Items</button>
+            <button class="btn btn-secondary stage-greenware">Greenware</button>
+            <button class="btn btn-secondary stage-bisque">Bisque</button>
+            <button class="btn btn-secondary stage-final">Final</button>
+        </div>
+    </div>
+
+    <!-- Pottery Item Cards -->
+    <div class="demo-section">
+        <div class="demo-title">Pottery Item Cards</div>
+        <div class="demo-grid">
+            <div class="pottery-card">
+                <div class="pottery-card-image">🏺</div>
+                <div class="pottery-card-title">Ceramic Vase #1</div>
+                <div class="pottery-card-meta">📋 Stoneware Clay</div>
+                <div class="pottery-card-meta">🎨 Celadon Glaze</div>
+                <div class="pottery-card-meta">📍 Shelf A-3</div>
+                <div class="pottery-card-stages">
+                    <span class="stage-badge stage-greenware">G</span>
+                    <span class="stage-badge stage-bisque">B</span>
+                    <span class="stage-badge stage-final">F</span>
+                </div>
+            </div>
+
+            <div class="pottery-card">
+                <div class="pottery-card-image">🍵</div>
+                <div class="pottery-card-title">Tea Bowl #2</div>
+                <div class="pottery-card-meta">📋 Porcelain Clay</div>
+                <div class="pottery-card-meta">🎨 No Glaze Yet</div>
+                <div class="pottery-card-meta">📍 Shelf B-1</div>
+                <div class="pottery-card-stages">
+                    <span class="stage-badge stage-greenware">G</span>
+                    <span class="stage-badge stage-bisque">B</span>
+                    <span class="stage-badge stage-empty">F</span>
+                </div>
+            </div>
+
+            <div class="pottery-card">
+                <div class="pottery-card-image">🥣</div>
+                <div class="pottery-card-title">Serving Bowl #3</div>
+                <div class="pottery-card-meta">📋 Earthenware Clay</div>
+                <div class="pottery-card-meta">🎨 In Progress</div>
+                <div class="pottery-card-meta">📍 Wheel Station</div>
+                <div class="pottery-card-stages">
+                    <span class="stage-badge stage-greenware">G</span>
+                    <span class="stage-badge stage-empty">B</span>
+                    <span class="stage-badge stage-empty">F</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Buttons -->
+    <div class="demo-section">
+        <div class="demo-title">Button Components</div>
+        <div style="display: flex; gap: var(--space-4); flex-wrap: wrap; align-items: center;">
+            <button class="btn btn-primary">✏️ Edit Item</button>
+            <button class="btn btn-secondary">📷 Add Photos</button>
+            <button class="btn-icon">⋮</button>
+            <button class="btn-icon">🗑️</button>
+        </div>
+
+        <!-- Floating Action Button -->
+        <button class="btn-fab">+</button>
+    </div>
+
+    <!-- Photo Gallery -->
+    <div class="demo-section">
+        <div class="demo-title">Photo Gallery - Stage Organization</div>
+        <div class="photo-gallery">
+            <div class="photo-slot has-photo">
+                <span class="stage-label stage-greenware">Greenware</span>
+                🏺
+            </div>
+            <div class="photo-slot has-photo">
+                <span class="stage-label stage-greenware">Greenware</span>
+                📸
+            </div>
+            <div class="photo-slot">
+                <span class="stage-label stage-greenware">Greenware</span>
+                +
+            </div>
+            <div class="photo-slot has-photo">
+                <span class="stage-label stage-bisque">Bisque</span>
+                🏺
+            </div>
+            <div class="photo-slot">
+                <span class="stage-label stage-bisque">Bisque</span>
+                +
+            </div>
+            <div class="photo-slot">
+                <span class="stage-label stage-final">Final</span>
+                +
+            </div>
+        </div>
+    </div>
+
+    <!-- Form Components -->
+    <div class="demo-section">
+        <div class="demo-title">Form Components</div>
+        <div style="max-width: 400px;">
+            <div class="form-field">
+                <label class="form-label">Item Name</label>
+                <input type="text" class="form-input" placeholder="Enter pottery item name" value="Ceramic Vase">
+            </div>
+
+            <div class="form-field">
+                <label class="form-label">Clay Type</label>
+                <select class="form-input form-select">
+                    <option>Stoneware</option>
+                    <option>Porcelain</option>
+                    <option>Earthenware</option>
+                    <option>Raku</option>
+                </select>
+            </div>
+
+            <div class="form-field">
+                <label class="form-label">Glaze (Optional)</label>
+                <input type="text" class="form-input" placeholder="Enter glaze type" value="Celadon">
+            </div>
+
+            <div class="form-field">
+                <label class="form-label">Notes</label>
+                <textarea class="form-input form-textarea" placeholder="Additional notes about this piece...">Beautiful piece with subtle texture work around the rim. Fired to cone 6.</textarea>
+            </div>
+
+            <div style="display: flex; gap: var(--space-3); justify-content: flex-end;">
+                <button class="btn btn-secondary">Cancel</button>
+                <button class="btn btn-primary">💾 Save Item</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Indicators -->
+    <div class="demo-section">
+        <div class="demo-title">Status Indicators</div>
+        <div style="display: flex; gap: var(--space-4); flex-wrap: wrap;">
+            <span class="status-indicator status-success">✓ Firing Complete</span>
+            <span class="status-indicator status-warning">⚠️ Needs Glaze</span>
+            <span class="status-indicator status-info">ℹ️ In Progress</span>
+        </div>
+    </div>
+
+    <!-- Stage Badges -->
+    <div class="demo-section">
+        <div class="demo-title">Stage Progression Badges</div>
+        <div style="display: flex; gap: var(--space-3); flex-wrap: wrap; align-items: center;">
+            <div style="display: flex; gap: var(--space-2);">
+                <span class="stage-badge stage-greenware">Greenware</span>
+                <span style="color: var(--on-surface-variant);">→</span>
+                <span class="stage-badge stage-bisque">Bisque</span>
+                <span style="color: var(--on-surface-variant);">→</span>
+                <span class="stage-badge stage-final">Final</span>
+            </div>
+        </div>
+
+        <div style="margin-top: var(--space-4); padding: var(--space-4); background: var(--surface-variant); border-radius: var(--radius-md);">
+            <div style="font-weight: 500; margin-bottom: var(--space-2);">Progress Visualization:</div>
+            <div style="display: flex; gap: var(--space-2); align-items: center;">
+                <span class="stage-badge stage-greenware">G ✓</span>
+                <div style="height: 2px; width: 20px; background: var(--greenware);"></div>
+                <span class="stage-badge stage-bisque">B ✓</span>
+                <div style="height: 2px; width: 20px; background: var(--outline);"></div>
+                <span class="stage-badge stage-empty">F</span>
+            </div>
+        </div>
+    </div>
+
+    <div style="height: 100px;"></div> <!-- Space for FAB -->
+</body>
+</html>

@@ -34,11 +34,6 @@ class PhotoBase(BaseModel):
     fileName: Optional[str] = Field(
         None, description="Original filename, useful for display"
     )
-    uploadedTimezone: Optional[str] = Field(
-        None,
-        description="Timezone identifier (e.g., 'UTC', 'America/New_York') "
-        "when photo was uploaded",
-    )
 
 
 class Photo(PhotoBase):
@@ -80,9 +75,7 @@ class PhotoResponse(PhotoBase):
 
 
 class PhotoUpdate(BaseModel):
-    """Schema for updating photo metadata fields (stage, imageNote).
-    Timezone is not updatable here.
-    """
+    """Schema for updating photo metadata fields (stage, imageNote)."""
 
     stage: Optional[str] = Field(None, description="New stage for the photo")
     imageNote: Optional[str] = Field(None, description="New note for the photo")
@@ -96,18 +89,16 @@ class PotteryItemBase(BaseModel):
 
     name: str
     clayType: str
+    currentStatus: str = Field(
+        default="greenware",
+        description="Current firing status: greenware, bisque, or final",
+    )
     glaze: Optional[str] = None
     location: str
     note: Optional[str] = None
     createdDateTime: datetime = Field(
         ...,
-        description="Timestamp item was created/started "
-        "(ISO 8601 format with timezone expected)",
-    )
-    createdTimezone: Optional[str] = Field(
-        None,
-        description="Timezone identifier (e.g., 'America/New_York') "
-        "when item was created",
+        description="Timestamp item was created/started (UTC)",
     )
     measurements: Optional[Measurements] = None
 
@@ -115,9 +106,7 @@ class PotteryItemBase(BaseModel):
 class PotteryItemCreate(PotteryItemBase):
     """Schema for creating a new pottery item."""
 
-    createdTimezone: Optional[str] = Field(
-        None, exclude=True
-    )  # Exclude from input schema if derived
+    pass
 
 
 class PotteryItem(PotteryItemBase):

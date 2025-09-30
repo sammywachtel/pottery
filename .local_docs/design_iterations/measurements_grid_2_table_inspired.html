@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Measurements Grid - Table Inspired Design</title>
+    <style>
+        /* Reset and base styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #f5f1eb 0%, #e8dfd4 100%);
+            padding: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        /* Pottery-themed color palette */
+        :root {
+            --greenware-color: #8b7355;
+            --bisque-color: #c9966b;
+            --final-color: #b8704f;
+
+            --text-primary: #3a2d24;
+            --text-secondary: #6b5d52;
+            --text-muted: #9c8d7e;
+
+            --border-primary: #d9cdbf;
+            --border-secondary: #e8dfd4;
+
+            --bg-white: #ffffff;
+            --bg-subtle: #fafaf8;
+            --bg-hover: #f5f1eb;
+
+            --shadow-sm: rgba(58, 45, 36, 0.06);
+            --shadow-md: rgba(58, 45, 36, 0.1);
+        }
+
+        .measurements-container {
+            max-width: 900px;
+            width: 100%;
+        }
+
+        /* Compact grid layout */
+        .measurements-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0;
+            background: var(--bg-white);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow:
+                0 4px 12px var(--shadow-sm),
+                0 1px 3px var(--shadow-md);
+        }
+
+        /* Stage section - clean table-like structure */
+        .stage-section {
+            border-right: 1px solid var(--border-primary);
+            border-bottom: 1px solid var(--border-primary);
+        }
+
+        .stage-section:nth-child(2) {
+            border-right: none;
+        }
+
+        .stage-section.final-stage {
+            grid-column: 1 / -1;
+            border-right: none;
+            border-bottom: none;
+        }
+
+        /* Stage header with color accent bar */
+        .stage-header {
+            position: relative;
+            padding: 1rem 1.25rem;
+            background: var(--bg-subtle);
+            border-bottom: 1px solid var(--border-primary);
+        }
+
+        .stage-header::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+        }
+
+        .greenware .stage-header::before {
+            background: var(--greenware-color);
+        }
+
+        .bisque .stage-header::before {
+            background: var(--bisque-color);
+        }
+
+        .final .stage-header::before {
+            background: var(--final-color);
+        }
+
+        .stage-name {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+            font-size: 0.8125rem;
+        }
+
+        /* Compact measurements table */
+        .measurements-table {
+            display: table;
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .measurement-row {
+            display: table-row;
+        }
+
+        .measurement-row:hover .measurement-cell {
+            background: var(--bg-hover);
+        }
+
+        .measurement-cell {
+            display: table-cell;
+            padding: 0.875rem 1.25rem;
+            border-bottom: 1px solid var(--border-secondary);
+            transition: background 0.15s ease;
+        }
+
+        .measurement-row:last-child .measurement-cell {
+            border-bottom: none;
+        }
+
+        .measurement-label-cell {
+            width: 40%;
+        }
+
+        .measurement-value-cell {
+            width: 60%;
+            text-align: right;
+        }
+
+        /* Label styling with icon */
+        .measurement-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .measurement-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 18px;
+            height: 18px;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        /* Value styling with units */
+        .measurement-value {
+            display: inline-flex;
+            align-items: baseline;
+            gap: 0.25rem;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .measurement-unit {
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            text-transform: lowercase;
+        }
+
+        /* Empty state */
+        .measurement-value.empty {
+            color: var(--text-muted);
+            font-weight: 400;
+            font-size: 0.875rem;
+        }
+
+        .measurement-value.empty::before {
+            content: '—';
+            margin-right: 0.25rem;
+        }
+
+        /* Final stage emphasis */
+        .final .stage-header {
+            background: linear-gradient(to right, #fff5f0 0%, var(--bg-subtle) 100%);
+        }
+
+        .final .stage-name {
+            font-size: 0.9375rem;
+            color: var(--final-color);
+        }
+
+        .final .measurement-value {
+            font-size: 1.125rem;
+            color: var(--final-color);
+        }
+
+        /* Responsive design */
+        @media (max-width: 640px) {
+            .measurements-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stage-section {
+                border-right: none;
+            }
+
+            .stage-section:last-child {
+                border-bottom: none;
+            }
+
+            .measurement-label-cell {
+                width: 50%;
+            }
+
+            .measurement-value-cell {
+                width: 50%;
+            }
+        }
+
+        @media (max-width: 360px) {
+            body {
+                padding: 1rem;
+            }
+
+            .stage-header {
+                padding: 0.875rem 1rem;
+            }
+
+            .measurement-cell {
+                padding: 0.75rem 1rem;
+            }
+
+            .measurements-table {
+                display: block;
+            }
+
+            .measurement-row {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            .measurement-cell {
+                display: block;
+                border: none;
+                padding: 0.625rem 1rem;
+            }
+
+            .measurement-row {
+                border-bottom: 1px solid var(--border-secondary);
+            }
+
+            .measurement-row:last-child {
+                border-bottom: none;
+            }
+        }
+
+        /* Demo: show empty state example */
+        .demo-empty {
+            margin-top: 2rem;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <div class="measurements-container">
+        <div class="measurements-grid">
+            <!-- Greenware Section -->
+            <div class="stage-section greenware">
+                <div class="stage-header">
+                    <h3 class="stage-name">Greenware</h3>
+                </div>
+                <div class="measurements-table">
+                    <div class="measurement-row">
+                        <div class="measurement-cell measurement-label-cell">
+                            <div class="measurement-label">
+                                <span class="measurement-icon">↕</span>
+                                <span>Height</span>
+                            </div>
+                        </div>
+                        <div class="measurement-cell measurement-value-cell">
+                            <div class="measurement-value">
+                                <span>8.5</span>
+                                <span class="measurement-unit">in</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="measurement-row">
+                        <div class="measurement-cell measurement-label-cell">
+                            <div class="measurement-label">
+                                <span class="measurement-icon">↔</span>
+                                <span>Width</span>
+                            </div>
+                        </div>
+                        <div class="measurement-cell measurement-value-cell">
+                            <div class="measurement-value">
+                                <span>6.0</span>
+                                <span class="measurement-unit">in</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="measurement-row">
+                        <div class="measurement-cell measurement-label-cell">
+                            <div class="measurement-label">
+                                <span class="measurement-icon">⊟</span>
+                                <span>Depth</span>
+                            </div>
+                        </div>
+                        <div class="measurement-cell measurement-value-cell">
+                            <div class="measurement-value">
+                                <span>6.0</span>
+                                <span class="measurement-unit">in</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bisque Section -->
+            <div class="stage-section bisque">
+                <div class="stage-header">
+                    <h3 class="stage-name">Bisque</h3>
+                </div>
+                <div class="measurements-table">
+                    <div class="measurement-row">
+                        <div class="measurement-cell measurement-label-cell">
+                            <div class="measurement-label">
+                                <span class="measurement-icon">↕</span>
+                                <span>Height</span>
+                            </div>
+                        </div>
+                        <div class="measurement-cell measurement-value-cell">
+                            <div class="measurement-value">
+                                <span>8.0</span>
+                                <span class="measurement-unit">in</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="measurement-row">
+                        <div class="measurement-cell measurement-label-cell">
+                            <div class="measurement-label">
+                                <span class="measurement-icon">↔</span>
+                                <span>Width</span>
+                            </div>
+                        </div>
+                        <div class="measurement-cell measurement-value-cell">
+                            <div class="measurement-value">
+                                <span>5.5</span>
+                                <span class="measurement-unit">in</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="measurement-row">
+                        <div class="measurement-cell measurement-label-cell">
+                            <div class="measurement-label">
+                                <span class="measurement-icon">⊟</span>
+                                <span>Depth</span>
+                            </div>
+                        </div>
+                        <div class="measurement-cell measurement-value-cell">
+                            <div class="measurement-value">
+                                <span>5.5</span>
+                                <span class="measurement-unit">in</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Final Section (Full Width) -->
+            <div class="stage-section final final-stage">
+                <div class="stage-header">
+                    <h3 class="stage-name">Final</h3>
+                </div>
+                <div class="measurements-table">
+                    <div class="measurement-row">
+                        <div class="measurement-cell measurement-label-cell">
+                            <div class="measurement-label">
+                                <span class="measurement-icon">↕</span>
+                                <span>Height</span>
+                            </div>
+                        </div>
+                        <div class="measurement-cell measurement-value-cell">
+                            <div class="measurement-value">
+                                <span>7.5</span>
+                                <span class="measurement-unit">in</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="measurement-row">
+                        <div class="measurement-cell measurement-label-cell">
+                            <div class="measurement-label">
+                                <span class="measurement-icon">↔</span>
+                                <span>Width</span>
+                            </div>
+                        </div>
+                        <div class="measurement-cell measurement-value-cell">
+                            <div class="measurement-value">
+                                <span>5.25</span>
+                                <span class="measurement-unit">in</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="measurement-row">
+                        <div class="measurement-cell measurement-label-cell">
+                            <div class="measurement-label">
+                                <span class="measurement-icon">⊟</span>
+                                <span>Depth</span>
+                            </div>
+                        </div>
+                        <div class="measurement-cell measurement-value-cell">
+                            <div class="measurement-value">
+                                <span>5.25</span>
+                                <span class="measurement-unit">in</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Demo: Empty State Example -->
+        <div class="measurements-grid demo-empty">
+            <div class="stage-section greenware">
+                <div class="stage-header">
+                    <h3 class="stage-name">Greenware</h3>
+                </div>
+                <div class="measurements-table">
+                    <div class="measurement-row">
+                        <div class="measurement-cell measurement-label-cell">
+                            <div class="measurement-label">
+                                <span class="measurement-icon">↕</span>
+                                <span>Height</span>
+                            </div>
+                        </div>
+                        <div class="measurement-cell measurement-value-cell">
+                            <div class="measurement-value empty"></div>
+                        </div>
+                    </div>
+                    <div class="measurement-row">
+                        <div class="measurement-cell measurement-label-cell">
+                            <div class="measurement-label">
+                                <span class="measurement-icon">↔</span>
+                                <span>Width</span>
+                            </div>
+                        </div>
+                        <div class="measurement-cell measurement-value-cell">
+                            <div class="measurement-value empty"></div>
+                        </div>
+                    </div>
+                    <div class="measurement-row">
+                        <div class="measurement-cell measurement-label-cell">
+                            <div class="measurement-label">
+                                <span class="measurement-icon">⊟</span>
+                                <span>Depth</span>
+                            </div>
+                        </div>
+                        <div class="measurement-cell measurement-value-cell">
+                            <div class="measurement-value empty"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stage-section bisque">
+                <div class="stage-header">
+                    <h3 class="stage-name">Bisque</h3>
+                </div>
+                <div class="measurements-table">
+                    <div class="measurement-row">
+                        <div class="measurement-cell measurement-label-cell">
+                            <div class="measurement-label">
+                                <span class="measurement-icon">↕</span>
+                                <span>Height</span>
+                            </div>
+                        </div>
+                        <div class="measurement-cell measurement-value-cell">
+                            <div class="measurement-value empty"></div>
+                        </div>
+                    </div>
+                    <div class="measurement-row">
+                        <div class="measurement-cell measurement-label-cell">
+                            <div class="measurement-label">
+                                <span class="measurement-icon">↔</span>
+                                <span>Width</span>
+                            </div>
+                        </div>
+                        <div class="measurement-cell measurement-value-cell">
+                            <div class="measurement-value empty"></div>
+                        </div>
+                    </div>
+                    <div class="measurement-row">
+                        <div class="measurement-cell measurement-label-cell">
+                            <div class="measurement-label">
+                                <span class="measurement-icon">⊟</span>
+                                <span>Depth</span>
+                            </div>
+                        </div>
+                        <div class="measurement-cell measurement-value-cell">
+                            <div class="measurement-value empty"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "89677836881",
+    "project_id": "pottery-app-prod",
+    "storage_bucket": "pottery-app-prod.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:89677836881:android:3467ec7e9f6018b3647e70",
+        "android_client_info": {
+          "package_name": "com.pottery.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "89677836881-fbkc1vqlbhfunrh79flt4g2fijtqr0k1.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB41KliS1SXOZvkivYjs3HElxVv2Opxo_o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "89677836881-fbkc1vqlbhfunrh79flt4g2fijtqr0k1.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

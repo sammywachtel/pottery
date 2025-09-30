@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Item Detail Wireframe - Variation 1: 3-Column Measurements Grid</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: white;
+            color: black;
+            line-height: 1.4;
+            padding: 20px;
+            max-width: 480px;
+            margin: 0 auto;
+        }
+
+        /* Wireframe text styles */
+        .wireframe-h1 {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .wireframe-h2 {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 24px 0 12px 0;
+            text-transform: uppercase;
+        }
+
+        .wireframe-label {
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .wireframe-body {
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        /* Layout components */
+        .wireframe-header {
+            border: 2px solid black;
+            padding: 16px;
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .status-badge {
+            border: 2px solid black;
+            background: white;
+            padding: 4px 12px;
+            font-weight: bold;
+            font-size: 11px;
+            text-transform: uppercase;
+            display: inline-block;
+            margin-top: 8px;
+        }
+
+        .stage-dots {
+            display: inline-flex;
+            gap: 6px;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+
+        .stage-dot {
+            width: 12px;
+            height: 12px;
+            border: 2px solid black;
+            border-radius: 50%;
+            background: white;
+        }
+
+        .stage-dot.active {
+            background: black;
+        }
+
+        .icon-button {
+            border: 2px solid black;
+            background: white;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .detail-section {
+            margin-bottom: 24px;
+        }
+
+        .detail-row {
+            display: flex;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .detail-row .label {
+            width: 100px;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .detail-row .value {
+            flex: 1;
+        }
+
+        .notes-box {
+            border: 2px solid black;
+            padding: 12px;
+            background: white;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        /* Photo gallery section */
+        .photo-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .photo-count-badge {
+            border: 2px solid black;
+            background: white;
+            padding: 2px 8px;
+            font-weight: bold;
+            font-size: 11px;
+        }
+
+        .photo-scroll-container {
+            border: 2px dashed black;
+            padding: 12px;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+
+        .photo-card {
+            display: inline-block;
+            width: 200px;
+            vertical-align: top;
+            margin-right: 12px;
+            border: 2px solid black;
+            background: white;
+        }
+
+        .photo-placeholder {
+            height: 150px;
+            background: repeating-linear-gradient(
+                45deg,
+                white,
+                white 10px,
+                black 10px,
+                black 12px
+            );
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            border-bottom: 2px solid black;
+        }
+
+        .photo-info {
+            padding: 12px;
+        }
+
+        .photo-stage {
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .photo-note {
+            font-size: 12px;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .photo-date {
+            font-size: 11px;
+            color: #666;
+        }
+
+        /* Measurements grid - 3 columns */
+        .measurements-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .measurement-card {
+            border: 2px solid black;
+            padding: 12px;
+            background: white;
+        }
+
+        .measurement-stage-title {
+            font-weight: bold;
+            font-size: 14px;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            text-align: center;
+            border-bottom: 2px solid black;
+            padding-bottom: 6px;
+        }
+
+        .measurement-item {
+            font-size: 12px;
+            margin-bottom: 4px;
+        }
+
+        .measurement-item .dim-label {
+            font-weight: bold;
+            display: inline-block;
+            width: 45px;
+        }
+
+        .measurement-item .dim-value {
+            display: inline-block;
+        }
+
+        /* Floating action button */
+        .fab {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            border: 2px solid black;
+            background: white;
+            padding: 12px 20px;
+            font-weight: bold;
+            font-size: 14px;
+            text-transform: uppercase;
+        }
+
+        @media (max-width: 400px) {
+            .measurements-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- HEADER SECTION -->
+    <div class="wireframe-header">
+        <div style="flex: 1;">
+            <div class="wireframe-h1">LARGE BOWL WITH HANDLES</div>
+            <div>
+                <span class="status-badge">BISQUE</span>
+                <span class="stage-dots">
+                    <span class="stage-dot active"></span>
+                    <span class="stage-dot active"></span>
+                    <span class="stage-dot"></span>
+                </span>
+            </div>
+        </div>
+        <div class="icon-button">✎</div>
+    </div>
+
+    <!-- DETAILS SECTION -->
+    <div class="detail-section">
+        <h2 class="wireframe-h2">Details</h2>
+        <div class="detail-row">
+            <span class="label">Clay Type</span>
+            <span class="value">Stoneware B-Mix</span>
+        </div>
+        <div class="detail-row">
+            <span class="label">Location</span>
+            <span class="value">Shelf 3-A</span>
+        </div>
+        <div class="detail-row">
+            <span class="label">Created</span>
+            <span class="value">Jan 15, 2025 2:30 PM</span>
+        </div>
+        <div class="detail-row">
+            <span class="label">Glaze</span>
+            <span class="value">Celadon Green</span>
+        </div>
+    </div>
+
+    <!-- NOTES SECTION -->
+    <div class="detail-section">
+        <h2 class="wireframe-h2">Notes</h2>
+        <div class="notes-box">
+            This bowl features two decorative handles attached at the rim. The handles were pulled and attached while clay was still leather hard. Some minor cracking noted at attachment points - monitor during firing.
+        </div>
+    </div>
+
+    <!-- PHOTOS SECTION (MOVED BEFORE MEASUREMENTS) -->
+    <div class="detail-section">
+        <div class="photo-header">
+            <h2 class="wireframe-h2" style="margin: 0;">Photos</h2>
+            <span class="photo-count-badge">4</span>
+        </div>
+        <div class="photo-scroll-container">
+            <div class="photo-card">
+                <div class="photo-placeholder">[IMAGE]</div>
+                <div class="photo-info">
+                    <div class="photo-stage">Greenware</div>
+                    <div class="photo-note">Fresh off the wheel</div>
+                    <div class="photo-date">Jan 15, 2:45 PM</div>
+                </div>
+            </div>
+            <div class="photo-card">
+                <div class="photo-placeholder">[IMAGE]</div>
+                <div class="photo-info">
+                    <div class="photo-stage">Greenware</div>
+                    <div class="photo-note">Handles attached</div>
+                    <div class="photo-date">Jan 16, 10:20 AM</div>
+                </div>
+            </div>
+            <div class="photo-card">
+                <div class="photo-placeholder">[IMAGE]</div>
+                <div class="photo-info">
+                    <div class="photo-stage">Bisque</div>
+                    <div class="photo-note">After first firing</div>
+                    <div class="photo-date">Jan 22, 3:15 PM</div>
+                </div>
+            </div>
+            <div class="photo-card">
+                <div class="photo-placeholder">[IMAGE]</div>
+                <div class="photo-info">
+                    <div class="photo-stage">Bisque</div>
+                    <div class="photo-note">Detail of handles</div>
+                    <div class="photo-date">Jan 22, 3:18 PM</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MEASUREMENTS SECTION (3-COLUMN GRID) -->
+    <div class="detail-section">
+        <h2 class="wireframe-h2">Measurements</h2>
+        <div class="measurements-grid">
+            <!-- Greenware Card -->
+            <div class="measurement-card">
+                <div class="measurement-stage-title">Greenware</div>
+                <div class="measurement-item">
+                    <span class="dim-label">Height:</span>
+                    <span class="dim-value">8.5"</span>
+                </div>
+                <div class="measurement-item">
+                    <span class="dim-label">Width:</span>
+                    <span class="dim-value">6.0"</span>
+                </div>
+                <div class="measurement-item">
+                    <span class="dim-label">Depth:</span>
+                    <span class="dim-value">6.0"</span>
+                </div>
+            </div>
+
+            <!-- Bisque Card -->
+            <div class="measurement-card">
+                <div class="measurement-stage-title">Bisque</div>
+                <div class="measurement-item">
+                    <span class="dim-label">Height:</span>
+                    <span class="dim-value">8.0"</span>
+                </div>
+                <div class="measurement-item">
+                    <span class="dim-label">Width:</span>
+                    <span class="dim-value">5.7"</span>
+                </div>
+                <div class="measurement-item">
+                    <span class="dim-label">Depth:</span>
+                    <span class="dim-value">5.7"</span>
+                </div>
+            </div>
+
+            <!-- Final Card -->
+            <div class="measurement-card">
+                <div class="measurement-stage-title">Final</div>
+                <div class="measurement-item">
+                    <span class="dim-label">Height:</span>
+                    <span class="dim-value">—</span>
+                </div>
+                <div class="measurement-item">
+                    <span class="dim-label">Width:</span>
+                    <span class="dim-value">—</span>
+                </div>
+                <div class="measurement-item">
+                    <span class="dim-label">Depth:</span>
+                    <span class="dim-value">—</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FLOATING ACTION BUTTON -->
+    <div class="fab">
+        ☁ UPLOAD PHOTO
+    </div>
+
+    <!-- DESIGN NOTES -->
+    <div style="margin-top: 40px; padding-top: 20px; border-top: 2px dashed black; font-size: 12px;">
+        <h3 style="font-weight: bold; margin-bottom: 8px;">VARIATION 1: 3-COLUMN MEASUREMENTS GRID</h3>
+        <p style="margin-bottom: 8px;"><strong>Key Features:</strong></p>
+        <ul style="margin-left: 20px; line-height: 1.6;">
+            <li>Photos section moved BEFORE measurements (addresses requirement)</li>
+            <li>Horizontal scrolling photo gallery with prominent display</li>
+            <li>3-column grid for measurements (one card per stage)</li>
+            <li>Compact view - all stages visible at once on wider screens</li>
+            <li>Responsive: collapses to single column on narrow screens (< 400px)</li>
+            <li>Clear stage labels with bordered card design</li>
+            <li>Easy to compare across stages horizontally</li>
+            <li>Clean visual hierarchy: Header → Details → Notes → Photos → Measurements</li>
+        </ul>
+        <p style="margin-top: 12px;"><strong>Best For:</strong> Users who want to quickly scan all three stages side-by-side. Works well on tablet-sized devices or landscape mobile orientation.</p>
+    </div>
+
+</body>
+</html>

@@ -48,7 +48,7 @@ sample_item_with_photo = PotteryItem(
     createdTimezone="UTC",
     location="Studio",
     photos=[existing_photo_internal],  # Include existing photo
-    user_id="admin",
+    user_id="test-firebase-uid-123",
 )
 
 # Sample item with no photos (for upload test)
@@ -60,7 +60,7 @@ sample_item_no_photos = PotteryItem(
     createdTimezone="UTC",
     location="Studio",
     photos=[],
-    user_id="admin",
+    user_id="test-firebase-uid-123",
 )
 
 
@@ -142,7 +142,7 @@ async def test_upload_photo_success(client: TestClient, mocker, auth_headers):
     assert response_dt == NOW_UTC
 
     mock_get_item_svc.assert_awaited_once_with(
-        TEST_ITEM_ID_1, user_id="admin"
+        TEST_ITEM_ID_1, user_id="test-firebase-uid-123"
     )  # Check service mock
     mock_gcs_upload.assert_awaited_once_with(
         item_id=TEST_ITEM_ID_1,
@@ -157,7 +157,9 @@ async def test_upload_photo_success(client: TestClient, mocker, auth_headers):
     added_photo_arg = call_args[1]
     assert isinstance(added_photo_arg, Photo)
     assert added_photo_arg.id == TEST_PHOTO_ID_NEW
-    assert call_kwargs["user_id"] == "admin"  # Check user_id is passed correctly
+    assert (
+        call_kwargs["user_id"] == "test-firebase-uid-123"
+    )  # Check user_id is passed correctly
 
     mock_generate_url.assert_awaited_once_with(expected_gcs_path)
     mock_uuid.assert_called_once()
@@ -189,7 +191,9 @@ async def test_upload_photo_item_not_found(client: TestClient, mocker, auth_head
         response.json()["detail"]
         == f"Pottery item with ID '{TEST_ITEM_ID_1}' not found."
     )
-    mock_get_item_svc.assert_awaited_once_with(TEST_ITEM_ID_1, user_id="admin")
+    mock_get_item_svc.assert_awaited_once_with(
+        TEST_ITEM_ID_1, user_id="test-firebase-uid-123"
+    )
 
 
 @pytest.mark.asyncio
@@ -335,11 +339,11 @@ async def test_delete_photo_success(client: TestClient, mocker, auth_headers):
 
     assert response.status_code == status.HTTP_204_NO_CONTENT
     mock_get_item_svc.assert_awaited_once_with(
-        TEST_ITEM_ID_1, user_id="admin"
+        TEST_ITEM_ID_1, user_id="test-firebase-uid-123"
     )  # Check service mock
     mock_gcs_delete.assert_awaited_once_with(EXISTING_GCS_PATH)
     mock_fs_remove_photo.assert_awaited_once_with(
-        TEST_ITEM_ID_1, EXISTING_PHOTO_ID, user_id="admin"
+        TEST_ITEM_ID_1, EXISTING_PHOTO_ID, user_id="test-firebase-uid-123"
     )
 
 
@@ -362,7 +366,9 @@ async def test_delete_photo_item_not_found(client: TestClient, mocker, auth_head
         response.json()["detail"]
         == f"Pottery item with ID '{TEST_ITEM_ID_1}' not found."
     )
-    mock_get_item_svc.assert_awaited_once_with(TEST_ITEM_ID_1, user_id="admin")
+    mock_get_item_svc.assert_awaited_once_with(
+        TEST_ITEM_ID_1, user_id="test-firebase-uid-123"
+    )
 
 
 @pytest.mark.asyncio
@@ -404,7 +410,9 @@ async def test_delete_photo_photo_not_found_in_item(
         response.json()["detail"]
         == f"Photo with ID '{EXISTING_PHOTO_ID}' not found in item '{TEST_ITEM_ID_1}'."
     )
-    mock_get_item_svc.assert_awaited_once_with(TEST_ITEM_ID_1, user_id="admin")
+    mock_get_item_svc.assert_awaited_once_with(
+        TEST_ITEM_ID_1, user_id="test-firebase-uid-123"
+    )
     mock_gcs_delete.assert_not_awaited()
     mock_fs_remove_photo.assert_not_awaited()
 
@@ -434,7 +442,9 @@ async def test_delete_photo_gcs_error(client: TestClient, mocker, auth_headers):
     assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
     # *** FIX: Assert correct error detail from router's except Exception block ***
     assert response.json()["detail"] == "Error during photo deletion from storage."
-    mock_get_item_svc.assert_awaited_once_with(TEST_ITEM_ID_1, user_id="admin")
+    mock_get_item_svc.assert_awaited_once_with(
+        TEST_ITEM_ID_1, user_id="test-firebase-uid-123"
+    )
     mock_gcs_delete.assert_awaited_once_with(EXISTING_GCS_PATH)
     mock_fs_remove_photo.assert_not_awaited()  # Should not be called if GCS fails
 
@@ -464,10 +474,12 @@ async def test_delete_photo_firestore_error(client: TestClient, mocker, auth_hea
     assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
     # Check specific detail from the handler in delete_photo endpoint
     assert response.json()["detail"] == "Failed to remove photo metadata from item."
-    mock_get_item_svc.assert_awaited_once_with(TEST_ITEM_ID_1, user_id="admin")
+    mock_get_item_svc.assert_awaited_once_with(
+        TEST_ITEM_ID_1, user_id="test-firebase-uid-123"
+    )
     mock_gcs_delete.assert_awaited_once_with(EXISTING_GCS_PATH)
     mock_fs_remove_photo.assert_awaited_once_with(
-        TEST_ITEM_ID_1, EXISTING_PHOTO_ID, user_id="admin"
+        TEST_ITEM_ID_1, EXISTING_PHOTO_ID, user_id="test-firebase-uid-123"
     )
 
 
@@ -515,7 +527,7 @@ async def test_update_photo_details_success(
     assert json_response["signedUrl"] is not None
 
     mock_get_item_svc.assert_awaited_once_with(
-        TEST_ITEM_ID_1, user_id="admin"
+        TEST_ITEM_ID_1, user_id="test-firebase-uid-123"
     )  # Check service mock
     mock_update_details.assert_awaited_once()
     call_args, call_kwargs = mock_update_details.call_args
@@ -523,7 +535,9 @@ async def test_update_photo_details_success(
     assert call_args[1] == EXISTING_PHOTO_ID
     assert isinstance(call_args[2], PhotoUpdate)
     assert call_args[2].stage == photo_update_payload["stage"]
-    assert call_kwargs["user_id"] == "admin"  # Check user_id is passed correctly
+    assert (
+        call_kwargs["user_id"] == "test-firebase-uid-123"
+    )  # Check user_id is passed correctly
 
     mock_generate_url.assert_awaited_once_with(EXISTING_GCS_PATH)
 
@@ -552,7 +566,9 @@ async def test_update_photo_details_item_not_found(
         response.json()["detail"]
         == f"Pottery item with ID '{TEST_ITEM_ID_1}' not found."
     )
-    mock_get_item_svc.assert_awaited_once_with(TEST_ITEM_ID_1, user_id="admin")
+    mock_get_item_svc.assert_awaited_once_with(
+        TEST_ITEM_ID_1, user_id="test-firebase-uid-123"
+    )
 
 
 @pytest.mark.asyncio
@@ -586,9 +602,11 @@ async def test_update_photo_details_photo_not_found(
         response.json()["detail"]
         == f"Photo with ID '{EXISTING_PHOTO_ID}' not found in item '{TEST_ITEM_ID_1}'."
     )
-    mock_get_item_svc.assert_awaited_once_with(TEST_ITEM_ID_1, user_id="admin")
+    mock_get_item_svc.assert_awaited_once_with(
+        TEST_ITEM_ID_1, user_id="test-firebase-uid-123"
+    )
     mock_update_details.assert_awaited_once_with(
-        TEST_ITEM_ID_1, EXISTING_PHOTO_ID, ANY, user_id="admin"
+        TEST_ITEM_ID_1, EXISTING_PHOTO_ID, ANY, user_id="test-firebase-uid-123"
     )
 
 
@@ -642,7 +660,9 @@ async def test_update_photo_details_firestore_error(
     assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
     # Check specific detail from the handler in update_photo_details endpoint
     assert response.json()["detail"] == "Failed to update photo details."
-    mock_get_item_svc.assert_awaited_once_with(TEST_ITEM_ID_1, user_id="admin")
+    mock_get_item_svc.assert_awaited_once_with(
+        TEST_ITEM_ID_1, user_id="test-firebase-uid-123"
+    )
     mock_update_details.assert_awaited_once_with(
-        TEST_ITEM_ID_1, EXISTING_PHOTO_ID, ANY, user_id="admin"
+        TEST_ITEM_ID_1, EXISTING_PHOTO_ID, ANY, user_id="test-firebase-uid-123"
     )

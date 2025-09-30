@@ -1,0 +1,14 @@
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - '-t'
+      - '$IMAGE'
+      - '--build-arg'
+      - API_BASE_URL=$_API_BASE_URL
+      - .
+images:
+  - '$IMAGE'
+substitutions:
+  _API_BASE_URL: https://pottery-api-1073709451179.us-central1.run.app
+  IMAGE: gcr.io/$PROJECT_ID/pottery-frontend:latest

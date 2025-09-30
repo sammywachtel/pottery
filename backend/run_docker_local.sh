@@ -1,33 +1,69 @@
 #!/bin/bash
 
 # Script to build and run the Docker container locally
+# Usage: ./run_docker_local.sh [--debug] [--env=<environment>]
 
 # Parse command line arguments
 DEBUG_MODE=false
+ENVIRONMENT="dev"  # Default to development
 while [[ "$#" -gt 0 ]]; do
   case $1 in
     --debug) DEBUG_MODE=true; shift ;;
-    *) echo "Unknown parameter: $1"; exit 1 ;;
+    --env=*)
+      ENVIRONMENT="${1#*=}"
+      shift
+      ;;
+    --help|-h)
+      echo "Usage: $0 [--debug] [--env=<environment>]"
+      echo "Options:"
+      echo "  --debug        Enable remote debugging on port 5678"
+      echo "  --env=ENV      Environment to use (dev|local, default: dev)"
+      echo "  --help         Show this help message"
+      echo ""
+      echo "Examples:"
+      echo "  $0                    # Run with dev environment"
+      echo "  $0 --debug           # Run with debug mode enabled"
+      echo "  $0 --env=local       # Use legacy .env.local file"
+      exit 0
+      ;;
+    *) echo "Unknown parameter: $1"; echo "Use --help for usage information"; exit 1 ;;
   esac
 done
 
-# Load environment variables from .env.local file into the script's environment
-ENV_LOCAL_FILE=".env.local"
-if [ -f "${ENV_LOCAL_FILE}" ]; then
-  echo "Loading environment variables from ${ENV_LOCAL_FILE} file..."
-  # Use set -a to export all variables defined in .env.local
+# Determine environment file
+case $ENVIRONMENT in
+  dev|development)
+    ENV_FILE=".env.dev"
+    echo "🚀 Running with DEVELOPMENT environment"
+    ;;
+  local)
+    ENV_FILE=".env.local"
+    echo "🔧 Running with LEGACY local environment"
+    ;;
+  *)
+    echo "Error: Invalid environment '$ENVIRONMENT'. Use 'dev' or 'local'."
+    exit 1
+    ;;
+esac
+
+# Load environment variables from environment file into the script's environment
+if [ -f "${ENV_FILE}" ]; then
+  echo "Loading environment variables from ${ENV_FILE} file..."
+  # Use set -a to export all variables defined in the file
   set -a
-  source "${ENV_LOCAL_FILE}"
+  source "${ENV_FILE}"
   set +a
 else
-  echo "Error: ${ENV_LOCAL_FILE} file not found. Please create it from .env.local.example."
+  echo "Error: ${ENV_FILE} file not found."
+  echo "Available files:"
+  ls -la .env.* 2>/dev/null || echo "No .env files found"
   exit 1
 fi
 
-# --- Configuration Variables from .env.local ---
+# --- Configuration Variables from environment file ---
 # Ensure HOST_KEY_PATH is set for the script
 if [ -z "${HOST_KEY_PATH}" ]; then
-  echo "Error: HOST_KEY_PATH environment variable is not set in ${ENV_LOCAL_FILE}."
+  echo "Error: HOST_KEY_PATH environment variable is not set in ${ENV_FILE}."
   exit 1
 fi
 # Use default local port if not set in .env.local
@@ -38,10 +74,18 @@ CONTAINER_PORT="${PORT:-8080}"
 # Debug port for PyCharm
 DEBUG_PORT="${DEBUG_PORT:-5678}"
 
+# Show local development summary
+echo "📋 Local Development Summary:"
+echo "   Environment: ${ENVIRONMENT}"
+echo "   Config File: ${ENV_FILE}"
+echo "   GCP Project: ${GCP_PROJECT_ID}"
+echo "   Local Port: ${LOCAL_PORT}"
+echo "   Debug Mode: ${DEBUG_MODE}"
+
 # --- Runtime Variables Needed by the Application Inside the Container ---
 # Ensure required runtime variables are set in the loaded environment
-if [ -z "${GCP_PROJECT_ID}" ]; then echo "Error: GCP_PROJECT_ID not set in ${ENV_LOCAL_FILE}." && exit 1; fi
-if [ -z "${GCS_BUCKET_NAME}" ]; then echo "Error: GCS_BUCKET_NAME not set in ${ENV_LOCAL_FILE}." && exit 1; fi
+if [ -z "${GCP_PROJECT_ID}" ]; then echo "Error: GCP_PROJECT_ID not set in ${ENV_FILE}." && exit 1; fi
+if [ -z "${GCS_BUCKET_NAME}" ]; then echo "Error: GCS_BUCKET_NAME not set in ${ENV_FILE}." && exit 1; fi
 # Add checks for other required runtime vars if necessary
 
 # Define where the key will be mounted inside the container
@@ -78,11 +122,25 @@ docker build -t "${IMAGE_NAME}" .
 if [ $? -ne 0 ]; then echo "ERROR: Docker build failed." && exit 1; fi
 echo "Docker build successful."
 
+# Setup local infrastructure (including CORS)
+echo "Setting up local development infrastructure..."
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+INFRA_SCRIPT="${SCRIPT_DIR}/scripts/setup-infrastructure.sh"
+
+if [ -x "${INFRA_SCRIPT}" ]; then
+  echo "Configuring GCS bucket CORS for local development..."
+  "${INFRA_SCRIPT}" local
+else
+  echo "WARNING: Infrastructure setup script not found at ${INFRA_SCRIPT}"
+  echo "You may need to manually configure GCS bucket CORS settings."
+  echo "Run: ./scripts/manage-cors.sh apply local"
+fi
+
 # Run the Docker container
 echo "Running Docker container..."
 
 # Base docker run command with common options
-DOCKER_CMD="docker run --name ${CONTAINER_NAME} -it \
+DOCKER_CMD="docker run --name ${CONTAINER_NAME} -d \
   -p ${LOCAL_PORT}:${CONTAINER_PORT} \
   -v ${HOST_KEY_PATH}:${CONTAINER_KEY_PATH}:ro \
   -e GOOGLE_APPLICATION_CREDENTIALS=${CONTAINER_KEY_PATH} \
@@ -91,17 +149,20 @@ DOCKER_CMD="docker run --name ${CONTAINER_NAME} -it \
   -e FIRESTORE_COLLECTION=${FIRESTORE_COLLECTION:-pottery_items} \
   -e FIRESTORE_DATABASE_ID=${FIRESTORE_DATABASE_ID:-(default)} \
   -e SIGNED_URL_EXPIRATION_MINUTES=${SIGNED_URL_EXPIRATION_MINUTES:-15} \
+  -e FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID} \
+  -e FIREBASE_CREDENTIALS_FILE=${CONTAINER_KEY_PATH} \
   -e PORT=${CONTAINER_PORT}"
 
 # Add debug port mapping and command if in debug mode
 if [ "$DEBUG_MODE" = true ]; then
-  echo "Starting container in debug mode..."
+  echo "🐛 Starting container in debug mode..."
   # Add debug port mapping
   DOCKER_CMD="${DOCKER_CMD} -p ${DEBUG_PORT}:5678"
-  # Run with debugpy
+  # Run with debugpy (override the default CMD)
   ${DOCKER_CMD} ${IMAGE_NAME} python -Xfrozen_modules=off -m debugpy --listen 0.0.0.0:5678 --wait-for-client -m uvicorn main:app --host 0.0.0.0 --port ${CONTAINER_PORT} --reload
 else
-  # Run normally
+  # Run normally using the default CMD from Dockerfile
+  echo "🚀 Starting container in normal mode..."
   ${DOCKER_CMD} ${IMAGE_NAME}
 fi
 

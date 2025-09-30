@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pottery Catalog - Item Detail</title>
+    <style>
+        /* Design System Tokens */
+        :root {
+            /* Primary Colors */
+            --clay-primary: oklch(55% 0.08 45);
+            --clay-primary-light: oklch(70% 0.06 45);
+            --clay-primary-dark: oklch(40% 0.10 45);
+
+            /* Stage Colors */
+            --greenware: oklch(60% 0.12 140);
+            --greenware-light: oklch(75% 0.10 140);
+            --bisque: oklch(70% 0.08 65);
+            --bisque-light: oklch(80% 0.06 65);
+            --final: oklch(55% 0.10 240);
+            --final-light: oklch(70% 0.08 240);
+
+            /* Neutral Colors */
+            --surface: oklch(98% 0.005 45);
+            --surface-variant: oklch(92% 0.01 45);
+            --surface-container: oklch(95% 0.008 45);
+            --on-surface: oklch(20% 0.02 45);
+            --on-surface-variant: oklch(45% 0.03 45);
+            --outline: oklch(65% 0.02 45);
+
+            /* Spacing */
+            --space-1: 0.25rem;
+            --space-2: 0.5rem;
+            --space-3: 0.75rem;
+            --space-4: 1rem;
+            --space-5: 1.25rem;
+            --space-6: 1.5rem;
+            --space-8: 2rem;
+
+            /* Radius */
+            --radius-sm: 0.375rem;
+            --radius-md: 0.5rem;
+            --radius-lg: 0.75rem;
+            --radius-xl: 1rem;
+            --radius-full: 9999px;
+
+            /* Shadows */
+            --shadow-clay: 0 2px 6px oklch(0% 0 0 / 0.16);
+            --shadow-ceramic: 0 4px 12px oklch(0% 0 0 / 0.15);
+
+            /* Touch targets */
+            --touch-target-min: 44px;
+        }
+
+        /* Base Styles */
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            line-height: 1.5;
+            margin: 0;
+            padding: 0;
+            background: var(--surface);
+            color: var(--on-surface);
+        }
+
+        /* Header Navigation */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: var(--space-4) var(--space-5);
+            background: var(--surface);
+            border-bottom: 1px solid var(--outline);
+            box-shadow: var(--shadow-clay);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+        }
+
+        .btn-back {
+            width: var(--touch-target-min);
+            height: var(--touch-target-min);
+            padding: 0;
+            border: none;
+            background: none;
+            color: var(--clay-primary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            border-radius: var(--radius-full);
+            transition: background-color 0.2s ease;
+        }
+
+        .btn-back:hover {
+            background: var(--surface-variant);
+        }
+
+        .header-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--on-surface);
+        }
+
+        .btn-icon {
+            width: var(--touch-target-min);
+            height: var(--touch-target-min);
+            padding: 0;
+            border-radius: var(--radius-full);
+            background: var(--surface);
+            color: var(--on-surface);
+            border: 1px solid var(--outline);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.125rem;
+            transition: all 0.2s ease;
+        }
+
+        .btn-icon:hover {
+            background: var(--surface-variant);
+        }
+
+        /* Photo Gallery */
+        .gallery-section {
+            background: var(--surface);
+        }
+
+        .photo-gallery {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 1;
+            background: var(--surface-variant);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 6rem;
+            color: var(--on-surface-variant);
+            overflow: hidden;
+        }
+
+        .gallery-nav {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-4);
+            padding: var(--space-4) var(--space-5);
+            background: var(--surface-container);
+            border-bottom: 1px solid var(--outline);
+        }
+
+        .gallery-indicators {
+            display: flex;
+            gap: var(--space-2);
+        }
+
+        .gallery-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: var(--radius-full);
+            background: var(--outline);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .gallery-dot.active {
+            background: var(--clay-primary);
+            transform: scale(1.25);
+        }
+
+        .gallery-stage-info {
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+            color: var(--on-surface-variant);
+            font-size: 0.875rem;
+        }
+
+        .stage-indicator {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+        }
+
+        .stage-badge {
+            width: 24px;
+            height: 24px;
+            border-radius: var(--radius-full);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.625rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .stage-greenware {
+            background: var(--greenware);
+            color: white;
+        }
+
+        .stage-bisque {
+            background: var(--bisque);
+            color: var(--on-surface);
+        }
+
+        .stage-final {
+            background: var(--final);
+            color: white;
+        }
+
+        /* Content Sections */
+        .content {
+            padding: 0 var(--space-5) var(--space-8);
+        }
+
+        .section {
+            margin-bottom: var(--space-8);
+        }
+
+        .section-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: var(--space-4);
+            color: var(--clay-primary-dark);
+        }
+
+        .info-card {
+            background: var(--surface-container);
+            border-radius: var(--radius-lg);
+            padding: var(--space-5);
+            border: 1px solid var(--outline);
+        }
+
+        .info-grid {
+            display: grid;
+            gap: var(--space-4);
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+        }
+
+        .info-icon {
+            font-size: 1.25rem;
+            width: 24px;
+            text-align: center;
+        }
+
+        .info-content {
+            flex: 1;
+        }
+
+        .info-label {
+            font-size: 0.875rem;
+            color: var(--on-surface-variant);
+            margin-bottom: var(--space-1);
+        }
+
+        .info-value {
+            font-size: 1rem;
+            font-weight: 500;
+            color: var(--on-surface);
+        }
+
+        /* Measurements Section */
+        .measurements-grid {
+            display: grid;
+            gap: var(--space-4);
+        }
+
+        .measurement-stage {
+            background: var(--surface);
+            border-radius: var(--radius-md);
+            padding: var(--space-4);
+            border: 1px solid var(--outline);
+        }
+
+        .measurement-stage-header {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            margin-bottom: var(--space-3);
+        }
+
+        .measurement-stage-title {
+            font-weight: 500;
+            font-size: 0.875rem;
+        }
+
+        .measurement-values {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: var(--space-3);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+        }
+
+        .measurement-item {
+            text-align: center;
+        }
+
+        .measurement-label {
+            color: var(--on-surface-variant);
+            font-size: 0.75rem;
+            margin-bottom: var(--space-1);
+        }
+
+        .measurement-value {
+            font-weight: 500;
+            color: var(--on-surface);
+        }
+
+        /* Notes Section */
+        .notes {
+            background: var(--surface-container);
+            border-radius: var(--radius-lg);
+            padding: var(--space-5);
+            border: 1px solid var(--outline);
+            line-height: 1.6;
+        }
+
+        /* Action Buttons */
+        .actions {
+            padding: var(--space-5);
+            background: var(--surface-container);
+            border-top: 1px solid var(--outline);
+            display: flex;
+            gap: var(--space-4);
+        }
+
+        .btn {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-2);
+            padding: var(--space-4);
+            border-radius: var(--radius-md);
+            font-weight: 500;
+            font-size: 1rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-height: var(--touch-target-min);
+        }
+
+        .btn-primary {
+            background: var(--clay-primary);
+            color: var(--surface);
+        }
+
+        .btn-primary:hover {
+            background: var(--clay-primary-dark);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: var(--surface);
+            color: var(--clay-primary);
+            border: 1px solid var(--clay-primary);
+        }
+
+        .btn-secondary:hover {
+            background: var(--clay-primary-light);
+            color: var(--surface);
+        }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            .content {
+                padding: 0 var(--space-4) var(--space-8);
+            }
+
+            .actions {
+                padding: var(--space-4);
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+
+            .measurements-grid {
+                gap: var(--space-3);
+            }
+
+            .measurement-values {
+                gap: var(--space-2);
+            }
+        }
+
+        /* Photo Gallery Gestures (placeholder) */
+        .gallery-gesture-hint {
+            position: absolute;
+            bottom: var(--space-4);
+            left: 50%;
+            transform: translateX(-50%);
+            color: var(--on-surface-variant);
+            font-size: 0.75rem;
+            background: oklch(0% 0 0 / 0.5);
+            padding: var(--space-1) var(--space-3);
+            border-radius: var(--radius-full);
+            backdrop-filter: blur(8px);
+        }
+
+        /* Loading States */
+        .loading-skeleton {
+            background: var(--surface-variant);
+            border-radius: var(--radius-sm);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-left">
+            <button class="btn-back" aria-label="Back to items list">
+                ←
+            </button>
+            <h1 class="header-title">Tall Ceramic Vase</h1>
+        </div>
+        <button class="btn-icon" aria-label="More options">
+            ⋮
+        </button>
+    </header>
+
+    <!-- Photo Gallery -->
+    <section class="gallery-section">
+        <div class="photo-gallery">
+            🏺
+            <div class="gallery-gesture-hint">
+                ← Swipe to browse photos →
+            </div>
+        </div>
+
+        <div class="gallery-nav">
+            <div class="gallery-indicators">
+                <span class="gallery-dot active"></span>
+                <span class="gallery-dot"></span>
+                <span class="gallery-dot"></span>
+                <span class="gallery-dot"></span>
+                <span class="gallery-dot"></span>
+                <span class="gallery-dot"></span>
+            </div>
+
+            <div class="gallery-stage-info">
+                <div class="stage-indicator">
+                    <span class="stage-badge stage-greenware">G</span>
+                    <span>Photo 1 of 6</span>
+                </div>
+                <span>•</span>
+                <span>Greenware Stage</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Content -->
+    <main class="content">
+        <!-- Basic Information -->
+        <section class="section">
+            <h2 class="section-title">Item Details</h2>
+            <div class="info-card">
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-icon">🏺</span>
+                        <div class="info-content">
+                            <div class="info-label">Clay Type</div>
+                            <div class="info-value">Stoneware Clay</div>
+                        </div>
+                    </div>
+
+                    <div class="info-item">
+                        <span class="info-icon">🎨</span>
+                        <div class="info-content">
+                            <div class="info-label">Glaze</div>
+                            <div class="info-value">Celadon Glaze</div>
+                        </div>
+                    </div>
+
+                    <div class="info-item">
+                        <span class="info-icon">📍</span>
+                        <div class="info-content">
+                            <div class="info-label">Location</div>
+                            <div class="info-value">Shelf A-3</div>
+                        </div>
+                    </div>
+
+                    <div class="info-item">
+                        <span class="info-icon">📅</span>
+                        <div class="info-content">
+                            <div class="info-label">Created</div>
+                            <div class="info-value">March 15, 2024</div>
+                        </div>
+                    </div>
+
+                    <div class="info-item">
+                        <span class="info-icon">📷</span>
+                        <div class="info-content">
+                            <div class="info-label">Photos</div>
+                            <div class="info-value">6 photos across all stages</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Measurements -->
+        <section class="section">
+            <h2 class="section-title">Measurements</h2>
+            <div class="measurements-grid">
+                <!-- Greenware Measurements -->
+                <div class="measurement-stage">
+                    <div class="measurement-stage-header">
+                        <span class="stage-badge stage-greenware">G</span>
+                        <span class="measurement-stage-title">Greenware (Unfired)</span>
+                    </div>
+                    <div class="measurement-values">
+                        <div class="measurement-item">
+                            <div class="measurement-label">Height</div>
+                            <div class="measurement-value">12.0"</div>
+                        </div>
+                        <div class="measurement-item">
+                            <div class="measurement-label">Width</div>
+                            <div class="measurement-value">6.0"</div>
+                        </div>
+                        <div class="measurement-item">
+                            <div class="measurement-label">Depth</div>
+                            <div class="measurement-value">6.0"</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bisque Measurements -->
+                <div class="measurement-stage">
+                    <div class="measurement-stage-header">
+                        <span class="stage-badge stage-bisque">B</span>
+                        <span class="measurement-stage-title">Bisque (First Fire)</span>
+                    </div>
+                    <div class="measurement-values">
+                        <div class="measurement-item">
+                            <div class="measurement-label">Height</div>
+                            <div class="measurement-value">11.2"</div>
+                        </div>
+                        <div class="measurement-item">
+                            <div class="measurement-label">Width</div>
+                            <div class="measurement-value">5.6"</div>
+                        </div>
+                        <div class="measurement-item">
+                            <div class="measurement-label">Depth</div>
+                            <div class="measurement-value">5.6"</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Final Measurements -->
+                <div class="measurement-stage">
+                    <div class="measurement-stage-header">
+                        <span class="stage-badge stage-final">F</span>
+                        <span class="measurement-stage-title">Final (Glazed)</span>
+                    </div>
+                    <div class="measurement-values">
+                        <div class="measurement-item">
+                            <div class="measurement-label">Height</div>
+                            <div class="measurement-value">11.1"</div>
+                        </div>
+                        <div class="measurement-item">
+                            <div class="measurement-label">Width</div>
+                            <div class="measurement-value">5.5"</div>
+                        </div>
+                        <div class="measurement-item">
+                            <div class="measurement-label">Depth</div>
+                            <div class="measurement-value">5.5"</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Progress Tracking -->
+        <section class="section">
+            <h2 class="section-title">Stage Progress</h2>
+            <div class="info-card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-4);">
+                    <span style="font-weight: 500;">Pottery Lifecycle</span>
+                    <span style="color: var(--greenware); font-size: 0.875rem;">✓ Complete</span>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-4);">
+                    <div style="display: flex; align-items: center; gap: var(--space-2);">
+                        <span class="stage-badge stage-greenware">G</span>
+                        <span style="font-size: 0.875rem;">Greenware</span>
+                        <span style="color: var(--greenware);">✓</span>
+                    </div>
+                    <div style="height: 2px; width: 30px; background: var(--greenware);"></div>
+                    <div style="display: flex; align-items: center; gap: var(--space-2);">
+                        <span class="stage-badge stage-bisque">B</span>
+                        <span style="font-size: 0.875rem;">Bisque</span>
+                        <span style="color: var(--bisque);">✓</span>
+                    </div>
+                    <div style="height: 2px; width: 30px; background: var(--bisque);"></div>
+                    <div style="display: flex; align-items: center; gap: var(--space-2);">
+                        <span class="stage-badge stage-final">F</span>
+                        <span style="font-size: 0.875rem;">Final</span>
+                        <span style="color: var(--final);">✓</span>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-4); font-size: 0.875rem; color: var(--on-surface-variant);">
+                    <div style="text-align: center;">
+                        <div style="font-weight: 500; color: var(--on-surface); margin-bottom: var(--space-1);">2 photos</div>
+                        <div>Mar 15, 2024</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-weight: 500; color: var(--on-surface); margin-bottom: var(--space-1);">1 photo</div>
+                        <div>Mar 20, 2024</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-weight: 500; color: var(--on-surface); margin-bottom: var(--space-1);">3 photos</div>
+                        <div>Mar 25, 2024</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Notes -->
+        <section class="section">
+            <h2 class="section-title">Notes</h2>
+            <div class="notes">
+                Beautiful tall vase with subtle texture work around the rim. The piece was thrown on the wheel with extra attention to wall thickness consistency.
+
+                <br><br>
+
+                Fired to cone 6 in the electric kiln. The celadon glaze developed beautifully with some interesting color variation where it pooled at the base. Very pleased with how this piece turned out - it has a lovely presence and the proportions feel just right.
+
+                <br><br>
+
+                <strong>Technical Notes:</strong> Used about 3 lbs of clay. Trimmed when leather hard. Bisque fired to cone 04. Applied glaze in three coats with careful attention to the rim area.
+            </div>
+        </section>
+    </main>
+
+    <!-- Action Buttons -->
+    <section class="actions">
+        <button class="btn btn-secondary">
+            📷 Add Photos
+        </button>
+        <button class="btn btn-primary">
+            ✏️ Edit Item
+        </button>
+    </section>
+
+    <script>
+        // Gallery interaction simulation
+        document.addEventListener('DOMContentLoaded', function() {
+            const galleryDots = document.querySelectorAll('.gallery-dot');
+            const stageInfo = document.querySelector('.gallery-stage-info');
+
+            // Mock photo data
+            const photos = [
+                { stage: 'greenware', stageLabel: 'Greenware Stage', index: 1, total: 2 },
+                { stage: 'greenware', stageLabel: 'Greenware Stage', index: 2, total: 2 },
+                { stage: 'bisque', stageLabel: 'Bisque Stage', index: 1, total: 1 },
+                { stage: 'final', stageLabel: 'Final Stage', index: 1, total: 3 },
+                { stage: 'final', stageLabel: 'Final Stage', index: 2, total: 3 },
+                { stage: 'final', stageLabel: 'Final Stage', index: 3, total: 3 }
+            ];
+
+            let currentPhoto = 0;
+
+            function updateGallery(index) {
+                // Update dots
+                galleryDots.forEach((dot, i) => {
+                    dot.classList.toggle('active', i === index);
+                });
+
+                // Update stage info
+                const photo = photos[index];
+                const stageClass = `stage-${photo.stage}`;
+                const stageBadge = stageInfo.querySelector('.stage-badge');
+                const stageText = stageInfo.querySelector('.stage-indicator span:last-child');
+                const stageLabel = stageInfo.querySelector('.gallery-stage-info span:last-child');
+
+                stageBadge.className = `stage-badge ${stageClass}`;
+                stageBadge.textContent = photo.stage.charAt(0).toUpperCase();
+                stageText.textContent = `Photo ${photo.index} of ${photo.total}`;
+                stageLabel.textContent = photo.stageLabel;
+
+                currentPhoto = index;
+            }
+
+            // Dot click handlers
+            galleryDots.forEach((dot, index) => {
+                dot.addEventListener('click', () => {
+                    updateGallery(index);
+                });
+            });
+
+            // Simple touch/swipe simulation
+            let startX = 0;
+            const gallery = document.querySelector('.photo-gallery');
+
+            gallery.addEventListener('touchstart', function(e) {
+                startX = e.touches[0].clientX;
+            });
+
+            gallery.addEventListener('touchend', function(e) {
+                const endX = e.changedTouches[0].clientX;
+                const diff = startX - endX;
+
+                if (Math.abs(diff) > 50) { // Minimum swipe distance
+                    if (diff > 0 && currentPhoto < photos.length - 1) {
+                        // Swipe left - next photo
+                        updateGallery(currentPhoto + 1);
+                    } else if (diff < 0 && currentPhoto > 0) {
+                        // Swipe right - previous photo
+                        updateGallery(currentPhoto - 1);
+                    }
+                }
+            });
+
+            // Mouse click for desktop
+            gallery.addEventListener('click', function(e) {
+                const rect = this.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const centerX = rect.width / 2;
+
+                if (x > centerX && currentPhoto < photos.length - 1) {
+                    updateGallery(currentPhoto + 1);
+                } else if (x < centerX && currentPhoto > 0) {
+                    updateGallery(currentPhoto - 1);
+                }
+            });
+
+            // Back button
+            document.querySelector('.btn-back').addEventListener('click', function() {
+                console.log('Navigate back to items list');
+            });
+
+            // Action buttons
+            document.querySelector('.btn-secondary').addEventListener('click', function() {
+                console.log('Navigate to photo management');
+            });
+
+            document.querySelector('.btn-primary').addEventListener('click', function() {
+                console.log('Navigate to edit item form');
+            });
+        });
+    </script>
+</body>
+</html>

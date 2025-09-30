@@ -1,0 +1,716 @@
+/*
+🏺 POTTERY CATALOG - WHIMSICAL ENHANCEMENTS
+Delightful micro-interactions and pottery-themed animations that celebrate the ceramic arts process.
+
+Usage: Include this CSS after the base pottery design system to add whimsical touches.
+All animations respect user preference for reduced motion.
+*/
+
+/* ===========================================
+   🎯 POTTERY-THEMED LOADING STATES
+   =========================================== */
+
+/* Pottery Wheel Spinner - Main loading animation */
+@keyframes pottery-wheel-spin {
+    0% { transform: rotate(0deg) scale(1); }
+    25% { transform: rotate(90deg) scale(1.05); }
+    50% { transform: rotate(180deg) scale(1); }
+    75% { transform: rotate(270deg) scale(1.05); }
+    100% { transform: rotate(360deg) scale(1); }
+}
+
+@keyframes clay-wobble {
+    0%, 100% { transform: translateX(0px) rotate(0deg); }
+    25% { transform: translateX(-2px) rotate(-1deg); }
+    50% { transform: translateX(0px) rotate(0deg); }
+    75% { transform: translateX(2px) rotate(1deg); }
+}
+
+.pottery-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--surface-variant);
+    border-top: 3px solid var(--clay-primary);
+    border-radius: 50%;
+    animation: pottery-wheel-spin 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite;
+    position: relative;
+}
+
+.pottery-spinner::before {
+    content: "🏺";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 20px;
+    animation: clay-wobble 2s ease-in-out infinite;
+}
+
+/* Clay Formation Loading */
+@keyframes clay-form {
+    0% {
+        height: 10px;
+        border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+    }
+    33% {
+        height: 25px;
+        border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%;
+    }
+    66% {
+        height: 35px;
+        border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+    }
+    100% {
+        height: 40px;
+        border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%;
+    }
+}
+
+.clay-formation-loader {
+    width: 50px;
+    height: 40px;
+    background: var(--clay-primary);
+    animation: clay-form 1.8s ease-in-out infinite;
+    margin: 0 auto;
+    position: relative;
+}
+
+.clay-formation-loader::after {
+    content: "Shaping your pottery...";
+    position: absolute;
+    top: 110%;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.75rem;
+    color: var(--on-surface-variant);
+    white-space: nowrap;
+}
+
+/* Kiln Firing Animation */
+@keyframes kiln-fire {
+    0%, 100% {
+        box-shadow: 0 0 5px var(--kiln-secondary);
+        transform: scale(1);
+    }
+    50% {
+        box-shadow: 0 0 20px var(--kiln-secondary), 0 0 30px var(--kiln-secondary-light);
+        transform: scale(1.02);
+    }
+}
+
+.kiln-loader {
+    width: 60px;
+    height: 40px;
+    background: linear-gradient(45deg, var(--clay-primary-dark), var(--kiln-secondary));
+    border-radius: var(--radius-md);
+    animation: kiln-fire 2s ease-in-out infinite;
+    position: relative;
+    overflow: hidden;
+}
+
+.kiln-loader::before {
+    content: "🔥";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 16px;
+    animation: clay-wobble 1.5s ease-in-out infinite;
+}
+
+/* ===========================================
+   ✨ DELIGHTFUL EMPTY STATES
+   =========================================== */
+
+.pottery-empty-state {
+    text-align: center;
+    padding: var(--space-8) var(--space-4);
+    color: var(--on-surface-variant);
+    background: linear-gradient(135deg, var(--surface) 0%, var(--surface-container) 100%);
+    border-radius: var(--radius-lg);
+    margin: var(--space-6);
+}
+
+.pottery-empty-icon {
+    font-size: 4rem;
+    margin-bottom: var(--space-4);
+    animation: pottery-wheel-spin 8s linear infinite;
+    display: inline-block;
+}
+
+/* Pottery Pun Messages - Rotate through different encouragements */
+@keyframes message-cycle {
+    0%, 20% { opacity: 1; transform: translateY(0); }
+    25%, 95% { opacity: 0; transform: translateY(-10px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+
+.pottery-pun-message {
+    font-size: 1.125rem;
+    font-weight: 500;
+    margin-bottom: var(--space-2);
+    color: var(--clay-primary-dark);
+    animation: message-cycle 6s ease-in-out infinite;
+}
+
+.pottery-empty-subtext {
+    margin-bottom: var(--space-6);
+    max-width: 300px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Encouraging Messages */
+.empty-greenware::before { content: "Time to get your hands muddy! 🤲"; }
+.empty-bisque::before { content: "Ready to fire up some magic? 🔥"; }
+.empty-final::before { content: "The kiln is calling your name! ✨"; }
+.empty-photos::before { content: "Every masterpiece deserves its moment! 📸"; }
+.empty-all::before { content: "Your pottery journey starts with a single pinch! 🏺"; }
+
+/* ===========================================
+   🎉 SUCCESS & CELEBRATION ANIMATIONS
+   =========================================== */
+
+/* Stage Graduation Celebration */
+@keyframes pottery-celebration {
+    0% {
+        transform: scale(1) rotate(0deg);
+        background: var(--clay-primary);
+    }
+    25% {
+        transform: scale(1.2) rotate(-5deg);
+        background: var(--greenware);
+    }
+    50% {
+        transform: scale(1.3) rotate(5deg);
+        background: var(--bisque);
+    }
+    75% {
+        transform: scale(1.2) rotate(-3deg);
+        background: var(--final);
+    }
+    100% {
+        transform: scale(1) rotate(0deg);
+        background: var(--clay-primary);
+    }
+}
+
+@keyframes confetti-burst {
+    0% {
+        transform: scale(0) rotate(0deg);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.5) rotate(180deg);
+        opacity: 0.8;
+    }
+    100% {
+        transform: scale(0) rotate(360deg);
+        opacity: 0;
+    }
+}
+
+.stage-graduation-celebration {
+    position: relative;
+    animation: pottery-celebration 1.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.stage-graduation-celebration::after {
+    content: "✨🏺✨";
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 1.2rem;
+    animation: confetti-burst 2s ease-out forwards;
+    pointer-events: none;
+}
+
+/* Photo Upload Success */
+@keyframes photo-upload-success {
+    0% {
+        transform: scale(0.8) rotate(-10deg);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.1) rotate(5deg);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1) rotate(0deg);
+        opacity: 1;
+    }
+}
+
+.photo-upload-success {
+    animation: photo-upload-success 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    box-shadow: 0 0 20px var(--greenware-light);
+}
+
+.photo-upload-success::before {
+    content: "📸✨";
+    position: absolute;
+    top: -15px;
+    right: -15px;
+    font-size: 1rem;
+    animation: confetti-burst 1.5s ease-out forwards;
+}
+
+/* ===========================================
+   🤏 POTTERY-SPECIFIC MICRO-INTERACTIONS
+   =========================================== */
+
+/* Clay Bounce - For buttons and interactive elements */
+@keyframes clay-bounce {
+    0%, 20%, 60%, 100% {
+        transform: translateY(0);
+    }
+    40% {
+        transform: translateY(-8px);
+    }
+    80% {
+        transform: translateY(-4px);
+    }
+}
+
+.clay-bounce:hover {
+    animation: clay-bounce 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Ceramic Touch Feedback */
+.ceramic-touch {
+    transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    position: relative;
+    overflow: hidden;
+}
+
+.ceramic-touch:active {
+    transform: scale(0.98);
+    box-shadow: inset 0 2px 4px oklch(0% 0 0 / 0.1);
+}
+
+.ceramic-touch::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: radial-gradient(circle, var(--clay-primary-light) 0%, transparent 70%);
+    transition: width 0.3s, height 0.3s;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.ceramic-touch:active::before {
+    width: 200px;
+    height: 200px;
+    opacity: 0.3;
+    transition: width 0.1s, height 0.1s, opacity 0.1s;
+}
+
+/* Pottery Wheel Button Spin */
+@keyframes wheel-button-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.pottery-wheel-button:hover {
+    animation: wheel-button-spin 0.8s ease-in-out;
+}
+
+/* Stage Badge Hover Effects */
+.stage-badge {
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    cursor: pointer;
+    position: relative;
+}
+
+.stage-badge:hover {
+    transform: scale(1.15) rotate(5deg);
+    box-shadow: 0 4px 12px oklch(0% 0 0 / 0.2);
+}
+
+.stage-badge.stage-greenware:hover::after {
+    content: "🌱 Fresh clay, endless possibilities";
+    position: absolute;
+    bottom: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--greenware);
+    color: white;
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+    font-size: 0.6rem;
+    white-space: nowrap;
+    z-index: 100;
+}
+
+.stage-badge.stage-bisque:hover::after {
+    content: "🔥 First fire complete";
+    position: absolute;
+    bottom: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--bisque);
+    color: var(--on-surface);
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+    font-size: 0.6rem;
+    white-space: nowrap;
+    z-index: 100;
+}
+
+.stage-badge.stage-final:hover::after {
+    content: "✨ Ready to show off";
+    position: absolute;
+    bottom: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--final);
+    color: white;
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+    font-size: 0.6rem;
+    white-space: nowrap;
+    z-index: 100;
+}
+
+/* ===========================================
+   🥚 POTTERY EASTER EGGS
+   =========================================== */
+
+/* Secret Konami Code Easter Egg - Pottery Edition */
+.pottery-konami-active .pottery-card {
+    animation: pottery-wheel-spin 0.5s ease-in-out;
+}
+
+.pottery-konami-active .pottery-card:nth-child(2n) {
+    animation-delay: 0.1s;
+}
+
+.pottery-konami-active .pottery-card:nth-child(3n) {
+    animation-delay: 0.2s;
+}
+
+/* Long Press Easter Egg on Empty States */
+.pottery-empty-state:active {
+    background: linear-gradient(135deg, var(--greenware-light), var(--bisque-light));
+}
+
+.pottery-empty-state.easter-egg-active::before {
+    content: "🤫 Every potter needs a little magic... Keep creating! ✨";
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--clay-primary);
+    color: var(--surface);
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-md);
+    font-size: 0.75rem;
+    animation: pottery-celebration 2s ease-out;
+}
+
+/* Shake-to-Clay Easter Egg */
+@keyframes clay-shake-response {
+    0%, 100% { transform: rotate(0deg); }
+    10% { transform: rotate(-2deg) scale(1.02); }
+    20% { transform: rotate(2deg) scale(1.04); }
+    30% { transform: rotate(-2deg) scale(1.02); }
+    40% { transform: rotate(2deg) scale(1.04); }
+    50% { transform: rotate(0deg) scale(1); }
+}
+
+.shake-detected .pottery-card {
+    animation: clay-shake-response 1s ease-in-out;
+}
+
+.shake-detected .header-title::after {
+    content: " - Shake detected! 🏺";
+    color: var(--greenware);
+    animation: confetti-burst 2s ease-out;
+}
+
+/* ===========================================
+   📱 STAGE TRANSITION ANIMATIONS
+   =========================================== */
+
+/* Progressive Stage Reveal */
+@keyframes stage-reveal {
+    0% {
+        opacity: 0;
+        transform: translateX(-20px) scale(0.8);
+    }
+    50% {
+        opacity: 0.7;
+        transform: translateX(0) scale(1.1);
+    }
+    100% {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+}
+
+.stage-transition .stage-badge {
+    animation: stage-reveal 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.stage-transition .stage-badge:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.stage-transition .stage-badge:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+/* Pottery Process Flow Animation */
+@keyframes pottery-flow {
+    0% {
+        background: var(--greenware);
+        transform: translateX(0);
+    }
+    33% {
+        background: var(--bisque);
+        transform: translateX(100%);
+    }
+    66% {
+        background: var(--final);
+        transform: translateX(200%);
+    }
+    100% {
+        background: var(--clay-primary);
+        transform: translateX(300%);
+    }
+}
+
+.pottery-process-indicator {
+    width: 20px;
+    height: 4px;
+    background: var(--greenware);
+    border-radius: var(--radius-full);
+    animation: pottery-flow 3s ease-in-out infinite;
+    margin: var(--space-2) 0;
+}
+
+/* ===========================================
+   📸 PHOTO UPLOAD MAGIC
+   =========================================== */
+
+/* Clay Shaping Upload Progress */
+@keyframes clay-shaping-progress {
+    0% {
+        width: 10%;
+        border-radius: 50%;
+        background: var(--clay-primary);
+    }
+    25% {
+        width: 30%;
+        border-radius: 25px;
+        background: var(--greenware);
+    }
+    50% {
+        width: 60%;
+        border-radius: 15px;
+        background: var(--bisque);
+    }
+    75% {
+        width: 85%;
+        border-radius: 10px;
+        background: var(--final);
+    }
+    100% {
+        width: 100%;
+        border-radius: var(--radius-sm);
+        background: var(--clay-primary);
+    }
+}
+
+.pottery-upload-progress {
+    height: 8px;
+    background: var(--surface-variant);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    position: relative;
+}
+
+.pottery-upload-progress::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    animation: clay-shaping-progress 2s ease-out forwards;
+}
+
+/* Photo Drop Zone Magic */
+.pottery-drop-zone {
+    border: 2px dashed var(--outline);
+    border-radius: var(--radius-lg);
+    padding: var(--space-8);
+    text-align: center;
+    transition: all 0.3s ease;
+    background: var(--surface-container);
+}
+
+.pottery-drop-zone.dragover {
+    border-color: var(--clay-primary);
+    background: linear-gradient(135deg, var(--clay-primary-light), var(--greenware-light));
+    transform: scale(1.02);
+    box-shadow: 0 0 20px var(--clay-primary-light);
+}
+
+.pottery-drop-zone.dragover::before {
+    content: "🏺 Drop your masterpiece here! ✨";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-weight: 600;
+    color: var(--clay-primary-dark);
+    animation: pottery-celebration 1s ease-in-out;
+}
+
+/* Upload Success Celebration */
+@keyframes upload-celebration {
+    0% {
+        transform: scale(1);
+        filter: brightness(1);
+    }
+    50% {
+        transform: scale(1.05);
+        filter: brightness(1.2);
+    }
+    100% {
+        transform: scale(1);
+        filter: brightness(1);
+    }
+}
+
+.pottery-upload-complete {
+    animation: upload-celebration 1s ease-out;
+    position: relative;
+}
+
+.pottery-upload-complete::after {
+    content: "🎉 Beautiful shot! Your pottery looks amazing! 📸";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--greenware);
+    color: white;
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-md);
+    font-size: 0.75rem;
+    white-space: nowrap;
+    margin-top: var(--space-2);
+    animation: stage-reveal 1s ease-out forwards;
+    z-index: 100;
+}
+
+/* ===========================================
+   🎭 ACCESSIBILITY & REDUCED MOTION
+   =========================================== */
+
+@media (prefers-reduced-motion: reduce) {
+    .pottery-spinner,
+    .clay-formation-loader,
+    .kiln-loader,
+    .pottery-empty-icon,
+    .pottery-celebration,
+    .stage-graduation-celebration,
+    .photo-upload-success,
+    .clay-bounce,
+    .pottery-wheel-button,
+    .pottery-konami-active .pottery-card,
+    .shake-detected .pottery-card,
+    .stage-transition .stage-badge,
+    .pottery-process-indicator,
+    .pottery-upload-progress::before,
+    .pottery-upload-complete,
+    .pottery-drop-zone.dragover {
+        animation: none;
+        transition: none;
+    }
+
+    .stage-badge:hover {
+        transform: none;
+    }
+
+    .pottery-drop-zone.dragover {
+        transform: none;
+    }
+}
+
+/* ===========================================
+   🎨 POTTERY-THEMED CURSOR EFFECTS
+   =========================================== */
+
+.pottery-interactive {
+    cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Ctext y='24' font-size='24'%3E🏺%3C/text%3E%3C/svg%3E"), auto;
+}
+
+.clay-working {
+    cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Ctext y='24' font-size='24'%3E🤲%3C/text%3E%3C/svg%3E"), auto;
+}
+
+.kiln-firing {
+    cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Ctext y='24' font-size='24'%3E🔥%3C/text%3E%3C/svg%3E"), auto;
+}
+
+/* ===========================================
+   💫 FINAL WHIMSICAL TOUCHES
+   =========================================== */
+
+/* Breathing effect for loading states */
+@keyframes pottery-breathe {
+    0%, 100% { transform: scale(1); opacity: 0.8; }
+    50% { transform: scale(1.05); opacity: 1; }
+}
+
+.pottery-loading .pottery-card {
+    animation: pottery-breathe 2s ease-in-out infinite;
+}
+
+/* Gentle floating for FAB */
+@keyframes pottery-float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-3px); }
+}
+
+.fab {
+    animation: pottery-float 3s ease-in-out infinite;
+}
+
+/* Success message varieties for different contexts */
+.success-messages::after {
+    animation: message-cycle 8s ease-in-out infinite;
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--greenware);
+    color: white;
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+    font-size: 0.7rem;
+    white-space: nowrap;
+    margin-bottom: var(--space-1);
+}
+
+.success-messages.greenware::after { content: "🌱 Greenware glory! Your clay creation is taking shape beautifully!"; }
+.success-messages.bisque::after { content: "🔥 Bisque brilliance! First firing complete - you're on fire!"; }
+.success-messages.final::after { content: "✨ Final firing fantastic! This piece is absolutely stunning!"; }
+.success-messages.photo::after { content: "📸 Picture perfect! Every angle captures the artistry!"; }
+.success-messages.save::after { content: "💾 Saved successfully! Your pottery portfolio grows stronger!"; }
+
+/* Hide success messages if reduced motion is preferred */
+@media (prefers-reduced-motion: reduce) {
+    .success-messages::after {
+        animation: none;
+        opacity: 0;
+    }
+}

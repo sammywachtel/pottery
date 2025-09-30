@@ -41,7 +41,7 @@ sample_item_internal_1 = PotteryItem(
     createdTimezone="UTC",
     location="Studio",
     photos=[sample_photo_internal],
-    user_id="admin",
+    user_id="test-firebase-uid-123",
 )
 sample_item_internal_2 = PotteryItem(
     id=TEST_ITEM_ID_2,
@@ -51,7 +51,7 @@ sample_item_internal_2 = PotteryItem(
     createdTimezone="-04:00",
     location="Shelf",
     photos=[],
-    user_id="admin",
+    user_id="test-firebase-uid-123",
 )
 create_payload = {
     "name": "New Item",
@@ -96,7 +96,7 @@ async def test_get_items_empty(client: TestClient, mocker, auth_headers):
     response = client.get("/api/items", headers=auth_headers)
     assert response.status_code == status.HTTP_200_OK
     assert response.json() == []
-    mock_get_all.assert_awaited_once_with(user_id="admin")
+    mock_get_all.assert_awaited_once_with(user_id="test-firebase-uid-123")
 
 
 @pytest.mark.asyncio
@@ -121,7 +121,7 @@ async def test_get_items_success(client: TestClient, mocker, auth_headers):
     assert len(json_response[0]["photos"]) == 1
     assert json_response[1]["id"] == TEST_ITEM_ID_2
     assert len(json_response[1]["photos"]) == 0
-    mock_get_all.assert_awaited_once_with(user_id="admin")
+    mock_get_all.assert_awaited_once_with(user_id="test-firebase-uid-123")
     assert mock_generate_urls.call_count == 2
 
 
@@ -136,7 +136,7 @@ async def test_get_items_firestore_error(client: TestClient, mocker, auth_header
     assert "detail" in response.json()
     # Check specific detail from the handler in get_items endpoint
     assert response.json()["detail"] == "Failed to retrieve items."
-    mock_get_all.assert_awaited_once_with(user_id="admin")
+    mock_get_all.assert_awaited_once_with(user_id="test-firebase-uid-123")
 
 
 @pytest.mark.asyncio
@@ -152,7 +152,7 @@ async def test_create_item_success(client: TestClient, mocker, auth_headers):
         **internal_data_payload,
         createdTimezone=get_timezone_identifier(dt_object),
         photos=[],
-        user_id="admin",
+        user_id="test-firebase-uid-123",
     )
     mock_create.return_value = created_item_internal
     mock_generate_urls = mocker.patch(
@@ -168,7 +168,7 @@ async def test_create_item_success(client: TestClient, mocker, auth_headers):
     response_dt = datetime.fromisoformat(response_dt_str.replace("Z", "+00:00"))
     payload_dt = datetime.fromisoformat(create_payload["createdDateTime"])
     assert response_dt == payload_dt
-    mock_create.assert_awaited_once_with(ANY, user_id="admin")
+    mock_create.assert_awaited_once_with(ANY, user_id="test-firebase-uid-123")
     mock_generate_urls.assert_awaited_once_with([])
 
 
@@ -198,7 +198,7 @@ async def test_create_item_firestore_error(client: TestClient, mocker, auth_head
     assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
     # Check specific detail from the handler in create_item endpoint
     assert response.json()["detail"] == "Failed to create item."
-    mock_create.assert_awaited_once_with(ANY, user_id="admin")
+    mock_create.assert_awaited_once_with(ANY, user_id="test-firebase-uid-123")
 
 
 @pytest.mark.asyncio
@@ -219,7 +219,9 @@ async def test_get_item_success(client: TestClient, mocker, auth_headers):
     assert response.status_code == status.HTTP_200_OK
     json_response = response.json()
     assert json_response["id"] == TEST_ITEM_ID_1
-    mock_get_item.assert_awaited_once_with(TEST_ITEM_ID_1, user_id="admin")
+    mock_get_item.assert_awaited_once_with(
+        TEST_ITEM_ID_1, user_id="test-firebase-uid-123"
+    )
     mock_generate_urls.assert_awaited_once_with(sample_item_internal_1.photos)
 
 
@@ -235,7 +237,9 @@ async def test_get_item_not_found(client: TestClient, mocker, auth_headers):
         response.json()["detail"]
         == f"Pottery item with ID '{TEST_ITEM_ID_1}' not found."
     )
-    mock_get_item.assert_awaited_once_with(TEST_ITEM_ID_1, user_id="admin")
+    mock_get_item.assert_awaited_once_with(
+        TEST_ITEM_ID_1, user_id="test-firebase-uid-123"
+    )
 
 
 @pytest.mark.asyncio
@@ -251,7 +255,9 @@ async def test_get_item_firestore_error(client: TestClient, mocker, auth_headers
         response.json()["detail"]
         == f"An internal error occurred while fetching item '{TEST_ITEM_ID_1}'."
     )
-    mock_get_item.assert_awaited_once_with(TEST_ITEM_ID_1, user_id="admin")
+    mock_get_item.assert_awaited_once_with(
+        TEST_ITEM_ID_1, user_id="test-firebase-uid-123"
+    )
 
 
 @pytest.mark.asyncio
@@ -266,7 +272,9 @@ async def test_get_item_firestore_connection_error(
     response = client.get(f"/api/items/{TEST_ITEM_ID_1}", headers=auth_headers)
     assert response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE
     assert response.json()["detail"] == "Backend database service unavailable."
-    mock_get_item.assert_awaited_once_with(TEST_ITEM_ID_1, user_id="admin")
+    mock_get_item.assert_awaited_once_with(
+        TEST_ITEM_ID_1, user_id="test-firebase-uid-123"
+    )
 
 
 @pytest.mark.asyncio
@@ -282,7 +290,7 @@ async def test_update_item_success(client: TestClient, mocker, auth_headers):
         **internal_update_data,
         createdTimezone=get_timezone_identifier(dt_object),
         photos=[],
-        user_id="admin",
+        user_id="test-firebase-uid-123",
     )
     mock_update.return_value = updated_item_internal
     mock_generate_urls = mocker.patch(
@@ -299,7 +307,9 @@ async def test_update_item_success(client: TestClient, mocker, auth_headers):
     response_dt = datetime.fromisoformat(response_dt_str.replace("Z", "+00:00"))
     payload_dt = datetime.fromisoformat(update_payload["createdDateTime"])
     assert response_dt == payload_dt
-    mock_update.assert_awaited_once_with(TEST_ITEM_ID_1, ANY, user_id="admin")
+    mock_update.assert_awaited_once_with(
+        TEST_ITEM_ID_1, ANY, user_id="test-firebase-uid-123"
+    )
     mock_generate_urls.assert_awaited_once_with([])
 
 
@@ -313,7 +323,9 @@ async def test_update_item_not_found(client: TestClient, mocker, auth_headers):
         f"/api/items/{TEST_ITEM_ID_1}", json=update_payload, headers=auth_headers
     )
     assert response.status_code == status.HTTP_404_NOT_FOUND
-    mock_update.assert_awaited_once_with(TEST_ITEM_ID_1, ANY, user_id="admin")
+    mock_update.assert_awaited_once_with(
+        TEST_ITEM_ID_1, ANY, user_id="test-firebase-uid-123"
+    )
 
 
 @pytest.mark.asyncio
@@ -338,7 +350,9 @@ async def test_update_item_firestore_error(client: TestClient, mocker, auth_head
     assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
     # Check specific detail from the handler in update_item endpoint
     assert response.json()["detail"] == "Failed to update item metadata."
-    mock_update.assert_awaited_once_with(TEST_ITEM_ID_1, ANY, user_id="admin")
+    mock_update.assert_awaited_once_with(
+        TEST_ITEM_ID_1, ANY, user_id="test-firebase-uid-123"
+    )
 
 
 @pytest.mark.asyncio
@@ -359,9 +373,13 @@ async def test_delete_item_success_with_photos(
     mock_fs_delete.return_value = True
     response = client.delete(f"/api/items/{TEST_ITEM_ID_1}", headers=auth_headers)
     assert response.status_code == status.HTTP_204_NO_CONTENT
-    mock_get_item.assert_awaited_once_with(TEST_ITEM_ID_1, user_id="admin")
+    mock_get_item.assert_awaited_once_with(
+        TEST_ITEM_ID_1, user_id="test-firebase-uid-123"
+    )
     mock_gcs_delete.assert_awaited_once_with([TEST_GCS_PATH_1])
-    mock_fs_delete.assert_awaited_once_with(TEST_ITEM_ID_1, user_id="admin")
+    mock_fs_delete.assert_awaited_once_with(
+        TEST_ITEM_ID_1, user_id="test-firebase-uid-123"
+    )
 
 
 @pytest.mark.asyncio
@@ -379,9 +397,13 @@ async def test_delete_item_success_no_photos(client: TestClient, mocker, auth_he
     mock_fs_delete.return_value = True
     response = client.delete(f"/api/items/{TEST_ITEM_ID_2}", headers=auth_headers)
     assert response.status_code == status.HTTP_204_NO_CONTENT
-    mock_get_item.assert_awaited_once_with(TEST_ITEM_ID_2, user_id="admin")
+    mock_get_item.assert_awaited_once_with(
+        TEST_ITEM_ID_2, user_id="test-firebase-uid-123"
+    )
     mock_gcs_delete.assert_not_awaited()
-    mock_fs_delete.assert_awaited_once_with(TEST_ITEM_ID_2, user_id="admin")
+    mock_fs_delete.assert_awaited_once_with(
+        TEST_ITEM_ID_2, user_id="test-firebase-uid-123"
+    )
 
 
 @pytest.mark.asyncio
@@ -398,7 +420,9 @@ async def test_delete_item_not_found(client: TestClient, mocker, auth_headers):
     )
     response = client.delete(f"/api/items/{TEST_ITEM_ID_1}", headers=auth_headers)
     assert response.status_code == status.HTTP_404_NOT_FOUND
-    mock_get_item.assert_awaited_once_with(TEST_ITEM_ID_1, user_id="admin")
+    mock_get_item.assert_awaited_once_with(
+        TEST_ITEM_ID_1, user_id="test-firebase-uid-123"
+    )
     mock_gcs_delete.assert_not_awaited()
     mock_fs_delete.assert_not_awaited()
 
@@ -426,7 +450,9 @@ async def test_delete_item_gcs_error(client: TestClient, mocker, auth_headers):
     assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
     # *** FIX: Assert correct error detail from router ***
     assert response.json()["detail"] == "Error during photo deletion."
-    mock_get_item.assert_awaited_once_with(TEST_ITEM_ID_1, user_id="admin")
+    mock_get_item.assert_awaited_once_with(
+        TEST_ITEM_ID_1, user_id="test-firebase-uid-123"
+    )
     mock_gcs_delete.assert_awaited_once_with([TEST_GCS_PATH_1])
     mock_fs_delete.assert_not_awaited()
 
@@ -456,6 +482,10 @@ async def test_delete_item_firestore_error(client: TestClient, mocker, auth_head
         response.json()["detail"]
         == "Failed to delete item metadata after deleting photos."
     )
-    mock_get_item.assert_awaited_once_with(TEST_ITEM_ID_1, user_id="admin")
+    mock_get_item.assert_awaited_once_with(
+        TEST_ITEM_ID_1, user_id="test-firebase-uid-123"
+    )
     mock_gcs_delete.assert_awaited_once_with([TEST_GCS_PATH_1])
-    mock_fs_delete.assert_awaited_once_with(TEST_ITEM_ID_1, user_id="admin")
+    mock_fs_delete.assert_awaited_once_with(
+        TEST_ITEM_ID_1, user_id="test-firebase-uid-123"
+    )

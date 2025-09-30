@@ -1,29 +1,79 @@
 #!/bin/bash
 
 # Combined Build and Deploy Script for Cloud Run
+# Usage: ./build_and_deploy.sh [--env=<environment>]
+# Environments: dev (default), prod
+
+# --- Parse Command Line Arguments ---
+ENVIRONMENT="dev"  # Default to development
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --env=*)
+      ENVIRONMENT="${1#*=}"
+      shift
+      ;;
+    --help|-h)
+      echo "Usage: $0 [--env=<environment>]"
+      echo "Environments: dev (default), prod"
+      echo "Examples:"
+      echo "  $0                # Deploy to dev environment"
+      echo "  $0 --env=dev      # Deploy to dev environment"
+      echo "  $0 --env=prod     # Deploy to production"
+      exit 0
+      ;;
+    *)
+      echo "Unknown option: $1"
+      echo "Use --help for usage information"
+      exit 1
+      ;;
+  esac
+done
+
+# --- Validate Environment ---
+case $ENVIRONMENT in
+  dev|development)
+    ENV_FILE=".env.dev"
+    echo "🚀 Deploying to DEVELOPMENT environment"
+    ;;
+  prod|production)
+    ENV_FILE=".env.prod"
+    echo "🏭 Deploying to PRODUCTION environment"
+    ;;
+  *)
+    echo "Error: Invalid environment '$ENVIRONMENT'. Use 'dev' or 'prod'."
+    exit 1
+    ;;
+esac
 
 # --- Load Environment Variables ---
-# Load environment variables ONLY from .env.deploy file if it exists
-ENV_DEPLOY_FILE=".env.deploy"
-if [ -f "${ENV_DEPLOY_FILE}" ]; then
-  echo "Loading environment variables from ${ENV_DEPLOY_FILE} file..."
+if [ -f "${ENV_FILE}" ]; then
+  echo "Loading environment variables from ${ENV_FILE}..."
   # Use set -a to export all variables defined in the file
   set -a
-  source "${ENV_DEPLOY_FILE}"
+  source "${ENV_FILE}"
   set +a
 else
-  # If the primary deploy env file is missing, it's an error.
-  echo "Error: ${ENV_DEPLOY_FILE} file not found. Please create it from .env.deploy.example."
+  echo "Error: Environment file ${ENV_FILE} not found."
+  echo "Available files:"
+  ls -la .env.* 2>/dev/null || echo "No .env files found"
   exit 1
 fi
 
-# --- Configuration Variables (from .env.deploy) ---
+# --- Configuration Variables (from environment file) ---
 # Ensure required variables are set
-if [ -z "${GCP_PROJECT_ID}" ]; then echo "Error: GCP_PROJECT_ID not set in ${ENV_DEPLOY_FILE}." && exit 1; fi
-if [ -z "${GCS_BUCKET_NAME}" ]; then echo "Error: GCS_BUCKET_NAME not set in ${ENV_DEPLOY_FILE}." && exit 1; fi
-if [ -z "${DEPLOYMENT_SERVICE_ACCOUNT_KEY_FILE}" ]; then echo "Error: DEPLOYMENT_SERVICE_ACCOUNT_KEY_FILE not set in ${ENV_DEPLOY_FILE}." && exit 1; fi
-if [ -z "${DEPLOYMENT_SERVICE_ACCOUNT_EMAIL}" ]; then echo "Error: DEPLOYMENT_SERVICE_ACCOUNT_EMAIL not set in ${ENV_DEPLOY_FILE}." && exit 1; fi
-if [ ! -f "${DEPLOYMENT_SERVICE_ACCOUNT_KEY_FILE}" ]; then echo "Error: Deployment key file not found at path specified in ${ENV_DEPLOY_FILE}: ${DEPLOYMENT_SERVICE_ACCOUNT_KEY_FILE}" && exit 1; fi
+if [ -z "${GCP_PROJECT_ID}" ]; then echo "Error: GCP_PROJECT_ID not set in ${ENV_FILE}." && exit 1; fi
+if [ -z "${GCS_BUCKET_NAME}" ]; then echo "Error: GCS_BUCKET_NAME not set in ${ENV_FILE}." && exit 1; fi
+if [ -z "${DEPLOYMENT_SERVICE_ACCOUNT_KEY_FILE}" ]; then echo "Error: DEPLOYMENT_SERVICE_ACCOUNT_KEY_FILE not set in ${ENV_FILE}." && exit 1; fi
+if [ -z "${DEPLOYMENT_SERVICE_ACCOUNT_EMAIL}" ]; then echo "Error: DEPLOYMENT_SERVICE_ACCOUNT_EMAIL not set in ${ENV_FILE}." && exit 1; fi
+if [ ! -f "${DEPLOYMENT_SERVICE_ACCOUNT_KEY_FILE}" ]; then echo "Error: Deployment key file not found at path specified in ${ENV_FILE}: ${DEPLOYMENT_SERVICE_ACCOUNT_KEY_FILE}" && exit 1; fi
+
+# Show deployment summary
+echo "📋 Deployment Summary:"
+echo "   Environment: ${ENVIRONMENT}"
+echo "   Config File: ${ENV_FILE}"
+echo "   GCP Project: ${GCP_PROJECT_ID}"
+echo "   Service Name: ${BUILD_SERVICE_NAME:-pottery-api}"
+echo "   Build Region: ${BUILD_REGION:-us-central1}"
 
 
 PROJECT_ID="${GCP_PROJECT_ID}"
@@ -43,11 +93,14 @@ GCS_BUCKET="${GCS_BUCKET_NAME}"
 
 # Construct the runtime environment variables string for Cloud Run deployment
 # Required vars
-ENV_VARS="GCP_PROJECT_ID=${PROJECT_ID},GCS_BUCKET_NAME=${GCS_BUCKET}"
-# Add optional runtime vars if they are set in .env.deploy
+ENV_VARS="ENVIRONMENT=${ENVIRONMENT},GCP_PROJECT_ID=${PROJECT_ID},GCS_BUCKET_NAME=${GCS_BUCKET}"
+# Add optional runtime vars if they are set in environment file
 if [ -n "${FIRESTORE_COLLECTION}" ]; then ENV_VARS+=",FIRESTORE_COLLECTION=${FIRESTORE_COLLECTION}"; fi
 if [ -n "${FIRESTORE_DATABASE_ID}" ]; then ENV_VARS+=",FIRESTORE_DATABASE_ID=${FIRESTORE_DATABASE_ID}"; fi
 if [ -n "${SIGNED_URL_EXPIRATION_MINUTES}" ]; then ENV_VARS+=",SIGNED_URL_EXPIRATION_MINUTES=${SIGNED_URL_EXPIRATION_MINUTES}"; fi
+if [ -n "${FIREBASE_PROJECT_ID}" ]; then ENV_VARS+=",FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID}"; fi
+if [ -n "${FIREBASE_AUTH_DOMAIN}" ]; then ENV_VARS+=",FIREBASE_AUTH_DOMAIN=${FIREBASE_AUTH_DOMAIN}"; fi
+if [ -n "${JWT_SECRET_KEY}" ]; then ENV_VARS+=",JWT_SECRET_KEY=${JWT_SECRET_KEY}"; fi
 
 
 echo "--- Build & Deploy Configuration ---"
@@ -123,5 +176,21 @@ gcloud run deploy "${SERVICE_NAME}" \
     --verbosity=info # Use info or debug for more output
 
 if [ $? -ne 0 ]; then echo "ERROR: Cloud Run deployment failed." && exit 1; fi
+
+echo "Deployment successful for service ${SERVICE_NAME}."
+
+# --- Setup Infrastructure Components ---
+echo "Setting up infrastructure components..."
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+INFRA_SCRIPT="${SCRIPT_DIR}/scripts/setup-infrastructure.sh"
+
+if [ -x "${INFRA_SCRIPT}" ]; then
+  echo "Configuring GCS bucket CORS for production..."
+  "${INFRA_SCRIPT}" prod
+  echo "Infrastructure setup completed."
+else
+  echo "WARNING: Infrastructure setup script not found at ${INFRA_SCRIPT}"
+  echo "You may need to manually configure GCS bucket CORS settings."
+fi
 
 echo "Deployment complete for service ${SERVICE_NAME}."

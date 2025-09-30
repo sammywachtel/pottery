@@ -1,0 +1,20 @@
+[
+  {
+    "origin": [
+      "https://pottery-app.com",
+      "https://www.pottery-app.com",
+      "https://app.pottery-app.com"
+    ],
+    "method": ["GET", "HEAD"],
+    "responseHeader": [
+      "Content-Type",
+      "Content-Length",
+      "Content-Range",
+      "ETag",
+      "Cache-Control",
+      "Last-Modified",
+      "Accept-Ranges"
+    ],
+    "maxAgeSeconds": 3600
+  }
+]

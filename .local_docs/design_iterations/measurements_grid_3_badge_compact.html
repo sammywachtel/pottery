@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Measurements Grid - Badge Compact Design</title>
+    <style>
+        /* Reset and base styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #f5f1eb 0%, #e8dfd4 100%);
+            padding: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        /* Pottery-themed color palette */
+        :root {
+            --greenware-primary: #8b7355;
+            --greenware-bg: #f4ede3;
+            --greenware-border: #d4c8b8;
+
+            --bisque-primary: #c9966b;
+            --bisque-bg: #faf3eb;
+            --bisque-border: #e8d9c9;
+
+            --final-primary: #b8704f;
+            --final-bg: #fff5f0;
+            --final-border: #f0d5ca;
+
+            --text-primary: #3a2d24;
+            --text-secondary: #6b5d52;
+            --text-muted: #9c8d7e;
+
+            --shadow: rgba(58, 45, 36, 0.08);
+        }
+
+        .measurements-container {
+            max-width: 800px;
+            width: 100%;
+        }
+
+        /* Compact grid with minimal gaps */
+        .measurements-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .measurements-grid .final-stage {
+            grid-column: 1 / -1;
+        }
+
+        /* Stage badge - compact card design */
+        .stage-badge {
+            background: white;
+            border-radius: 12px;
+            padding: 1.125rem;
+            box-shadow: 0 2px 8px var(--shadow);
+            border: 2px solid;
+            transition: all 0.2s ease;
+        }
+
+        .stage-badge:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px var(--shadow);
+        }
+
+        .stage-badge.greenware {
+            border-color: var(--greenware-border);
+            background: linear-gradient(135deg, white 0%, var(--greenware-bg) 100%);
+        }
+
+        .stage-badge.bisque {
+            border-color: var(--bisque-border);
+            background: linear-gradient(135deg, white 0%, var(--bisque-bg) 100%);
+        }
+
+        .stage-badge.final {
+            border-color: var(--final-border);
+            background: linear-gradient(135deg, white 0%, var(--final-bg) 100%);
+        }
+
+        /* Compact header with inline badge */
+        .stage-header {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.375rem 0.75rem;
+            border-radius: 6px;
+            margin-bottom: 0.875rem;
+        }
+
+        .greenware .stage-header {
+            background: var(--greenware-primary);
+            color: white;
+        }
+
+        .bisque .stage-header {
+            background: var(--bisque-primary);
+            color: white;
+        }
+
+        .final .stage-header {
+            background: var(--final-primary);
+            color: white;
+        }
+
+        .stage-name {
+            font-size: 0.8125rem;
+            font-weight: 600;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+        }
+
+        /* Compact inline measurements */
+        .measurements-inline {
+            display: flex;
+            flex-direction: column;
+            gap: 0.625rem;
+        }
+
+        .measurement-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.5);
+            transition: background 0.15s ease;
+        }
+
+        .measurement-item:hover {
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        /* Icon and label in compact format */
+        .measurement-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            flex-shrink: 0;
+        }
+
+        .greenware .measurement-icon {
+            background: var(--greenware-bg);
+            color: var(--greenware-primary);
+        }
+
+        .bisque .measurement-icon {
+            background: var(--bisque-bg);
+            color: var(--bisque-primary);
+        }
+
+        .final .measurement-icon {
+            background: var(--final-bg);
+            color: var(--final-primary);
+        }
+
+        .measurement-label {
+            flex: 0 0 auto;
+            font-size: 0.8125rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            min-width: 48px;
+        }
+
+        .measurement-spacer {
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(to right, var(--text-muted) 0%, transparent 100%);
+            opacity: 0.2;
+            margin: 0 0.5rem;
+        }
+
+        /* Value with inline unit */
+        .measurement-value {
+            display: flex;
+            align-items: baseline;
+            gap: 0.25rem;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+        }
+
+        .measurement-unit {
+            font-size: 0.6875rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        /* Empty state */
+        .measurement-value.empty {
+            color: var(--text-muted);
+            font-weight: 400;
+            font-size: 0.8125rem;
+            font-style: italic;
+        }
+
+        /* Final stage gets extra emphasis */
+        .final .stage-name {
+            font-size: 0.9375rem;
+        }
+
+        .final .measurement-value {
+            font-size: 1.125rem;
+        }
+
+        .final .measurement-icon {
+            width: 26px;
+            height: 26px;
+            font-size: 1rem;
+        }
+
+        /* Responsive breakpoints */
+        @media (max-width: 640px) {
+            .measurements-grid {
+                grid-template-columns: 1fr;
+                gap: 0.875rem;
+            }
+
+            .stage-badge {
+                padding: 1rem;
+            }
+
+            .measurement-label {
+                min-width: 40px;
+            }
+        }
+
+        @media (max-width: 360px) {
+            body {
+                padding: 1rem;
+            }
+
+            .measurements-grid {
+                gap: 0.75rem;
+            }
+
+            .stage-badge {
+                padding: 0.875rem;
+            }
+
+            .measurement-item {
+                padding: 0.375rem;
+            }
+
+            .measurement-spacer {
+                display: none;
+            }
+
+            .measurement-label {
+                flex: 1;
+            }
+        }
+
+        /* Demo styling for empty state */
+        .demo-empty {
+            margin-top: 1.5rem;
+            opacity: 0.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="measurements-container">
+        <div class="measurements-grid">
+            <!-- Greenware Badge -->
+            <div class="stage-badge greenware">
+                <div class="stage-header">
+                    <span class="stage-name">Greenware</span>
+                </div>
+                <div class="measurements-inline">
+                    <div class="measurement-item">
+                        <div class="measurement-icon">↕</div>
+                        <div class="measurement-label">Height</div>
+                        <div class="measurement-spacer"></div>
+                        <div class="measurement-value">
+                            <span>8.5</span>
+                            <span class="measurement-unit">in</span>
+                        </div>
+                    </div>
+                    <div class="measurement-item">
+                        <div class="measurement-icon">↔</div>
+                        <div class="measurement-label">Width</div>
+                        <div class="measurement-spacer"></div>
+                        <div class="measurement-value">
+                            <span>6.0</span>
+                            <span class="measurement-unit">in</span>
+                        </div>
+                    </div>
+                    <div class="measurement-item">
+                        <div class="measurement-icon">⊟</div>
+                        <div class="measurement-label">Depth</div>
+                        <div class="measurement-spacer"></div>
+                        <div class="measurement-value">
+                            <span>6.0</span>
+                            <span class="measurement-unit">in</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bisque Badge -->
+            <div class="stage-badge bisque">
+                <div class="stage-header">
+                    <span class="stage-name">Bisque</span>
+                </div>
+                <div class="measurements-inline">
+                    <div class="measurement-item">
+                        <div class="measurement-icon">↕</div>
+                        <div class="measurement-label">Height</div>
+                        <div class="measurement-spacer"></div>
+                        <div class="measurement-value">
+                            <span>8.0</span>
+                            <span class="measurement-unit">in</span>
+                        </div>
+                    </div>
+                    <div class="measurement-item">
+                        <div class="measurement-icon">↔</div>
+                        <div class="measurement-label">Width</div>
+                        <div class="measurement-spacer"></div>
+                        <div class="measurement-value">
+                            <span>5.5</span>
+                            <span class="measurement-unit">in</span>
+                        </div>
+                    </div>
+                    <div class="measurement-item">
+                        <div class="measurement-icon">⊟</div>
+                        <div class="measurement-label">Depth</div>
+                        <div class="measurement-spacer"></div>
+                        <div class="measurement-value">
+                            <span>5.5</span>
+                            <span class="measurement-unit">in</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Final Badge (Full Width) -->
+            <div class="stage-badge final final-stage">
+                <div class="stage-header">
+                    <span class="stage-name">Final</span>
+                </div>
+                <div class="measurements-inline">
+                    <div class="measurement-item">
+                        <div class="measurement-icon">↕</div>
+                        <div class="measurement-label">Height</div>
+                        <div class="measurement-spacer"></div>
+                        <div class="measurement-value">
+                            <span>7.5</span>
+                            <span class="measurement-unit">in</span>
+                        </div>
+                    </div>
+                    <div class="measurement-item">
+                        <div class="measurement-icon">↔</div>
+                        <div class="measurement-label">Width</div>
+                        <div class="measurement-spacer"></div>
+                        <div class="measurement-value">
+                            <span>5.25</span>
+                            <span class="measurement-unit">in</span>
+                        </div>
+                    </div>
+                    <div class="measurement-item">
+                        <div class="measurement-icon">⊟</div>
+                        <div class="measurement-label">Depth</div>
+                        <div class="measurement-spacer"></div>
+                        <div class="measurement-value">
+                            <span>5.25</span>
+                            <span class="measurement-unit">in</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Demo: Empty State Example -->
+        <div class="measurements-grid demo-empty">
+            <div class="stage-badge greenware">
+                <div class="stage-header">
+                    <span class="stage-name">Greenware</span>
+                </div>
+                <div class="measurements-inline">
+                    <div class="measurement-item">
+                        <div class="measurement-icon">↕</div>
+                        <div class="measurement-label">Height</div>
+                        <div class="measurement-spacer"></div>
+                        <div class="measurement-value empty">—</div>
+                    </div>
+                    <div class="measurement-item">
+                        <div class="measurement-icon">↔</div>
+                        <div class="measurement-label">Width</div>
+                        <div class="measurement-spacer"></div>
+                        <div class="measurement-value empty">—</div>
+                    </div>
+                    <div class="measurement-item">
+                        <div class="measurement-icon">⊟</div>
+                        <div class="measurement-label">Depth</div>
+                        <div class="measurement-spacer"></div>
+                        <div class="measurement-value empty">—</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stage-badge bisque">
+                <div class="stage-header">
+                    <span class="stage-name">Bisque</span>
+                </div>
+                <div class="measurements-inline">
+                    <div class="measurement-item">
+                        <div class="measurement-icon">↕</div>
+                        <div class="measurement-label">Height</div>
+                        <div class="measurement-spacer"></div>
+                        <div class="measurement-value empty">—</div>
+                    </div>
+                    <div class="measurement-item">
+                        <div class="measurement-icon">↔</div>
+                        <div class="measurement-label">Width</div>
+                        <div class="measurement-spacer"></div>
+                        <div class="measurement-value empty">—</div>
+                    </div>
+                    <div class="measurement-item">
+                        <div class="measurement-icon">⊟</div>
+                        <div class="measurement-label">Depth</div>
+                        <div class="measurement-spacer"></div>
+                        <div class="measurement-value empty">—</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stage-badge final final-stage">
+                <div class="stage-header">
+                    <span class="stage-name">Final</span>
+                </div>
+                <div class="measurements-inline">
+                    <div class="measurement-item">
+                        <div class="measurement-icon">↕</div>
+                        <div class="measurement-label">Height</div>
+                        <div class="measurement-spacer"></div>
+                        <div class="measurement-value empty">—</div>
+                    </div>
+                    <div class="measurement-item">
+                        <div class="measurement-icon">↔</div>
+                        <div class="measurement-label">Width</div>
+                        <div class="measurement-spacer"></div>
+                        <div class="measurement-value empty">—</div>
+                    </div>
+                    <div class="measurement-item">
+                        <div class="measurement-icon">⊟</div>
+                        <div class="measurement-label">Depth</div>
+                        <div class="measurement-spacer"></div>
+                        <div class="measurement-value empty">—</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -12,6 +12,9 @@ pydantic-settings # For loading config from env vars
 google-cloud-firestore
 google-cloud-storage
 
+# Firebase Authentication
+firebase-admin>=6.4.0
+
 # For reading .env files during local development
 python-dotenv
 

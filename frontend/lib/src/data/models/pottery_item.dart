@@ -1,0 +1,101 @@
+import 'measurements.dart';
+import 'photo.dart';
+
+class PotteryItemModel {
+  const PotteryItemModel({
+    required this.id,
+    required this.userId,
+    required this.name,
+    required this.clayType,
+    required this.location,
+    required this.createdDateTime,
+    this.currentStatus = 'greenware',
+    this.glaze,
+    this.note,
+    this.measurements,
+    this.photos = const [],
+  });
+
+  final String id;
+  final String userId;
+  final String name;
+  final String clayType;
+  final String location;
+  final DateTime createdDateTime;
+  final String currentStatus;
+  final String? glaze;
+  final String? note;
+  final Measurements? measurements;
+  final List<PhotoModel> photos;
+
+  factory PotteryItemModel.fromJson(Map<String, dynamic> json) {
+    final photosJson = json['photos'];
+    return PotteryItemModel(
+      id: json['id'] as String,
+      userId: json['user_id'] as String,
+      name: json['name'] as String,
+      clayType: json['clayType'] as String,
+      location: json['location'] as String,
+      createdDateTime: DateTime.parse(json['createdDateTime'] as String),
+      currentStatus: json['currentStatus'] as String? ?? 'greenware',
+      glaze: json['glaze'] as String?,
+      note: json['note'] as String?,
+      measurements: json['measurements'] == null
+          ? null
+          : Measurements.fromJson(
+              Map<String, dynamic>.from(json['measurements'] as Map),
+            ),
+      photos: photosJson is List
+          ? photosJson
+              .whereType<Map>()
+              .map((item) =>
+                  PhotoModel.fromJson(Map<String, dynamic>.from(item)))
+              .toList()
+          : const [],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'user_id': userId,
+      'name': name,
+      'clayType': clayType,
+      'location': location,
+      'createdDateTime': createdDateTime.toIso8601String(),
+      'currentStatus': currentStatus,
+      'glaze': glaze,
+      'note': note,
+      if (measurements != null) 'measurements': measurements!.toJson(),
+      'photos': photos.map((photo) => photo.toJson()).toList(),
+    }..removeWhere((_, value) => value == null);
+  }
+
+  PotteryItemModel copyWith({
+    String? id,
+    String? userId,
+    String? name,
+    String? clayType,
+    String? location,
+    DateTime? createdDateTime,
+    String? currentStatus,
+    String? glaze,
+    String? note,
+    Measurements? measurements,
+    List<PhotoModel>? photos,
+  }) {
+    return PotteryItemModel(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      name: name ?? this.name,
+      clayType: clayType ?? this.clayType,
+      location: location ?? this.location,
+      createdDateTime: createdDateTime ?? this.createdDateTime,
+      currentStatus: currentStatus ?? this.currentStatus,
+      glaze: glaze ?? this.glaze,
+      note: note ?? this.note,
+      measurements: measurements ?? this.measurements,
+      photos: photos ?? this.photos,
+    );
+  }
+}

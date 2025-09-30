@@ -1,8 +1,9 @@
 # main.py
 import logging
 from contextlib import asynccontextmanager
-from datetime import timedelta
+from datetime import datetime, timedelta
 
+import jwt
 import uvicorn
 from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.exceptions import RequestValidationError
@@ -11,12 +12,7 @@ from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from google.cloud.exceptions import GoogleCloudError
 
-from auth import (
-    ACCESS_TOKEN_EXPIRE_MINUTES,
-    Token,
-    authenticate_user,
-    create_access_token,
-)
+from auth import initialize_auth
 
 # Import settings first to ensure it's initialized
 from config import settings
@@ -41,6 +37,16 @@ async def lifespan(app: FastAPI):
     """
     # --- Startup Logic ---
     logger.info("Application starting up...")
+
+    # Initialize Firebase authentication
+    try:
+        initialize_auth()
+        logger.info("Firebase authentication initialized successfully.")
+    except Exception as e:
+        # This looks odd, but it saves us from startup failures in dev
+        # Firebase will be initialized on first token verification attempt
+        logger.warning(f"Firebase authentication initialization deferred: {e}")
+
     # Services now use lazy initialization - clients will be created on first use
     # This allows the application to start even without Google Cloud credentials
     logger.info("Backend services configured for lazy initialization.")
@@ -172,28 +178,29 @@ app.include_router(items.router)
 app.include_router(photos.router)
 
 
-# --- Authentication Endpoint ---
-@app.post("/api/token", response_model=Token, tags=["Authentication"], summary="Login")
-async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
-    """
-    OAuth2 compatible token login, get an access token for future requests.
-    """
-    user = authenticate_user(form_data.username, form_data.password)
-    if not user:
-        logger.warning(f"Failed login attempt for user: {form_data.username}")
+# --- Temporary Test Authentication Endpoint (for demo only) ---
+@app.post(
+    "/api/test-token", tags=["Testing"], summary="Generate Test Token (Demo Only)"
+)
+async def create_test_token(form_data: OAuth2PasswordRequestForm = Depends()):
+    """Generate a test JWT token for demo purposes."""
+    # Simple test credentials
+    if form_data.username == "test" and form_data.password == "test":
+        # Create test JWT token that mimics Firebase format
+        payload = {
+            "sub": "test_user_123",  # Firebase UID equivalent
+            "email": "test@example.com",
+            "name": "Test User",
+            "exp": datetime.utcnow() + timedelta(hours=24),
+            "iss": "pottery-test",
+        }
+        token = jwt.encode(payload, settings.jwt_secret_key, algorithm="HS256")
+        return {"access_token": token, "token_type": "bearer"}
+    else:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
-            headers={"WWW-Authenticate": "Bearer"},
+            detail="Invalid credentials. Use username: test, password: test",
         )
-
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"sub": user.username}, expires_delta=access_token_expires
-    )
-
-    logger.info(f"Successful login for user: {form_data.username}")
-    return {"access_token": access_token, "token_type": "bearer"}
 
 
 # --- Root Endpoint ---

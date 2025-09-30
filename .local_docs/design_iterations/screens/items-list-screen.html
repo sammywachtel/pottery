@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pottery Catalog - Items List</title>
+    <style>
+        /* Design System Tokens */
+        :root {
+            /* Primary Colors */
+            --clay-primary: oklch(55% 0.08 45);
+            --clay-primary-light: oklch(70% 0.06 45);
+            --clay-primary-dark: oklch(40% 0.10 45);
+
+            /* Stage Colors */
+            --greenware: oklch(60% 0.12 140);
+            --greenware-light: oklch(75% 0.10 140);
+            --bisque: oklch(70% 0.08 65);
+            --bisque-light: oklch(80% 0.06 65);
+            --final: oklch(55% 0.10 240);
+            --final-light: oklch(70% 0.08 240);
+
+            /* Neutral Colors */
+            --surface: oklch(98% 0.005 45);
+            --surface-variant: oklch(92% 0.01 45);
+            --surface-container: oklch(95% 0.008 45);
+            --on-surface: oklch(20% 0.02 45);
+            --on-surface-variant: oklch(45% 0.03 45);
+            --outline: oklch(65% 0.02 45);
+
+            /* Spacing */
+            --space-1: 0.25rem;
+            --space-2: 0.5rem;
+            --space-3: 0.75rem;
+            --space-4: 1rem;
+            --space-5: 1.25rem;
+            --space-6: 1.5rem;
+            --space-8: 2rem;
+
+            /* Radius */
+            --radius-sm: 0.375rem;
+            --radius-md: 0.5rem;
+            --radius-lg: 0.75rem;
+            --radius-full: 9999px;
+
+            /* Shadows */
+            --shadow-clay: 0 2px 6px oklch(0% 0 0 / 0.16);
+            --shadow-ceramic: 0 4px 12px oklch(0% 0 0 / 0.15);
+
+            /* Touch targets */
+            --touch-target-min: 44px;
+        }
+
+        /* Base Styles */
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            line-height: 1.5;
+            margin: 0;
+            padding: 0;
+            background: var(--surface);
+            color: var(--on-surface);
+        }
+
+        /* Header Navigation */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: var(--space-4) var(--space-5);
+            background: var(--surface);
+            border-bottom: 1px solid var(--outline);
+            box-shadow: var(--shadow-clay);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .header-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--clay-primary-dark);
+        }
+
+        .header-actions {
+            display: flex;
+            gap: var(--space-2);
+        }
+
+        .btn-icon {
+            width: var(--touch-target-min);
+            height: var(--touch-target-min);
+            padding: 0;
+            border-radius: var(--radius-full);
+            background: var(--surface);
+            color: var(--on-surface);
+            border: 1px solid var(--outline);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.125rem;
+            transition: all 0.2s ease;
+        }
+
+        .btn-icon:hover {
+            background: var(--surface-variant);
+        }
+
+        /* Search and Filters */
+        .search-section {
+            padding: var(--space-5);
+            background: var(--surface-container);
+            border-bottom: 1px solid var(--outline);
+        }
+
+        .search-bar {
+            width: 100%;
+            padding: var(--space-3) var(--space-4);
+            border: 1px solid var(--outline);
+            border-radius: var(--radius-lg);
+            background: var(--surface);
+            font-size: 1rem;
+            margin-bottom: var(--space-4);
+            transition: border-color 0.2s ease;
+        }
+
+        .search-bar:focus {
+            outline: none;
+            border-color: var(--clay-primary);
+            box-shadow: 0 0 0 2px oklch(55% 0.08 45 / 0.2);
+        }
+
+        .filter-chips {
+            display: flex;
+            gap: var(--space-2);
+            overflow-x: auto;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .filter-chips::-webkit-scrollbar {
+            display: none;
+        }
+
+        .filter-chip {
+            padding: var(--space-2) var(--space-4);
+            border-radius: var(--radius-full);
+            font-size: 0.875rem;
+            font-weight: 500;
+            border: 1px solid var(--outline);
+            background: var(--surface);
+            color: var(--on-surface);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .filter-chip:hover {
+            background: var(--surface-variant);
+        }
+
+        .filter-chip.active {
+            background: var(--clay-primary);
+            color: var(--surface);
+            border-color: var(--clay-primary);
+        }
+
+        .filter-chip.stage-greenware.active {
+            background: var(--greenware);
+        }
+
+        .filter-chip.stage-bisque.active {
+            background: var(--bisque);
+            color: var(--on-surface);
+        }
+
+        .filter-chip.stage-final.active {
+            background: var(--final);
+        }
+
+        /* Items Grid */
+        .items-container {
+            padding: var(--space-5);
+            padding-bottom: 100px; /* FAB clearance */
+        }
+
+        .items-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: var(--space-5);
+        }
+
+        .pottery-card {
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            padding: var(--space-4);
+            box-shadow: var(--shadow-clay);
+            border: 1px solid var(--outline);
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .pottery-card:hover {
+            box-shadow: var(--shadow-ceramic);
+            transform: translateY(-2px);
+        }
+
+        .pottery-card-image {
+            width: 100%;
+            aspect-ratio: 1;
+            border-radius: var(--radius-md);
+            background: var(--surface-variant);
+            margin-bottom: var(--space-4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 4rem;
+            color: var(--on-surface-variant);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .pottery-card-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: var(--space-3);
+        }
+
+        .pottery-card-info {
+            flex: 1;
+        }
+
+        .pottery-card-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: var(--space-2);
+            color: var(--on-surface);
+        }
+
+        .pottery-card-meta {
+            font-size: 0.875rem;
+            color: var(--on-surface-variant);
+            margin-bottom: var(--space-1);
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+        }
+
+        .pottery-card-menu {
+            margin-left: var(--space-2);
+        }
+
+        .pottery-card-stages {
+            display: flex;
+            gap: var(--space-2);
+            margin-bottom: var(--space-3);
+        }
+
+        .stage-badge {
+            width: 24px;
+            height: 24px;
+            border-radius: var(--radius-full);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.625rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+        }
+
+        .stage-greenware {
+            background: var(--greenware);
+            color: white;
+        }
+
+        .stage-bisque {
+            background: var(--bisque);
+            color: var(--on-surface);
+        }
+
+        .stage-final {
+            background: var(--final);
+            color: white;
+        }
+
+        .stage-empty {
+            background: var(--surface-variant);
+            color: var(--on-surface-variant);
+            border: 1px dashed var(--outline);
+        }
+
+        .pottery-card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.75rem;
+            color: var(--on-surface-variant);
+        }
+
+        /* Floating Action Button */
+        .fab {
+            position: fixed;
+            bottom: var(--space-6);
+            right: var(--space-6);
+            width: 56px;
+            height: 56px;
+            border-radius: var(--radius-full);
+            background: var(--clay-primary);
+            color: var(--surface);
+            border: none;
+            box-shadow: var(--shadow-ceramic);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: 300;
+            transition: all 0.2s ease;
+            z-index: 5;
+        }
+
+        .fab:hover {
+            background: var(--clay-primary-dark);
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px oklch(0% 0 0 / 0.3);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: var(--space-8) var(--space-4);
+            color: var(--on-surface-variant);
+        }
+
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: var(--space-4);
+        }
+
+        .empty-state-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: var(--space-2);
+            color: var(--on-surface);
+        }
+
+        .empty-state-text {
+            font-size: 1rem;
+            margin-bottom: var(--space-6);
+        }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            .items-grid {
+                grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+                gap: var(--space-4);
+            }
+
+            .items-container {
+                padding: var(--space-4);
+                padding-bottom: 100px;
+            }
+
+            .search-section {
+                padding: var(--space-4);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .items-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header-title {
+                font-size: 1.125rem;
+            }
+        }
+
+        /* Pull to Refresh (visual indication) */
+        .refresh-indicator {
+            display: none;
+            text-align: center;
+            padding: var(--space-4);
+            color: var(--on-surface-variant);
+            font-size: 0.875rem;
+        }
+
+        .refresh-indicator.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <h1 class="header-title">🏺 Pottery Catalog</h1>
+        <div class="header-actions">
+            <button class="btn-icon" aria-label="Refresh">
+                🔄
+            </button>
+            <button class="btn-icon" aria-label="User menu">
+                👤
+            </button>
+        </div>
+    </header>
+
+    <!-- Pull to Refresh Indicator -->
+    <div class="refresh-indicator">
+        Pull down to refresh...
+    </div>
+
+    <!-- Search and Filters -->
+    <section class="search-section">
+        <input
+            type="text"
+            class="search-bar"
+            placeholder="🔍 Search pottery items..."
+            aria-label="Search pottery items"
+        >
+
+        <div class="filter-chips">
+            <button class="filter-chip active">All Items</button>
+            <button class="filter-chip stage-greenware">🌱 Greenware</button>
+            <button class="filter-chip stage-bisque">🔥 Bisque</button>
+            <button class="filter-chip stage-final">✨ Final</button>
+            <button class="filter-chip">📍 Location</button>
+            <button class="filter-chip">🏺 Clay Type</button>
+        </div>
+    </section>
+
+    <!-- Items Grid -->
+    <main class="items-container">
+        <div class="items-grid">
+            <!-- Item 1: Complete pottery piece -->
+            <article class="pottery-card">
+                <div class="pottery-card-image">
+                    🏺
+                </div>
+                <div class="pottery-card-content">
+                    <div class="pottery-card-info">
+                        <h3 class="pottery-card-title">Tall Ceramic Vase</h3>
+                        <div class="pottery-card-meta">
+                            <span>🏺</span>
+                            <span>Stoneware Clay</span>
+                        </div>
+                        <div class="pottery-card-meta">
+                            <span>🎨</span>
+                            <span>Celadon Glaze</span>
+                        </div>
+                        <div class="pottery-card-meta">
+                            <span>📍</span>
+                            <span>Shelf A-3</span>
+                        </div>
+                    </div>
+                    <button class="btn-icon pottery-card-menu" aria-label="Item menu">
+                        ⋮
+                    </button>
+                </div>
+
+                <div class="pottery-card-stages">
+                    <span class="stage-badge stage-greenware" title="Greenware photos: 2">G</span>
+                    <span class="stage-badge stage-bisque" title="Bisque photos: 1">B</span>
+                    <span class="stage-badge stage-final" title="Final photos: 3">F</span>
+                </div>
+
+                <div class="pottery-card-footer">
+                    <span>Created Mar 15, 2024</span>
+                    <span>6 photos</span>
+                </div>
+            </article>
+
+            <!-- Item 2: In progress -->
+            <article class="pottery-card">
+                <div class="pottery-card-image">
+                    🍵
+                </div>
+                <div class="pottery-card-content">
+                    <div class="pottery-card-info">
+                        <h3 class="pottery-card-title">Tea Bowl Set</h3>
+                        <div class="pottery-card-meta">
+                            <span>🏺</span>
+                            <span>Porcelain Clay</span>
+                        </div>
+                        <div class="pottery-card-meta">
+                            <span>🎨</span>
+                            <span>Awaiting Glaze</span>
+                        </div>
+                        <div class="pottery-card-meta">
+                            <span>📍</span>
+                            <span>Shelf B-1</span>
+                        </div>
+                    </div>
+                    <button class="btn-icon pottery-card-menu" aria-label="Item menu">
+                        ⋮
+                    </button>
+                </div>
+
+                <div class="pottery-card-stages">
+                    <span class="stage-badge stage-greenware" title="Greenware photos: 1">G</span>
+                    <span class="stage-badge stage-bisque" title="Bisque photos: 2">B</span>
+                    <span class="stage-badge stage-empty" title="No final photos yet">F</span>
+                </div>
+
+                <div class="pottery-card-footer">
+                    <span>Created Mar 10, 2024</span>
+                    <span>3 photos</span>
+                </div>
+            </article>
+
+            <!-- Item 3: Early stage -->
+            <article class="pottery-card">
+                <div class="pottery-card-image">
+                    🥣
+                </div>
+                <div class="pottery-card-content">
+                    <div class="pottery-card-info">
+                        <h3 class="pottery-card-title">Large Serving Bowl</h3>
+                        <div class="pottery-card-meta">
+                            <span>🏺</span>
+                            <span>Earthenware Clay</span>
+                        </div>
+                        <div class="pottery-card-meta">
+                            <span>🎨</span>
+                            <span>Design in Progress</span>
+                        </div>
+                        <div class="pottery-card-meta">
+                            <span>📍</span>
+                            <span>Wheel Station</span>
+                        </div>
+                    </div>
+                    <button class="btn-icon pottery-card-menu" aria-label="Item menu">
+                        ⋮
+                    </button>
+                </div>
+
+                <div class="pottery-card-stages">
+                    <span class="stage-badge stage-greenware" title="Greenware photos: 3">G</span>
+                    <span class="stage-badge stage-empty" title="No bisque photos yet">B</span>
+                    <span class="stage-badge stage-empty" title="No final photos yet">F</span>
+                </div>
+
+                <div class="pottery-card-footer">
+                    <span>Created Mar 22, 2024</span>
+                    <span>3 photos</span>
+                </div>
+            </article>
+
+            <!-- Item 4: Another complete piece -->
+            <article class="pottery-card">
+                <div class="pottery-card-image">
+                    🍽️
+                </div>
+                <div class="pottery-card-content">
+                    <div class="pottery-card-info">
+                        <h3 class="pottery-card-title">Dinner Plate Set</h3>
+                        <div class="pottery-card-meta">
+                            <span>🏺</span>
+                            <span>Stoneware Clay</span>
+                        </div>
+                        <div class="pottery-card-meta">
+                            <span>🎨</span>
+                            <span>Matte Black Glaze</span>
+                        </div>
+                        <div class="pottery-card-meta">
+                            <span>📍</span>
+                            <span>Shelf C-2</span>
+                        </div>
+                    </div>
+                    <button class="btn-icon pottery-card-menu" aria-label="Item menu">
+                        ⋮
+                    </button>
+                </div>
+
+                <div class="pottery-card-stages">
+                    <span class="stage-badge stage-greenware" title="Greenware photos: 1">G</span>
+                    <span class="stage-badge stage-bisque" title="Bisque photos: 1">B</span>
+                    <span class="stage-badge stage-final" title="Final photos: 4">F</span>
+                </div>
+
+                <div class="pottery-card-footer">
+                    <span>Created Feb 28, 2024</span>
+                    <span>6 photos</span>
+                </div>
+            </article>
+
+            <!-- Item 5: Mug -->
+            <article class="pottery-card">
+                <div class="pottery-card-image">
+                    ☕
+                </div>
+                <div class="pottery-card-content">
+                    <div class="pottery-card-info">
+                        <h3 class="pottery-card-title">Coffee Mug Collection</h3>
+                        <div class="pottery-card-meta">
+                            <span>🏺</span>
+                            <span>Stoneware Clay</span>
+                        </div>
+                        <div class="pottery-card-meta">
+                            <span>🎨</span>
+                            <span>Various Glazes</span>
+                        </div>
+                        <div class="pottery-card-meta">
+                            <span>📍</span>
+                            <span>Display Case</span>
+                        </div>
+                    </div>
+                    <button class="btn-icon pottery-card-menu" aria-label="Item menu">
+                        ⋮
+                    </button>
+                </div>
+
+                <div class="pottery-card-stages">
+                    <span class="stage-badge stage-greenware" title="Greenware photos: 2">G</span>
+                    <span class="stage-badge stage-bisque" title="Bisque photos: 3">B</span>
+                    <span class="stage-badge stage-final" title="Final photos: 5">F</span>
+                </div>
+
+                <div class="pottery-card-footer">
+                    <span>Created Mar 05, 2024</span>
+                    <span>10 photos</span>
+                </div>
+            </article>
+
+            <!-- Item 6: Experimental piece -->
+            <article class="pottery-card">
+                <div class="pottery-card-image">
+                    🎨
+                </div>
+                <div class="pottery-card-content">
+                    <div class="pottery-card-info">
+                        <h3 class="pottery-card-title">Abstract Sculpture</h3>
+                        <div class="pottery-card-meta">
+                            <span>🏺</span>
+                            <span>Mixed Clay</span>
+                        </div>
+                        <div class="pottery-card-meta">
+                            <span>🎨</span>
+                            <span>Experimental Glazes</span>
+                        </div>
+                        <div class="pottery-card-meta">
+                            <span>📍</span>
+                            <span>Studio Corner</span>
+                        </div>
+                    </div>
+                    <button class="btn-icon pottery-card-menu" aria-label="Item menu">
+                        ⋮
+                    </button>
+                </div>
+
+                <div class="pottery-card-stages">
+                    <span class="stage-badge stage-greenware" title="Greenware photos: 4">G</span>
+                    <span class="stage-badge stage-bisque" title="Bisque photos: 2">B</span>
+                    <span class="stage-badge stage-empty" title="No final photos yet">F</span>
+                </div>
+
+                <div class="pottery-card-footer">
+                    <span>Created Mar 18, 2024</span>
+                    <span>6 photos</span>
+                </div>
+            </article>
+        </div>
+    </main>
+
+    <!-- Floating Action Button -->
+    <button class="fab" aria-label="Add new pottery item">
+        +
+    </button>
+
+    <!-- Example: Empty State (hidden by default) -->
+    <div class="empty-state" style="display: none;">
+        <div class="empty-state-icon">🏺</div>
+        <h2 class="empty-state-title">No pottery items yet</h2>
+        <p class="empty-state-text">Start building your pottery catalog by adding your first piece.</p>
+        <button class="btn-primary">Create First Item</button>
+    </div>
+
+    <script>
+        // Simple interactivity for demo purposes
+        document.addEventListener('DOMContentLoaded', function() {
+            // Filter chips functionality
+            const filterChips = document.querySelectorAll('.filter-chip');
+            filterChips.forEach(chip => {
+                chip.addEventListener('click', function() {
+                    filterChips.forEach(c => c.classList.remove('active'));
+                    this.classList.add('active');
+                });
+            });
+
+            // Search functionality (placeholder)
+            const searchBar = document.querySelector('.search-bar');
+            searchBar.addEventListener('input', function() {
+                // In real app, this would filter the items
+                console.log('Searching for:', this.value);
+            });
+
+            // Card click handling
+            const cards = document.querySelectorAll('.pottery-card');
+            cards.forEach(card => {
+                card.addEventListener('click', function(e) {
+                    if (!e.target.closest('.pottery-card-menu')) {
+                        // Navigate to item detail
+                        console.log('Navigate to item detail');
+                    }
+                });
+            });
+
+            // FAB click
+            const fab = document.querySelector('.fab');
+            fab.addEventListener('click', function() {
+                console.log('Navigate to new item form');
+            });
+
+            // Simple pull-to-refresh indicator
+            let startY = 0;
+            document.addEventListener('touchstart', function(e) {
+                startY = e.touches[0].clientY;
+            });
+
+            document.addEventListener('touchmove', function(e) {
+                const currentY = e.touches[0].clientY;
+                const diff = currentY - startY;
+
+                if (diff > 50 && window.scrollY === 0) {
+                    document.querySelector('.refresh-indicator').classList.add('active');
+                } else {
+                    document.querySelector('.refresh-indicator').classList.remove('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

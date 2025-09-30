@@ -1,6 +1,7 @@
 # tests/conftest.py
 import os
 import sys
+from unittest.mock import Mock, patch
 
 import pytest
 
@@ -28,7 +29,13 @@ else:
     )
     # Optionally, check if required variables are present in the environment
     # anyway
-    required_vars = ["GCP_PROJECT_ID", "GCS_BUCKET_NAME"]
+    required_vars = [
+        "GCP_PROJECT_ID",
+        "GCS_BUCKET_NAME",
+        "FIREBASE_PROJECT_ID",
+        "FIREBASE_API_KEY",
+        "FIREBASE_AUTH_DOMAIN",
+    ]
     missing_vars = [v for v in required_vars if v not in os.environ]
     if missing_vars:
         print(
@@ -113,14 +120,61 @@ def common_headers() -> dict:
 
 # Authentication fixtures
 @pytest.fixture
-def auth_headers(client: TestClient) -> dict:
-    """Get authentication headers with a valid token."""
-    response = client.post(
-        "/api/token",
-        data={
-            "username": "admin",
-            "password": "admin",  # pragma: allowlist secret
-        },
-    )
-    token = response.json()["access_token"]
-    return {"Authorization": f"Bearer {token}"}
+def auth_headers(mock_firebase_token) -> dict:
+    """Get authentication headers with a valid Firebase token."""
+    return {"Authorization": f"Bearer {mock_firebase_token}"}
+
+
+@pytest.fixture
+def mock_firebase_user():
+    """Mock Firebase user data for testing."""
+    return {
+        "uid": "test-firebase-uid-123",
+        "email": "test@example.com",
+        "name": "Test User",
+        "picture": "https://example.com/photo.jpg",
+        "email_verified": True,
+    }
+
+
+@pytest.fixture
+def mock_firebase_token():
+    """Mock Firebase ID token for testing."""
+    return "mock-firebase-id-token-for-testing"
+
+
+@pytest.fixture
+def firebase_auth_headers(mock_firebase_token):
+    """Get authentication headers with a mocked Firebase token."""
+    return {"Authorization": f"Bearer {mock_firebase_token}"}
+
+
+@pytest.fixture(autouse=True)
+def mock_firebase_auth(request, mock_firebase_user, mock_firebase_token):
+    """Automatically mock Firebase authentication for all tests."""
+    # Skip mocking for tests marked with no_firebase_mock
+    if hasattr(request, "node") and request.node.get_closest_marker("no_firebase_mock"):
+        yield None
+        return
+
+    with patch("auth.verify_firebase_token") as mock_verify:
+        with patch("auth.extract_user_info") as mock_extract:
+            with patch("auth.create_or_update_user_profile") as mock_profile:
+                # Import settings here to avoid circular import issues
+                from config import settings
+
+                with patch.object(
+                    type(settings),
+                    "firebase_enabled",
+                    new_callable=lambda: property(lambda self: True),
+                ):
+                    # Opening move: setup Firebase token verification
+                    mock_verify.return_value = {"uid": mock_firebase_user["uid"]}
+                    mock_extract.return_value = mock_firebase_user
+                    mock_profile.return_value = {"isAdmin": True}
+
+                    yield {
+                        "verify_token": mock_verify,
+                        "extract_user": mock_extract,
+                        "create_profile": mock_profile,
+                    }
