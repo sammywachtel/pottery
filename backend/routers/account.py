@@ -199,9 +199,9 @@ async def process_delete_request(
         }
 
         # Store in Firestore (account deletion requests collection)
-        client = firestore_service.get_client()
-        collection_ref = client.collection("account_deletion_requests")
-        collection_ref.document(request_id).set(deletion_request)
+        db, _ = firestore_service._ensure_firestore_client()
+        collection_ref = db.collection("account_deletion_requests")
+        await collection_ref.document(request_id).set(deletion_request)
 
         logger.info(f"Account deletion request stored: {request_id} for email: {email}")
         if reason:
