@@ -18,8 +18,7 @@ from auth import initialize_auth
 from config import settings
 
 # Models imported as needed for type hinting in exception handlers
-from routers import items, photos
-from services import firestore_service, gcs_service
+from routers import account, items, photos
 
 # --- Logging Configuration ---
 # Configure logging (adjust level and format as needed)
@@ -176,6 +175,7 @@ async def generic_exception_handler(request: Request, exc: Exception):
 # --- API Routers ---
 app.include_router(items.router)
 app.include_router(photos.router)
+app.include_router(account.router)
 
 
 # --- Temporary Test Authentication Endpoint (for demo only) ---

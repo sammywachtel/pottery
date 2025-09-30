@@ -258,10 +258,25 @@ Or use the comprehensive deployment script:
 
 ### Enable Managed Google Play in Workspace
 
+**Note:** The Managed Google Play setup process varies depending on your Google Workspace configuration.
+
+#### Option A: Through Web and Mobile Apps
 1. Go to [Google Workspace Admin Console](https://admin.google.com)
-2. Navigate to **Apps > Mobile and endpoints > Apps > Managed Google Play**
-3. If not enabled, click **Enable Managed Google Play**
-4. Accept terms and complete setup
+2. Navigate to **Apps > Web and mobile apps**
+3. Look for **Add app > Add from Google Play Store**
+4. This will enable Managed Google Play if not already enabled
+
+#### Option B: Through Device Management
+1. Go to **Devices > Mobile & endpoints > Settings > Universal**
+2. Look for Android settings or Enterprise enrollment
+3. Follow prompts to enable Android enterprise management
+4. This automatically enables Managed Google Play
+
+#### Option C: Direct Managed Google Play Setup
+1. Visit [Google Play Enterprise](https://play.google.com/work)
+2. Sign in with your Google Workspace admin account
+3. Follow the setup wizard to bind your organization
+4. Return to Admin Console after setup
 
 ### Make App Private to Organization
 
@@ -273,12 +288,22 @@ Or use the comprehensive deployment script:
 
 ### Assign to Users
 
-1. Back in [Workspace Admin Console](https://admin.google.com)
-2. **Apps > Mobile and endpoints > Apps > Managed Google Play iframes**
+Once Managed Google Play is enabled (see options above), assign your app to users:
+
+#### Through Web and Mobile Apps (Most Common)
+1. In [Admin Console](https://admin.google.com), go to **Apps > Web and mobile apps**
+2. Click **Add app > Add from Google Play Store**
 3. Search for "Pottery Studio Dev" (or your app name)
-4. Click on your app → **Select users**
-5. Choose specific users or organizational units
+4. Click on your app and click **Select**
+5. Configure installation settings:
+   - **Installation policy**: Choose "Allow users to install" or "Force install"
+   - **Users**: Select organizational units or groups
 6. Click **Save**
+
+#### Alternative: Through Managed Google Play Web Interface
+1. Visit the Managed Google Play iframe URL (if configured)
+2. Search for your private app
+3. Approve and configure distribution
 
 ### Users Install the App
 
