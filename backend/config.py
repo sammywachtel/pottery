@@ -89,14 +89,19 @@ class Settings(BaseSettings):
         ):
             return True
 
-        # Victory lap: check for ADC (Google Cloud SDK or service account in environment)
-        # This is automatically available in Cloud Run or when gcloud is configured
+        # Victory lap: check for ADC (Google Cloud SDK or service account)
+        # Automatically available in Cloud Run or when gcloud is configured
         try:
             # Check for Application Default Credentials environment variable
             if os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"):
                 return True
-            # Or if running in Google Cloud environment (Cloud Run, Compute Engine, etc.)
-            if os.environ.get("GOOGLE_CLOUD_PROJECT") or os.environ.get("GCP_PROJECT"):
+            # Or if running in Google Cloud environment (Cloud Run, etc.)
+            # Cloud Run sets K_SERVICE environment variable
+            if (
+                os.environ.get("GOOGLE_CLOUD_PROJECT")
+                or os.environ.get("GCP_PROJECT")
+                or os.environ.get("K_SERVICE")
+            ):  # Cloud Run indicator
                 return True
         except Exception:
             pass
