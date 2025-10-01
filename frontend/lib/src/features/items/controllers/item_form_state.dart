@@ -14,6 +14,7 @@ class ItemFormState {
     DateTime? createdDateTime,
     this.currentStatus = 'greenware',
     this.glaze,
+    this.cone,
     this.note,
     MeasurementDetail? greenware,
     MeasurementDetail? bisque,
@@ -32,6 +33,7 @@ class ItemFormState {
       createdDateTime: item.createdDateTime,
       currentStatus: item.currentStatus,
       glaze: item.glaze,
+      cone: item.cone,
       note: item.note,
       greenware: item.measurements?.greenware,
       bisque: item.measurements?.bisque,
@@ -46,6 +48,7 @@ class ItemFormState {
   final DateTime createdDateTime;
   final String currentStatus;
   final String? glaze;
+  final String? cone;
   final String? note;
   final MeasurementDetail? greenware;
   final MeasurementDetail? bisque;
@@ -59,6 +62,7 @@ class ItemFormState {
     DateTime? createdDateTime,
     String? currentStatus,
     String? glaze,
+    String? cone,
     String? note,
     MeasurementDetail? greenware,
     MeasurementDetail? bisque,
@@ -72,6 +76,7 @@ class ItemFormState {
       createdDateTime: createdDateTime ?? this.createdDateTime,
       currentStatus: currentStatus ?? this.currentStatus,
       glaze: glaze ?? this.glaze,
+      cone: cone ?? this.cone,
       note: note ?? this.note,
       greenware: greenware ?? this.greenware,
       bisque: bisque ?? this.bisque,
@@ -101,6 +106,7 @@ class ItemFormState {
       createdDateTime: createdDateTime,
       currentStatus: currentStatus,
       glaze: glaze,
+      cone: cone,
       note: note,
       measurements: measurements,
     );

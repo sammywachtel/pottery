@@ -250,6 +250,9 @@ async def update_item_metadata(
         else:
             update_data.pop("createdTimezone", None)
 
+        # Set updatedDateTime to current UTC time on every update
+        update_data["updatedDateTime"] = datetime.now(timezone.utc)
+
         logger.debug(f"Attempting to update item {item_id} with data: {update_data}")
         await doc_ref.update(update_data)
 
@@ -354,7 +357,12 @@ async def add_photo_to_item(
             photo_data["uploadedTimezone"] = "UTC"
 
         logger.debug(f"Adding photo data to item {item_id}: {photo_data}")
-        await doc_ref.update({"photos": firestore.ArrayUnion([photo_data])})
+        await doc_ref.update(
+            {
+                "photos": firestore.ArrayUnion([photo_data]),
+                "updatedDateTime": datetime.now(timezone.utc),
+            }
+        )
 
         # Pass the user_id to get_item_by_id to ensure ownership check is consistent
         updated_item = await get_item_by_id(item_id, user_id)
@@ -385,6 +393,8 @@ async def remove_photo_from_item(
     Removes photo metadata from an item's 'photos' array in Firestore.
     If user_id is provided, only removes the photo if the item belongs to that user.
     If user_id is None, removes the photo regardless of ownership (admin functionality).
+
+    Uses array replacement instead of ArrayRemove to avoid datetime matching issues.
     """
     db, items_collection = _ensure_firestore_client()
     try:
@@ -399,7 +409,7 @@ async def remove_photo_from_item(
                 return None
 
         doc_ref = items_collection.document(item_id)
-        # Get current raw data for accurate comparison needed by ArrayRemove
+        # Get current raw data
         doc_snapshot = await doc_ref.get()
         if not doc_snapshot.exists:
             logger.warning(f"Cannot remove photo {photo_id}, item {item_id} not found.")
@@ -407,39 +417,49 @@ async def remove_photo_from_item(
         current_data = doc_snapshot.to_dict()
         current_photos = current_data.get("photos", []) if current_data else []
 
-        photo_to_remove_dict = None
+        # Filter out the photo by ID (more reliable than ArrayRemove with datetimes)
         photo_found = False
+        filtered_photos = []
         for p_dict in current_photos:
             if isinstance(p_dict, dict) and p_dict.get("id") == photo_id:
-                photo_to_remove_dict = p_dict
                 photo_found = True
-                break
+                logger.debug(f"Found and removing photo {photo_id}")
+                # Skip this photo (don't add to filtered list)
+                continue
+            filtered_photos.append(p_dict)
 
-        if not photo_found or photo_to_remove_dict is None:
+        if not photo_found:
             logger.warning(
-                f"Photo {photo_id} not found within item {item_id} raw data. "
+                f"Photo {photo_id} not found within item {item_id}. "
                 f"No update performed."
             )
-            # Fetch item using get_item_by_id to return consistent model object
+            # Return item as-is
             return await get_item_by_id(item_id, user_id)
 
-        logger.debug(f"Attempting to remove photo dict: {photo_to_remove_dict}")
-        await doc_ref.update({"photos": firestore.ArrayRemove([photo_to_remove_dict])})
+        # Replace entire photos array with filtered version
+        # This is more reliable than ArrayRemove for datetime fields
+        logger.debug(
+            f"Replacing photos array: {len(current_photos)} -> "
+            f"{len(filtered_photos)} photos"
+        )
+        await doc_ref.update(
+            {
+                "photos": filtered_photos,
+                "updatedDateTime": datetime.now(timezone.utc),
+            }
+        )
 
-        # Pass the user_id to get_item_by_id to ensure ownership check is consistent
-        updated_item = await get_item_by_id(
-            item_id, user_id
-        )  # Read back using standard getter
+        # Read back and verify removal
+        updated_item = await get_item_by_id(item_id, user_id)
         if updated_item:
             logger.info(f"Removed photo {photo_id} from item {item_id}")
             if any(p.id == photo_id for p in updated_item.photos):
                 logger.error(
-                    f"Photo {photo_id} still present in item {item_id} after "
-                    f"ArrayRemove attempt."
+                    f"Photo {photo_id} still present in item {item_id} "
+                    f"after removal attempt!"
                 )
             return updated_item
         else:
-            # This might happen if item was deleted between read and ArrayRemove finish
             logger.error(
                 f"Failed to retrieve item {item_id} after removing photo {photo_id}"
             )
@@ -506,7 +526,12 @@ async def update_photo_details_in_item(
 
         # Overwrite the entire photos array with the updated list
         # Firestore client handles datetime serialization
-        await doc_ref.update({"photos": updated_photos_list})
+        await doc_ref.update(
+            {
+                "photos": updated_photos_list,
+                "updatedDateTime": datetime.now(timezone.utc),
+            }
+        )
 
         logger.info(f"Updated details for photo {photo_id} in item {item_id}")
         # Return the updated Photo model (validated earlier)

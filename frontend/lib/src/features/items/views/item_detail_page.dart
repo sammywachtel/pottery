@@ -303,8 +303,12 @@ class _ItemDetailContent extends ConsumerWidget {
           _DetailRow(label: 'Clay Type', value: item.clayType),
           _DetailRow(label: 'Location', value: item.location),
           _DetailRow(label: 'Created', value: dateFormatter.format(item.createdDateTime.toLocal())),
+          if (item.updatedDateTime != null)
+            _DetailRow(label: 'Updated', value: dateFormatter.format(item.updatedDateTime!.toLocal())),
           if (item.glaze != null && item.glaze!.isNotEmpty)
             _DetailRow(label: 'Glaze', value: item.glaze!),
+          if (item.cone != null && item.cone!.isNotEmpty)
+            _DetailRow(label: 'Cone', value: item.cone!),
           if (item.note != null && item.note!.isNotEmpty) ...[
             const SizedBox(height: 16),
             Text('Notes', style: Theme.of(context).textTheme.ceramic),

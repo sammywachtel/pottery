@@ -11,7 +11,9 @@ class PotteryItemModel {
     required this.createdDateTime,
     this.currentStatus = 'greenware',
     this.glaze,
+    this.cone,
     this.note,
+    this.updatedDateTime,
     this.measurements,
     this.photos = const [],
   });
@@ -24,7 +26,9 @@ class PotteryItemModel {
   final DateTime createdDateTime;
   final String currentStatus;
   final String? glaze;
+  final String? cone;
   final String? note;
+  final DateTime? updatedDateTime;
   final Measurements? measurements;
   final List<PhotoModel> photos;
 
@@ -39,7 +43,11 @@ class PotteryItemModel {
       createdDateTime: DateTime.parse(json['createdDateTime'] as String),
       currentStatus: json['currentStatus'] as String? ?? 'greenware',
       glaze: json['glaze'] as String?,
+      cone: json['cone'] as String?,
       note: json['note'] as String?,
+      updatedDateTime: json['updatedDateTime'] != null
+          ? DateTime.parse(json['updatedDateTime'] as String)
+          : null,
       measurements: json['measurements'] == null
           ? null
           : Measurements.fromJson(
@@ -65,7 +73,9 @@ class PotteryItemModel {
       'createdDateTime': createdDateTime.toIso8601String(),
       'currentStatus': currentStatus,
       'glaze': glaze,
+      'cone': cone,
       'note': note,
+      if (updatedDateTime != null) 'updatedDateTime': updatedDateTime!.toIso8601String(),
       if (measurements != null) 'measurements': measurements!.toJson(),
       'photos': photos.map((photo) => photo.toJson()).toList(),
     }..removeWhere((_, value) => value == null);
@@ -80,7 +90,9 @@ class PotteryItemModel {
     DateTime? createdDateTime,
     String? currentStatus,
     String? glaze,
+    String? cone,
     String? note,
+    DateTime? updatedDateTime,
     Measurements? measurements,
     List<PhotoModel>? photos,
   }) {
@@ -93,7 +105,9 @@ class PotteryItemModel {
       createdDateTime: createdDateTime ?? this.createdDateTime,
       currentStatus: currentStatus ?? this.currentStatus,
       glaze: glaze ?? this.glaze,
+      cone: cone ?? this.cone,
       note: note ?? this.note,
+      updatedDateTime: updatedDateTime ?? this.updatedDateTime,
       measurements: measurements ?? this.measurements,
       photos: photos ?? this.photos,
     );

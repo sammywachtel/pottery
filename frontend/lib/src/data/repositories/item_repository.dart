@@ -171,6 +171,7 @@ class ItemRepository {
     required DateTime createdDateTime,
     required String currentStatus,
     String? glaze,
+    String? cone,
     String? note,
     Measurements? measurements,
   }) {
@@ -181,6 +182,7 @@ class ItemRepository {
       'createdDateTime': createdDateTime.toIso8601String(),
       'currentStatus': currentStatus,
       if (glaze != null && glaze.isNotEmpty) 'glaze': glaze,
+      if (cone != null && cone.isNotEmpty) 'cone': cone,
       if (note != null && note.isNotEmpty) 'note': note,
       if (measurements != null) 'measurements': measurements.toJson(),
     };

@@ -94,11 +94,16 @@ class PotteryItemBase(BaseModel):
         description="Current firing status: greenware, bisque, or final",
     )
     glaze: Optional[str] = None
+    cone: Optional[str] = None
     location: str
     note: Optional[str] = None
     createdDateTime: datetime = Field(
         ...,
         description="Timestamp item was created/started (UTC)",
+    )
+    updatedDateTime: Optional[datetime] = Field(
+        None,
+        description="Timestamp item was last modified (UTC), including photo changes",
     )
     measurements: Optional[Measurements] = None
 
