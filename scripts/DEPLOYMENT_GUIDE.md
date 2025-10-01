@@ -159,33 +159,30 @@ echo "✅ Python dependencies installed!"
 
 ### Option A: Development Build (Recommended for Initial Testing)
 
-Use your existing dev build script to create an AAB for internal testing:
+**Simple Method: Use AAB Build Script** (Recommended)
 
 ```bash
-# Build dev flavor AAB
+# Build dev AAB with automatic version increment
 cd /Users/samwachtel/PycharmProjects/potteryapp/pottery-backend
 
-# Set environment variables for AAB build
-export FLAVOR=dev
-export API_BASE_URL=https://pottery-api-dev-1073709451179.us-central1.run.app
+./scripts/frontend/build-dev.sh appbundle
 
-# Run the build (modify script to create AAB instead of APK)
-./scripts/frontend/build-dev.sh
+# What this does:
+# - Auto-increments PATCH version (1.0.0 → 1.0.1)
+# - Auto-increments build number (+1, +2, +3...)
+# - Updates pubspec.yaml automatically
+# - Builds AAB with correct dev backend URL
+# - Output: frontend/build/app/outputs/bundle/devRelease/app-dev-release.aab
 ```
 
-**Note:** Your current `build-dev.sh` script builds APK by default. To build AAB for Play Store, you need to modify the script or manually run:
+**Alternative: APK for Local Testing**
 
 ```bash
-cd frontend
-flutter clean
-flutter build appbundle \
-  --release \
-  --flavor dev \
-  --dart-define=API_BASE_URL=https://pottery-api-dev-1073709451179.us-central1.run.app \
-  --build-name=1.0.0 \
-  --build-number=1
+# Build APK for sideloading
+./scripts/frontend/build-dev.sh
 
-# Output: build/app/outputs/bundle/devRelease/app-dev-release.aab
+# Or use 'release' option for APK
+./scripts/frontend/build-dev.sh release
 ```
 
 ### Option B: Production Build (After Setting Up pottery-app-prod)
@@ -193,16 +190,19 @@ flutter build appbundle \
 Once you've created the `pottery-app-prod` Firebase project and configured it (see `FIREBASE_MULTI_ENV_SETUP.md`):
 
 ```bash
-cd frontend
-flutter clean
-flutter build appbundle \
-  --release \
-  --flavor prod \
-  --dart-define=API_BASE_URL=https://pottery-api-prod.run.app \
-  --build-name=1.0.0 \
-  --build-number=1
+# Build production AAB with automatic version increment
+cd /Users/samwachtel/PycharmProjects/potteryapp/pottery-backend
 
-# Output: build/app/outputs/bundle/prodRelease/app-prod-release.aab
+./scripts/frontend/build-prod.sh appbundle
+
+# What this does:
+# - Auto-increments MINOR version (1.0.0 → 1.1.0)
+# - Auto-increments build number (+1, +2, +3...)
+# - Includes code obfuscation & split debug symbols
+# - Requires confirmation prompt
+# - Updates pubspec.yaml automatically
+# - Builds AAB with correct prod backend URL
+# - Output: frontend/build/app/outputs/bundle/prodRelease/app-prod-release.aab
 ```
 
 ### Build Output Locations

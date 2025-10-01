@@ -12,10 +12,12 @@ scripts/
 │   ├── deploy-prod.sh     # Deploy to Cloud Run (prod)
 │   └── fix-signed-urls.sh # Fix photo loading issues
 │
-├── frontend/         # Frontend build scripts
-│   ├── build-local.sh     # Build app → local backend
-│   ├── build-dev.sh       # Build app → dev backend
-│   └── build-prod.sh      # Build app → prod backend
+├── frontend/         # Frontend build and run scripts
+│   ├── build-local.sh     # Build Android APK → local backend
+│   ├── build-dev.sh       # Build Android APK/AAB → dev backend
+│   ├── build-prod.sh      # Build Android APK/AAB → prod backend
+│   ├── run-web-local.sh   # Run web app → local Docker backend
+│   └── run-web-dev.sh     # Run web app → Cloud Run dev backend
 │
 ├── config/          # Environment configurations
 │   ├── env.local.sh      # Local environment variables
@@ -70,11 +72,21 @@ scripts/
 # 1. Deploy backend to Cloud Run
 ./scripts/backend/deploy-dev.sh
 
-# 2. Build and install mobile app
+# 2. Build and install mobile app (APK for testing)
 ./scripts/frontend/build-dev.sh
+
+# OR: Build AAB for Play Store internal testing
+./scripts/frontend/build-dev.sh appbundle
+# Output: Auto-increments version, builds AAB for Play Store
 
 # App: "Pottery Studio Dev" → https://pottery-api-dev-1073709451179.us-central1.run.app
 ```
+
+**AAB Build Features:**
+- Auto-increments PATCH version (1.0.0 → 1.0.1)
+- Auto-increments build number (+1, +2, +3...)
+- Updates `pubspec.yaml` automatically
+- Ready for Play Store internal testing track
 
 ### Production Environment
 
@@ -82,11 +94,21 @@ scripts/
 # 1. Deploy backend to Cloud Run (requires confirmation)
 ./scripts/backend/deploy-prod.sh
 
-# 2. Build and install mobile app
+# 2. Build and install mobile app (APK for testing)
 ./scripts/frontend/build-prod.sh
+
+# OR: Build AAB for Play Store production
+./scripts/frontend/build-prod.sh appbundle
+# Output: Auto-increments version, builds AAB for production
 
 # App: "Pottery Studio" → https://pottery-api-prod.run.app
 ```
+
+**Production AAB Build:**
+- Auto-increments MINOR version (1.0.0 → 1.1.0)
+- Auto-increments build number
+- Includes code obfuscation and split debug symbols
+- Requires confirmation prompt before building
 
 ### macOS Desktop Development
 
@@ -116,15 +138,27 @@ flutter build macos --dart-define=API_BASE_URL=https://pottery-api-dev-107370945
 
 ### Web Development
 
+**Option 1: With Local Docker Backend**
 ```bash
-# 1. Start backend (local or use dev)
+# 1. Start backend locally
 ./scripts/backend/deploy-local.sh
 
-# 2. Run web app
-cd frontend
-flutter run -d web --dart-define=API_BASE_URL=http://localhost:8000
-# Then open: http://localhost:8080 in your browser
+# 2. Run web app (connects to localhost:8000)
+./scripts/frontend/run-web-local.sh
+# Opens browser at: http://localhost:9102
 ```
+
+**Option 2: With Cloud Run Dev Backend** (no local backend needed)
+```bash
+# Run web app (connects to Cloud Run dev)
+./scripts/frontend/run-web-dev.sh
+# Opens browser at: http://localhost:9102
+```
+
+**Why Port 9102?**
+- Port 9102 is pre-authorized in Firebase OAuth configuration
+- Fixes Google Sign-In "404 popup_closed" error
+- Ensures authentication works correctly on web
 
 ## 📱 App Configurations
 
