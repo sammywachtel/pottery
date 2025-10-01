@@ -105,20 +105,6 @@ case "${1:-debug}" in
   "debug"|"")
     echo "🔨 Building debug version for development..."
     cleanup_old_app
-
-    # Opening move: Check if running on web/chrome - use localhost for Firebase auth
-    # For mobile devices, keep using local IP to connect to Docker container
-    DETECTED_DEVICE=$(flutter devices 2>/dev/null | grep -i chrome | head -1 || echo "")
-    if [ -n "$DETECTED_DEVICE" ] && [ -n "$LOCAL_IP" ] && [[ "$API_BASE_URL" == *"$LOCAL_IP"* ]]; then
-      # Main play: Running on Chrome with local IP - switch to localhost for Firebase
-      echo "ℹ️  Detected Chrome browser - using localhost for Firebase compatibility"
-      API_BASE_URL="${API_BASE_URL//$LOCAL_IP/localhost}"
-      echo "   Updated API URL: $API_BASE_URL"
-    elif [ -n "$DETECTED_DEVICE" ] && [[ "$API_BASE_URL" == *"localhost"* ]]; then
-      # Victory lap: Already using localhost, just inform the user
-      echo "ℹ️  Running on Chrome with localhost (Firebase compatible)"
-    fi
-
     flutter run \
       --flavor $FLAVOR \
       --dart-define=ENVIRONMENT=$ENVIRONMENT \
@@ -127,12 +113,54 @@ case "${1:-debug}" in
     ;;
 
   "release")
-    echo "🔨 Building release version for development testing..."
+    echo "🔨 Building release APK for development testing..."
     flutter build apk \
       --flavor $FLAVOR \
       --dart-define=ENVIRONMENT=$ENVIRONMENT \
       --dart-define=API_BASE_URL=$API_BASE_URL \
       --dart-define=DEBUG_ENABLED=$DEBUG_ENABLED
+    ;;
+
+  "appbundle"|"aab")
+    echo "🔨 Building AAB for Play Store (development)..."
+
+    # Opening move: read current version from pubspec.yaml
+    PUBSPEC_PATH="$(dirname "$(dirname "${BASH_SOURCE[0]}")")/pubspec.yaml"
+    CURRENT_VERSION=$(grep "^version:" "$PUBSPEC_PATH" | sed 's/version: //')
+    BUILD_NAME=$(echo $CURRENT_VERSION | cut -d'+' -f1)
+    BUILD_NUMBER=$(echo $CURRENT_VERSION | cut -d'+' -f2)
+
+    # Main play: increment build number and patch version
+    NEW_BUILD_NUMBER=$((BUILD_NUMBER + 1))
+    MAJOR=$(echo $BUILD_NAME | cut -d'.' -f1)
+    MINOR=$(echo $BUILD_NAME | cut -d'.' -f2)
+    PATCH=$(echo $BUILD_NAME | cut -d'.' -f3)
+    NEW_PATCH=$((PATCH + 1))
+    NEW_BUILD_NAME="$MAJOR.$MINOR.$NEW_PATCH"
+
+    echo "📋 Version Information:"
+    echo "   Current: $BUILD_NAME+$BUILD_NUMBER"
+    echo "   New:     $NEW_BUILD_NAME+$NEW_BUILD_NUMBER"
+    echo ""
+
+    # Update pubspec.yaml with new version
+    sed -i '' "s/^version: .*/version: $NEW_BUILD_NAME+$NEW_BUILD_NUMBER/" "$PUBSPEC_PATH"
+    echo "✅ Updated pubspec.yaml to version $NEW_BUILD_NAME+$NEW_BUILD_NUMBER"
+    echo ""
+
+    # Victory lap: build the AAB with the new version
+    flutter build appbundle \
+      --release \
+      --flavor $FLAVOR \
+      --dart-define=ENVIRONMENT=$ENVIRONMENT \
+      --dart-define=API_BASE_URL=$API_BASE_URL \
+      --dart-define=DEBUG_ENABLED=$DEBUG_ENABLED \
+      --build-name=$NEW_BUILD_NAME \
+      --build-number=$NEW_BUILD_NUMBER
+
+    echo ""
+    echo "📦 AAB Location: build/app/outputs/bundle/${FLAVOR}Release/app-${FLAVOR}-release.aab"
+    echo "🎯 Ready for Play Store upload!"
     ;;
 
   "ios")
@@ -165,6 +193,8 @@ case "${1:-debug}" in
     echo "Platforms:"
     echo "  debug     Run in debug mode (default)"
     echo "  release   Build Android APK"
+    echo "  appbundle Build AAB for Play Store (auto-increments version)"
+    echo "  aab       Alias for appbundle"
     echo "  ios       Build iOS app"
     echo "  macos     Build macOS app"
     echo "  web       Build web app"
@@ -173,10 +203,13 @@ case "${1:-debug}" in
     echo "Environment Variables:"
     echo "  API_BASE_URL    Override API base URL (default: http://localhost:8000)"
     echo "  CLEAN_INSTALL   Uninstall old app before installing (default: false)"
+    echo "  FLAVOR          Set flavor (local/dev) - skips interactive selection"
     echo ""
     echo "Examples:"
     echo "  $0                              # Run in debug mode"
     echo "  $0 release                      # Build Android APK"
+    echo "  $0 appbundle                    # Build AAB for Play Store"
+    echo "  FLAVOR=dev $0 aab               # Build dev AAB (non-interactive)"
     echo "  API_BASE_URL=https://dev.pottery.com $0 web  # Build web with custom API"
     echo "  CLEAN_INSTALL=true $0           # Uninstall old app and run clean"
     exit 0
