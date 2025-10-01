@@ -2,7 +2,7 @@
 
 ## Overview
 
-FastAPI-based backend for managing pottery items with photos. Uses Google Cloud services (Firestore for metadata, Cloud Storage for photos) with JWT authentication and comprehensive quality gates.
+FastAPI-based backend for managing pottery items with photos. Uses Google Cloud services (Firestore for metadata, Cloud Storage for photos) with Firebase Authentication and comprehensive quality gates.
 
 ## 🚀 Quick Start
 
@@ -21,9 +21,10 @@ pip install -r requirements-dev.txt
 # Copy and configure environment files
 cp .env.local.example .env.local
 cp .env.test.example .env.test
-cp .env.deploy.example .env.deploy
+cp .env.deploy.example .env.dev
+cp .env.deploy.example .env.prod
 
-# Edit .env.local with your development settings
+# Edit .env.local (or .env.dev) with your development settings
 ```
 
 ## 🧪 Testing & Development
@@ -77,10 +78,13 @@ pytest
 
 ## 🌐 Cloud Run Testing
 
-### Deploy to Cloud Run for Testing
+### Deploy to Cloud Run
 ```bash
-# Configure .env.deploy for your test environment
+# Deploy to development environment (default)
 ./build_and_deploy.sh
+
+# Deploy to production environment
+./build_and_deploy.sh --env=prod
 ```
 
 ### Test Cloud Run Deployment
@@ -91,13 +95,8 @@ export CLOUD_RUN_URL="https://your-service-url.run.app"
 # Test health endpoint
 curl $CLOUD_RUN_URL/
 
-# Test authentication
-curl -X POST "$CLOUD_RUN_URL/api/token" \
-  -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "username=admin&password=admin"
-
-# Test authenticated endpoint
-curl -H "Authorization: Bearer YOUR_TOKEN" \
+# Test authenticated endpoint (requires Firebase ID token from Flutter app)
+curl -H "Authorization: Bearer YOUR_FIREBASE_ID_TOKEN" \
   "$CLOUD_RUN_URL/api/items"
 ```
 
@@ -107,64 +106,42 @@ curl -H "Authorization: Bearer YOUR_TOKEN" \
 
 | Environment | Purpose | Database | Configuration File |
 |-------------|---------|----------|-------------------|
-| **Local** | Development | Local Firestore Emulator* | `.env.local` |
-| **Dev** | Development testing | GCP Project: `pottery-dev-*` | `.env.deploy.dev` |
-| **Test** | Staging/QA | GCP Project: `pottery-test-*` | `.env.deploy.test` |
-| **Production** | Live application | GCP Project: `pottery-prod-*` | `.env.deploy.prod` |
-
-*\*Note: Firestore emulator setup coming in future release*
+| **Local** | Local development | Firestore in dev project | `.env.local` |
+| **Dev** | Development testing | Firestore in dev project | `.env.dev` |
+| **Production** | Live application | Firestore in prod project | `.env.prod` |
 
 ### Deployment Commands
 
 **Development Environment:**
 ```bash
-# Deploy to dev environment
-cp .env.deploy.dev .env.deploy
+# Deploy to dev environment (default)
 ./build_and_deploy.sh
 
-# Set dev-specific Cloud Run service name
-export BUILD_SERVICE_NAME="pottery-api-dev"
-./build_and_deploy.sh
-```
-
-**Test Environment:**
-```bash
-# Deploy to test environment
-cp .env.deploy.test .env.deploy
-export BUILD_SERVICE_NAME="pottery-api-test"
-./build_and_deploy.sh
+# Or explicitly specify dev
+./build_and_deploy.sh --env=dev
 ```
 
 **Production Environment:**
 ```bash
-# Deploy to production (requires additional approval)
-cp .env.deploy.prod .env.deploy
-export BUILD_SERVICE_NAME="pottery-api-prod"
-./build_and_deploy.sh
+# Deploy to production
+./build_and_deploy.sh --env=prod
 ```
 
-## 📊 Database Migration Planning
+**Get Help:**
+```bash
+./build_and_deploy.sh --help
+```
 
-### Current: Google Cloud Firestore
-- **Dev**: Firestore database in `pottery-dev-project`
-- **Test**: Firestore database in `pottery-test-project`
-- **Prod**: Firestore database in `pottery-prod-project`
+## 📊 Current Database Setup
 
-### Future: Supabase Integration
-*Planned migration to Supabase for better development experience and cost optimization:*
+### Google Cloud Firestore
+- **Dev/Local**: Firestore database in development GCP project
+- **Prod**: Firestore database in production GCP project (to be created)
 
-| Environment | Supabase Project | Database URL | Purpose |
-|-------------|------------------|--------------|---------|
-| **Dev** | `pottery-dev` | `postgresql://...dev.supabase.co` | Development testing |
-| **Test** | `pottery-test` | `postgresql://...test.supabase.co` | QA and staging |
-| **Prod** | `pottery-prod` | `postgresql://...prod.supabase.co` | Production data |
-
-**Migration Benefits:**
-- PostgreSQL relational database with better query capabilities
-- Built-in authentication and authorization
-- Real-time subscriptions
-- Better local development with database branching
-- Cost-effective scaling
+### Firebase Authentication
+- Uses Firebase ID tokens (1-hour expiration)
+- Automatic token refresh on client side
+- Backend verifies tokens using Firebase Admin SDK
 
 ## 🔧 Environment Variables
 
@@ -174,10 +151,8 @@ export BUILD_SERVICE_NAME="pottery-api-prod"
 GCP_PROJECT_ID=your-project-id
 GCS_BUCKET_NAME=your-bucket-name
 
-# Authentication
-JWT_SECRET_KEY=your-secret-key-here
-JWT_ALGORITHM=HS256
-JWT_ACCESS_TOKEN_EXPIRE_MINUTES=30
+# Firebase Authentication
+FIREBASE_PROJECT_ID=your-firebase-project-id
 
 # Database (Current: Firestore)
 FIRESTORE_COLLECTION=pottery_items
@@ -213,20 +188,20 @@ CLOUD_RUN_SERVICE_ACCOUNT_EMAIL=runtime@your-project.iam.gserviceaccount.com
 - **ReDoc**: `http://localhost:8000/api/redoc`
 
 ### Authentication
-Default development credentials:
-- Username: `admin`
-- Password: `admin`
+The API uses Firebase Authentication. Clients must:
+1. Authenticate with Firebase (email/password or Google OAuth)
+2. Get Firebase ID token
+3. Send ID token in Authorization header: `Bearer <firebase_id_token>`
 
-**Get Token:**
-```bash
-curl -X POST "http://localhost:8000/api/token" \
-  -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "username=admin&password=admin"
-```
+Firebase ID tokens expire after 1 hour and are automatically refreshed by the Flutter client.
 
-**Use Token:**
+**Testing with curl:**
 ```bash
-curl -H "Authorization: Bearer YOUR_TOKEN" \
+# Get Firebase ID token from your Flutter app or Firebase console
+export FIREBASE_TOKEN="your-firebase-id-token"
+
+# Use token in requests
+curl -H "Authorization: Bearer $FIREBASE_TOKEN" \
   "http://localhost:8000/api/items"
 ```
 
@@ -375,27 +350,19 @@ backend/
 │   └── images/       # Test image files
 ├── main.py           # FastAPI application entry point
 ├── models.py         # Pydantic data models
-├── auth.py          # JWT authentication
+├── auth.py          # Firebase authentication
 ├── config.py        # Application configuration
 └── Dockerfile       # Container definition
 ```
 
 ## 🔄 Future Enhancements
 
-### Planned Database Migration
-- [ ] **Supabase Integration**: Migrate from Firestore to PostgreSQL
-- [ ] **Multi-environment Databases**: Separate dev/test/prod databases
-- [ ] **Database Migrations**: Automated schema versioning
-- [ ] **Local Database**: Supabase local development setup
-
 ### Deployment Improvements
 - [ ] **CI/CD Pipeline**: Automated testing and deployment
-- [ ] **Environment Promotion**: Dev → Test → Prod workflow
 - [ ] **Blue/Green Deployments**: Zero-downtime deployments
 - [ ] **Health Checks**: Comprehensive monitoring and alerting
 
 ### Development Experience
 - [ ] **Firestore Emulator**: Local development without GCP
-- [ ] **Hot Reload**: Faster development iteration
 - [ ] **Performance Monitoring**: APM integration
 - [ ] **Load Testing**: Automated performance testing
