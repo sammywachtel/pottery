@@ -194,6 +194,7 @@ CLOUD_RUN_SERVICE_ACCOUNT_EMAIL=runtime@your-project.iam.gserviceaccount.com
 - Service Account User
 - Storage Admin
 - Storage Object Viewer
+- Viewer
 
 ## 📋 API Documentation
 
