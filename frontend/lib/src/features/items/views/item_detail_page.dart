@@ -302,9 +302,6 @@ class _ItemDetailContent extends ConsumerWidget {
           const SizedBox(height: 12),
           _DetailRow(label: 'Clay Type', value: item.clayType),
           _DetailRow(label: 'Location', value: item.location),
-          _DetailRow(label: 'Created', value: dateFormatter.format(item.createdDateTime.toLocal())),
-          if (item.updatedDateTime != null)
-            _DetailRow(label: 'Updated', value: dateFormatter.format(item.updatedDateTime!.toLocal())),
           if (item.glaze != null && item.glaze!.isNotEmpty)
             _DetailRow(label: 'Glaze', value: item.glaze!),
           if (item.cone != null && item.cone!.isNotEmpty)
@@ -403,7 +400,16 @@ class _ItemDetailContent extends ConsumerWidget {
             Text('Measurements', style: Theme.of(context).textTheme.ceramic),
             const SizedBox(height: 12),
             _MeasurementsGrid(measurements: item.measurements!),
+            const SizedBox(height: 24),
           ],
+          // Timestamps Section at the bottom
+          Text('Timestamps', style: Theme.of(context).textTheme.ceramic),
+          const SizedBox(height: 12),
+          _DetailRow(label: 'Created', value: dateFormatter.format(item.createdDateTime.toLocal())),
+          if (item.updatedDateTime != null)
+            _DetailRow(label: 'Updated', value: dateFormatter.format(item.updatedDateTime!.toLocal())),
+          // Add padding at bottom so FAB doesn't block content
+          const SizedBox(height: 80),
         ],
       ),
     );
