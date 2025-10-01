@@ -92,6 +92,7 @@ Comprehensive documentation is available in the [`docs/`](./docs/) directory:
 - [🏗️ Environment Setup](./docs/getting-started/environment-setup.md) - Configure dev/prod environments
 
 ### 🏛️ Architecture & Design
+- [🏗️ **Architecture & Security**](./docs/ARCHITECTURE_AND_SECURITY.md) - **Complete system architecture, security model, and service relationships**
 - [📋 System Overview](./docs/architecture/system-overview.md) - High-level architecture
 - [🔗 API Reference](./docs/architecture/api-reference.md) - REST API documentation
 - [🗃️ Database Schema](./docs/architecture/database-schema.md) - Firestore structure
@@ -105,6 +106,8 @@ Comprehensive documentation is available in the [`docs/`](./docs/) directory:
 - [🤝 Contributing](./docs/development/contributing.md) - How to contribute
 
 ### 🚀 Deployment
+- [📦 **Play Store Deployment**](./scripts/DEPLOYMENT_GUIDE.md) - **Complete guide for Google Play deployment**
+- [🏗️ **Architecture & Security**](./docs/ARCHITECTURE_AND_SECURITY.md) - **Environment setup and graduation (dev to prod)**
 - [📦 Deployment Guide](./docs/deployment/deployment-guide.md) - Production deployment
 - [⚙️ Environment Config](./docs/deployment/environment-config.md) - Environment variables
 - [🏗️ Infrastructure](./docs/deployment/infrastructure.md) - GCP setup

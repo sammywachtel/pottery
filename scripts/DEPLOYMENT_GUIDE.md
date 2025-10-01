@@ -380,6 +380,43 @@ flutter build appbundle --release --flavor dev --build-name=1.0.1 --build-number
 - Check app is published to internal/production track
 - Users should look in "Work apps" section of Play Store
 
+### Firebase Authentication Issues
+
+**"ApiException: 10" when signing in via Play Store**
+- This is a SHA certificate fingerprint mismatch
+- **Cause**: Google Play re-signs your app with their own signing key after upload
+- **Solution**: Add Play Store's app signing certificate to Firebase
+
+**Fix Steps:**
+1. Get Play Store signing certificate:
+   - Go to [Play Console](https://play.google.com/console) > Your app
+   - Navigate to **Release > Setup > App signing**
+   - Under "App signing key certificate", copy the SHA-1 fingerprint
+
+2. Add to Firebase:
+   - Go to [Firebase Console](https://console.firebase.google.com/) > Your project
+   - **Project settings** > Scroll to "Your apps"
+   - Find your Android app (e.g., `com.pottery.app.dev`)
+   - Click **Add fingerprint**
+   - Paste the Play Store SHA-1 fingerprint
+   - Click **Save**
+
+3. Download and deploy new config:
+   ```bash
+   # Download new google-services.json from Firebase Console
+   # Place in: frontend/android/app/src/{flavor}/google-services.json
+
+   # Rebuild AAB
+   cd frontend
+   flutter build appbundle --release --flavor dev
+
+   # Upload new version to Play Store
+   ```
+
+**Important**: You need TWO SHA-1 fingerprints in Firebase:
+- Your upload key SHA-1 (for local development/testing)
+- Play Store's app signing key SHA-1 (for production distribution via Play Store)
+
 ## Environment Structure Summary
 
 | Environment | Firebase Project | Package | Backend | Use Case |
