@@ -191,6 +191,7 @@ CLOUD_RUN_SERVICE_ACCOUNT_EMAIL=runtime@your-project.iam.gserviceaccount.com
 - Logs Viewer
 - Logs Writer
 - Project IAM Admin
+- Secret Manager Admin
 - Service Account User
 - Storage Admin
 - Storage Object Viewer
