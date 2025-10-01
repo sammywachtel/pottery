@@ -40,12 +40,14 @@ The Pottery App allows users to create, manage, and browse pottery items with ph
 
 ### Local Development
 
+**Option 1: With Local Docker Backend (full local development)**
+
 ```bash
 # 1. Clone the repository
 git clone <repository-url>
 cd pottery-backend
 
-# 2. Start the backend
+# 2. Start the local backend
 cd backend
 ./run_docker_local.sh
 
@@ -58,6 +60,23 @@ cd frontend
 - 🌐 **Frontend**: http://localhost:9102
 - 🔧 **Backend API**: http://localhost:8000
 - 📚 **API Docs**: http://localhost:8000/api/docs
+
+**Option 2: With Cloud Run Dev Backend (frontend-only development)**
+
+```bash
+# 1. Clone the repository
+git clone <repository-url>
+cd pottery-backend
+
+# 2. Start the frontend (connects to Cloud Run dev)
+cd frontend
+./scripts/run_web_dev.sh
+```
+
+**Access the application:**
+- 🌐 **Frontend**: http://localhost:9102
+- ☁️ **Backend API**: https://pottery-api-dev-1073709451179.us-central1.run.app
+- 📚 **API Docs**: https://pottery-api-dev-1073709451179.us-central1.run.app/api/docs
 
 **Note:** Port 9102 is used for the frontend to ensure Google Sign-In works properly. This port is pre-authorized in Firebase OAuth configuration.
 

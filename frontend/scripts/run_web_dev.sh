@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# Run Flutter Web with Local Docker Backend
+# Run Flutter Web with Cloud Run Dev Backend
 # This script runs the Flutter web app on port 9102 (authorized in Firebase)
-# and connects to LOCAL Docker backend at localhost:8000
+# and connects to CLOUD RUN DEV backend
 
 set -e
 
@@ -13,24 +13,23 @@ cd "$FRONTEND_DIR"
 
 # Configuration
 PORT="${WEB_PORT:-9102}"
-BACKEND_URL="http://localhost:8000"
+BACKEND_URL="https://pottery-api-dev-1073709451179.us-central1.run.app"
 ENVIRONMENT="development"
 DEBUG_ENABLED="true"
 
-echo "🚀 Starting Flutter Web Application (LOCAL BACKEND)"
-echo "===================================================="
+echo "🚀 Starting Flutter Web Application (CLOUD RUN DEV BACKEND)"
+echo "==========================================================="
 echo ""
 echo "📋 Configuration:"
 echo "   Web Port: $PORT"
-echo "   Backend: LOCAL Docker (http://localhost:8000)"
+echo "   Backend: CLOUD RUN DEV"
+echo "   Backend URL: $BACKEND_URL"
 echo "   Environment: $ENVIRONMENT"
 echo "   Debug: $DEBUG_ENABLED"
 echo ""
-echo "⚠️  Make sure local Docker backend is running:"
-echo "   cd backend && ./run_docker_local.sh"
-echo ""
 echo "🌐 Access the app at: http://localhost:$PORT"
 echo "🔑 Google Sign-In will work (port $PORT is authorized)"
+echo "☁️  Using live Cloud Run dev backend (no local backend needed)"
 echo ""
 echo "Press Ctrl+C to stop the server"
 echo ""
