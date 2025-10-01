@@ -181,6 +181,20 @@ BUILD_REGION=us-central1
 CLOUD_RUN_SERVICE_ACCOUNT_EMAIL=runtime@your-project.iam.gserviceaccount.com
 ```
 
+### Service Account IAM Roles
+
+**Required roles for deployment service account:**
+- Artifact Registry Writer
+- Cloud Build Service Account
+- Cloud Build Viewer
+- Cloud Run Admin
+- Logs Viewer
+- Logs Writer
+- Project IAM Admin
+- Service Account User
+- Storage Admin
+- Storage Object Viewer
+
 ## 📋 API Documentation
 
 ### Interactive Documentation
