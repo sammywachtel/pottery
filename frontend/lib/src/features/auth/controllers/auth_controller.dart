@@ -106,6 +106,23 @@ class AuthController extends StateNotifier<AuthState> {
     );
   }
 
+  /// Ensure we have a valid token, refreshing if needed
+  /// Call this before critical operations to prevent data loss on token expiry
+  Future<bool> ensureValidToken() async {
+    if (!state.isAuthenticated) return false;
+
+    try {
+      final freshToken = await _repository.refreshToken();
+      if (freshToken != null) {
+        state = state.copyWith(token: freshToken);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      return false;
+    }
+  }
+
   void _setAuthenticated(AuthSession session) {
     state = state.copyWith(
       isInitializing: false,

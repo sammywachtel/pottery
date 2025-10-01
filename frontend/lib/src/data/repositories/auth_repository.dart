@@ -172,5 +172,13 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
   final client = ref.watch(apiClientProvider);
   final storage = LocalAuthStorage();
   final firebaseAuth = FirebaseAuthService();
-  return AuthRepository(client, storage, firebaseAuth);
+  final repository = AuthRepository(client, storage, firebaseAuth);
+
+  // Wire up the auth interceptor for automatic token refresh on 401 errors
+  // This prevents users from losing form data when tokens expire
+  client.dio.interceptors.add(
+    AuthInterceptor(() => repository.refreshToken()),
+  );
+
+  return repository;
 });
