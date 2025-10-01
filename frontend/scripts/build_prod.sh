@@ -6,6 +6,11 @@
 
 set -e
 
+# Change to frontend directory (parent of scripts directory)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+FRONTEND_DIR="$(dirname "$SCRIPT_DIR")"
+cd "$FRONTEND_DIR"
+
 echo "🏭 Building Flutter app for PRODUCTION environment..."
 
 # Build configuration
@@ -56,8 +61,8 @@ case "${1:-release}" in
   "appbundle"|"aab")
     echo "🔨 Building AAB for Play Store (production)..."
 
-    # Opening move: read current version from pubspec.yaml
-    PUBSPEC_PATH="$(dirname "$(dirname "${BASH_SOURCE[0]}")")/pubspec.yaml"
+    # Opening move: read current version from pubspec.yaml (we're already in frontend dir)
+    PUBSPEC_PATH="pubspec.yaml"
     CURRENT_VERSION=$(grep "^version:" "$PUBSPEC_PATH" | sed 's/version: //')
     BUILD_NAME=$(echo $CURRENT_VERSION | cut -d'+' -f1)
     BUILD_NUMBER=$(echo $CURRENT_VERSION | cut -d'+' -f2)
