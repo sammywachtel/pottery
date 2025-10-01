@@ -51,16 +51,15 @@ cd backend
 
 # 3. Start the frontend (new terminal)
 cd frontend
-flutter run -d chrome \
-  --dart-define=API_BASE_URL=http://localhost:8000 \
-  --web-hostname localhost \
-  --web-port 9100
+./scripts/run_web_local.sh
 ```
 
 **Access the application:**
-- 🌐 **Frontend**: http://localhost:9100
+- 🌐 **Frontend**: http://localhost:9102
 - 🔧 **Backend API**: http://localhost:8000
 - 📚 **API Docs**: http://localhost:8000/api/docs
+
+**Note:** Port 9102 is used for the frontend to ensure Google Sign-In works properly. This port is pre-authorized in Firebase OAuth configuration.
 
 ### Mobile App Development
 
