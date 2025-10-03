@@ -1,9 +1,11 @@
 # routers/photos.py
+import io
 import logging
 import uuid as uuid_pkg
 from typing import Optional
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from PIL import Image
 
 from auth import User, get_current_active_user
 from models import HTTPValidationError  # Import error models
@@ -123,6 +125,21 @@ async def upload_photo(
     photo_id = str(uuid_pkg.uuid4())
     file_content = await file.read()  # Read file content
 
+    # Opening move: Calculate aspect ratio from image dimensions
+    aspect_ratio = None
+    try:
+        image = Image.open(io.BytesIO(file_content))
+        width, height = image.size
+        if height > 0:
+            aspect_ratio = width / height
+            logger.info(
+                f"Photo {photo_id} dimensions: {width}x{height}, "
+                f"aspect ratio: {aspect_ratio:.2f}"
+            )
+    except Exception as e:
+        logger.warning(f"Failed to calculate aspect ratio for photo {photo_id}: {e}")
+        # Continue without aspect ratio - it's optional
+
     # 1. Upload to GCS
     try:
         gcs_path = await gcs_service.upload_photo_to_gcs(
@@ -162,6 +179,7 @@ async def upload_photo(
         imageNote=photo_note,
         fileName=file.filename,
         isPrimary=not has_primary,  # Auto-primary if no existing primary
+        aspectRatio=aspect_ratio,  # Store calculated aspect ratio
         # uploadedAt is set by default in the model
     )
 

@@ -167,11 +167,24 @@ class _ItemsHomePageState extends ConsumerState<ItemsHomePage> {
               slivers: [
                 SliverPadding(
                   padding: const EdgeInsets.all(PotterySpacing.clay),
-                  sliver: SliverMasonryGrid.count(
+                  sliver: SliverStaggeredGrid.countBuilder(
                     crossAxisCount: _getCrossAxisCount(context),
                     mainAxisSpacing: PotterySpacing.trim,
                     crossAxisSpacing: PotterySpacing.trim,
-                    childCount: sortedItems.length,
+                    itemCount: sortedItems.length,
+                    // Big play: Adaptive column spans based on photo aspect ratio
+                    // Landscape photos span 2 columns, portrait/square span 1
+                    staggeredTileBuilder: (index) {
+                      final item = sortedItems[index];
+                      final primaryPhoto = item.photos.where((p) => p.isPrimary).firstOrNull
+                          ?? item.photos.firstOrNull;
+
+                      // If photo is landscape (aspect > 1.3), span 2 columns
+                      if (primaryPhoto != null && (primaryPhoto.aspectRatio ?? 1.0) > 1.3) {
+                        return const StaggeredTile.fit(2); // Landscape spans 2
+                      }
+                      return const StaggeredTile.fit(1); // Portrait/square spans 1
+                    },
                     itemBuilder: (context, index) {
                       final item = sortedItems[index];
                       return _PotteryItemCard(

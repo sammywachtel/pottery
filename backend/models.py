@@ -38,6 +38,13 @@ class PhotoBase(BaseModel):
         default=False,
         description="Whether this photo is the primary display photo for the item",
     )
+    aspectRatio: Optional[float] = Field(
+        None,
+        description=(
+            "Photo aspect ratio (width/height). "
+            "E.g., 1.5 for landscape, 0.75 for portrait, 1.0 for square"
+        ),
+    )
 
 
 class Photo(PhotoBase):
