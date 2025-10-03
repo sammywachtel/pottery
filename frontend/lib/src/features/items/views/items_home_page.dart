@@ -155,6 +155,9 @@ class _ItemsHomePageState extends ConsumerState<ItemsHomePage> {
           return RefreshIndicator.adaptive(
             onRefresh: refresh,
             child: CustomScrollView(
+              // Opening move: Increase cache extent to keep more items alive off-screen
+              // This prevents photos from being disposed and reloaded during scroll
+              cacheExtent: 1000.0, // Keep ~3 screens worth of items cached
               slivers: [
                 SliverPadding(
                   padding: const EdgeInsets.all(PotterySpacing.clay),
@@ -425,8 +428,9 @@ class _ItemsHomePageState extends ConsumerState<ItemsHomePage> {
   }
 }
 
-// New pottery card implementation
-class _PotteryItemCard extends StatelessWidget {
+// Opening move: Convert to StatefulWidget with AutomaticKeepAliveClientMixin
+// This prevents the widget from being disposed when scrolling, keeping photos cached
+class _PotteryItemCard extends StatefulWidget {
   const _PotteryItemCard({
     required this.item,
     this.onTap,
@@ -438,37 +442,49 @@ class _PotteryItemCard extends StatelessWidget {
   final VoidCallback? onLongPress;
 
   @override
+  State<_PotteryItemCard> createState() => _PotteryItemCardState();
+}
+
+class _PotteryItemCardState extends State<_PotteryItemCard>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
   Widget build(BuildContext context) {
+    // Big play: Call super.build to enable keep-alive functionality
+    super.build(context);
+
     return PotteryCard(
-      name: item.name,
-      clayType: item.clayType,
-      location: item.location,
+      name: widget.item.name,
+      clayType: widget.item.clayType,
+      location: widget.item.location,
       primaryPhotoUrl: _getPrimaryPhotoUrl(),
-      photos: item.photos.map((photo) => {
+      photos: widget.item.photos.map((photo) => {
         'stage': photo.stage,
         'signedUrl': photo.signedUrl,
         'id': photo.id,
       }).toList(),
-      currentStatus: item.currentStatus,
-      createdDateTime: item.createdDateTime,
-      onTap: onTap,
-      onLongPress: onLongPress,
-      heroTag: 'item-${item.id}',
+      currentStatus: widget.item.currentStatus,
+      createdDateTime: widget.item.createdDateTime,
+      onTap: widget.onTap,
+      onLongPress: widget.onLongPress,
+      heroTag: 'item-${widget.item.id}',
       cardVariant: PotteryCardVariant.grid,
     );
   }
 
   String? _getPrimaryPhotoUrl() {
-    if (item.photos.isEmpty) return null;
+    if (widget.item.photos.isEmpty) return null;
 
-    // Opening move: check if any photo is marked as primary
-    final primaryPhoto = item.photos.where((p) => p.isPrimary).firstOrNull;
+    // Check if any photo is marked as primary
+    final primaryPhoto = widget.item.photos.where((p) => p.isPrimary).firstOrNull;
     if (primaryPhoto?.signedUrl != null) {
       return primaryPhoto!.signedUrl;
     }
 
-    // Main play: if no primary photo, use the most recent photo (newest uploadedAt)
-    final photosWithUrl = item.photos.where((p) => p.signedUrl != null).toList();
+    // If no primary photo, use the most recent photo (newest uploadedAt)
+    final photosWithUrl = widget.item.photos.where((p) => p.signedUrl != null).toList();
     if (photosWithUrl.isEmpty) return null;
 
     // Sort by uploadedAt descending (most recent first)

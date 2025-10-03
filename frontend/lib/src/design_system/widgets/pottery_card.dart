@@ -343,8 +343,13 @@ class _PotteryCardState extends State<PotteryCard> with TickerProviderStateMixin
         height: double.infinity,
         placeholder: (context, url) => _buildPhotoPlaceholder(theme),
         errorWidget: (context, url, error) => _buildPhotoError(theme),
-        fadeInDuration: const Duration(milliseconds: 300),
-        fadeOutDuration: const Duration(milliseconds: 100),
+        // Big play: Reduce fade durations to minimize flickering on cached images
+        // Cached images display almost instantly, so fast fade prevents visual flash
+        fadeInDuration: const Duration(milliseconds: 150),
+        fadeOutDuration: const Duration(milliseconds: 50),
+        // Victory lap: Use disk and memory cache for maximum performance
+        memCacheWidth: 400, // Cache at reasonable resolution for list view
+        memCacheHeight: 400,
       );
     } else {
       return _buildPhotoPlaceholder(theme);
@@ -472,6 +477,10 @@ class CompactPotteryCard extends StatelessWidget {
                       ? CachedNetworkImage(
                           imageUrl: primaryPhotoUrl!,
                           fit: BoxFit.cover,
+                          fadeInDuration: const Duration(milliseconds: 150),
+                          fadeOutDuration: const Duration(milliseconds: 50),
+                          memCacheWidth: 100, // Small cache for tiny thumbnails
+                          memCacheHeight: 100,
                           placeholder: (context, url) => Container(
                             color: theme.colorScheme.surfaceVariant,
                             child: Icon(
