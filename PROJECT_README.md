@@ -15,16 +15,16 @@ cat scripts/README.md
 ./scripts/setup/setup-firebase.sh
 
 # 💻 Local development
-./scripts/backend/deploy-local.sh      # Start backend locally
-./scripts/frontend/build-local.sh     # Install "Pottery Studio Local" app
+./backend/run_docker_local.sh      # Start backend locally
+./frontend/scripts/build_dev.sh     # Install "Pottery Studio Local" app
 
 # 🧪 Development testing
 ./scripts/backend/deploy-dev.sh       # Deploy to Cloud Run dev
-./scripts/frontend/build-dev.sh      # Install "Pottery Studio Dev" app
+./frontend/scripts/build_dev.sh      # Install "Pottery Studio Dev" app
 
 # 🚀 Production deployment
 ./scripts/backend/deploy-prod.sh      # Deploy to Cloud Run prod
-./scripts/frontend/build-prod.sh     # Install "Pottery Studio" app
+./frontend/scripts/build_prod.sh     # Install "Pottery Studio" app
 ```
 
 ## 📱 Three-App System

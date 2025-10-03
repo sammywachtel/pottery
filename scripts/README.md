@@ -58,10 +58,10 @@ scripts/
 
 ```bash
 # 1. Start backend locally
-./scripts/backend/deploy-local.sh
+./backend/run_docker_local.sh
 
 # 2. Build and install mobile app
-./scripts/frontend/build-local.sh
+./frontend/scripts/build_dev.sh
 
 # App: "Pottery Studio Local" → http://localhost:8000
 ```
@@ -73,10 +73,10 @@ scripts/
 ./scripts/backend/deploy-dev.sh
 
 # 2. Build and install mobile app (APK for testing)
-./scripts/frontend/build-dev.sh
+./frontend/scripts/build_dev.sh
 
 # OR: Build AAB for Play Store internal testing
-./scripts/frontend/build-dev.sh appbundle
+./frontend/scripts/build_dev.sh appbundle
 # Output: Auto-increments version, builds AAB for Play Store
 
 # App: "Pottery Studio Dev" → https://pottery-api-dev-1073709451179.us-central1.run.app
@@ -95,10 +95,10 @@ scripts/
 ./scripts/backend/deploy-prod.sh
 
 # 2. Build and install mobile app (APK for testing)
-./scripts/frontend/build-prod.sh
+./frontend/scripts/build_prod.sh
 
 # OR: Build AAB for Play Store production
-./scripts/frontend/build-prod.sh appbundle
+./frontend/scripts/build_prod.sh appbundle
 # Output: Auto-increments version, builds AAB for production
 
 # App: "Pottery Studio" → https://pottery-api-prod.run.app
@@ -114,7 +114,7 @@ scripts/
 
 ```bash
 # 1. Start backend locally
-./scripts/backend/deploy-local.sh
+./backend/run_docker_local.sh
 
 # 2. Run macOS desktop app
 cd frontend
@@ -141,17 +141,17 @@ flutter build macos --dart-define=API_BASE_URL=https://pottery-api-dev-107370945
 **Option 1: With Local Docker Backend**
 ```bash
 # 1. Start backend locally
-./scripts/backend/deploy-local.sh
+./backend/run_docker_local.sh
 
 # 2. Run web app (connects to localhost:8000)
-./scripts/frontend/run-web-local.sh
+./frontend/scripts/build_dev.sh web
 # Opens browser at: http://localhost:9102
 ```
 
 **Option 2: With Cloud Run Dev Backend** (no local backend needed)
 ```bash
 # Run web app (connects to Cloud Run dev)
-./scripts/frontend/run-web-dev.sh
+./frontend/scripts/build_dev.sh web
 # Opens browser at: http://localhost:9102
 ```
 
@@ -309,7 +309,7 @@ SocketException: Connection failed (OS Error: Operation not permitted)
 **Testing Google Sign-In on macOS:**
 ```bash
 # 1. Start backend locally
-./scripts/backend/deploy-local.sh
+./backend/run_docker_local.sh
 
 # 2. Run macOS app
 cd frontend

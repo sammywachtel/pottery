@@ -3,6 +3,11 @@
 # Script to build and run the Docker container locally
 # Usage: ./run_docker_local.sh [--debug] [--env=<environment>]
 
+# Calculate directory paths
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+BACKEND_DIR="${PROJECT_ROOT}/backend"
+
 # Parse command line arguments
 DEBUG_MODE=false
 ENVIRONMENT="dev"  # Default to development
@@ -30,14 +35,14 @@ while [[ "$#" -gt 0 ]]; do
   esac
 done
 
-# Determine environment file
+# Determine environment file (in backend directory)
 case $ENVIRONMENT in
   dev|development)
-    ENV_FILE=".env.dev"
+    ENV_FILE="${BACKEND_DIR}/.env.dev"
     echo "🚀 Running with DEVELOPMENT environment"
     ;;
   local)
-    ENV_FILE=".env.local"
+    ENV_FILE="${BACKEND_DIR}/.env.local"
     echo "🔧 Running with LEGACY local environment"
     ;;
   *)
@@ -55,8 +60,8 @@ if [ -f "${ENV_FILE}" ]; then
   set +a
 else
   echo "Error: ${ENV_FILE} file not found."
-  echo "Available files:"
-  ls -la .env.* 2>/dev/null || echo "No .env files found"
+  echo "Available files in backend directory:"
+  ls -la "${BACKEND_DIR}"/.env.* 2>/dev/null || echo "No .env files found"
   exit 1
 fi
 
@@ -116,16 +121,15 @@ if [ "$(docker ps -aq -f name=^${CONTAINER_NAME}$)" ]; then
     docker rm ${CONTAINER_NAME}
 fi
 
-# Build the Docker image
+# Build the Docker image (from backend directory)
 echo "Building Docker image: ${IMAGE_NAME}..."
-docker build -t "${IMAGE_NAME}" .
+docker build -t "${IMAGE_NAME}" "${BACKEND_DIR}"
 if [ $? -ne 0 ]; then echo "ERROR: Docker build failed." && exit 1; fi
 echo "Docker build successful."
 
 # Setup local infrastructure (including CORS)
 echo "Setting up local development infrastructure..."
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-INFRA_SCRIPT="${SCRIPT_DIR}/scripts/setup-infrastructure.sh"
+INFRA_SCRIPT="${SCRIPT_DIR}/setup-infrastructure.sh"
 
 if [ -x "${INFRA_SCRIPT}" ]; then
   echo "Configuring GCS bucket CORS for local development..."
@@ -133,7 +137,7 @@ if [ -x "${INFRA_SCRIPT}" ]; then
 else
   echo "WARNING: Infrastructure setup script not found at ${INFRA_SCRIPT}"
   echo "You may need to manually configure GCS bucket CORS settings."
-  echo "Run: ./scripts/manage-cors.sh apply local"
+  echo "Run: ${SCRIPT_DIR}/manage-cors.sh apply local"
 fi
 
 # Run the Docker container

@@ -16,9 +16,9 @@ Your project already has build automation:
 
 | Script | Purpose | Package | Backend |
 |--------|---------|---------|---------|
-| `scripts/frontend/build-local.sh` | Local development | com.pottery.app.local | localhost:8000 |
-| `scripts/frontend/build-dev.sh` | Dev/testing | com.pottery.app.dev | pottery-api-dev |
-| `scripts/frontend/build-prod.sh` | Production | com.pottery.app | pottery-api-prod |
+| `frontend/scripts/build_dev.sh` | Local development | com.pottery.app.local | localhost:8000 |
+| `frontend/scripts/build_dev.sh` | Dev/testing | com.pottery.app.dev | pottery-api-dev |
+| `frontend/scripts/build_prod.sh` | Production | com.pottery.app | pottery-api-prod |
 
 **For Play Store deployment:**
 - **Internal testing**: Use `build-dev.sh` → creates `com.pottery.app.dev`
@@ -165,7 +165,7 @@ echo "✅ Python dependencies installed!"
 # Build dev AAB with automatic version increment
 cd /Users/samwachtel/PycharmProjects/potteryapp/pottery-backend
 
-./scripts/frontend/build-dev.sh appbundle
+./frontend/scripts/build_dev.sh appbundle
 
 # What this does:
 # - Auto-increments PATCH version (1.0.0 → 1.0.1)
@@ -179,10 +179,10 @@ cd /Users/samwachtel/PycharmProjects/potteryapp/pottery-backend
 
 ```bash
 # Build APK for sideloading
-./scripts/frontend/build-dev.sh
+./frontend/scripts/build_dev.sh
 
 # Or use 'release' option for APK
-./scripts/frontend/build-dev.sh release
+./frontend/scripts/build_dev.sh release
 ```
 
 ### Option B: Production Build (After Setting Up pottery-app-prod)
@@ -193,7 +193,7 @@ Once you've created the `pottery-app-prod` Firebase project and configured it (s
 # Build production AAB with automatic version increment
 cd /Users/samwachtel/PycharmProjects/potteryapp/pottery-backend
 
-./scripts/frontend/build-prod.sh appbundle
+./frontend/scripts/build_prod.sh appbundle
 
 # What this does:
 # - Auto-increments MINOR version (1.0.0 → 1.1.0)
@@ -433,7 +433,7 @@ flutter build appbundle --release --flavor dev --build-name=1.0.1 --build-number
 
 ```bash
 # 1. Make changes locally
-./scripts/frontend/build-local.sh
+./frontend/scripts/build_dev.sh
 
 # 2. Test with local backend
 # App installs as "Pottery Studio Local"
@@ -466,8 +466,8 @@ flutter build appbundle --release --flavor prod
 
 - [Main Scripts README](README.md) - Overview of all deployment scripts
 - [Firebase Multi-Environment Setup](FIREBASE_MULTI_ENV_SETUP.md) - Detailed Firebase configuration
-- [Backend Deployment](backend/README.md) - Backend deployment guides
-- [Frontend Build Scripts](frontend/) - Flutter build script details
+- [Backend Deployment](../backend/README.md) - Backend deployment guides
+- [Frontend Build Scripts](../frontend/scripts/) - Flutter build script details
 
 ## Support Resources
 

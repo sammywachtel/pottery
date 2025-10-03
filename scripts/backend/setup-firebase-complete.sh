@@ -495,29 +495,46 @@ configure_service_account_permissions() {
     # Service account name pattern
     local service_account="pottery-app-sa@$project_id.iam.gserviceaccount.com"
 
-    # Check if service account exists
+    # Check if service account exists - create if not
     if ! gcloud iam service-accounts describe "$service_account" --project="$project_id" &> /dev/null; then
-        warning "Service account $service_account not found in $project_id"
-        log "Service account should be created during backend deployment"
-        return 0
+        log "Creating service account: $service_account"
+        gcloud iam service-accounts create pottery-app-sa \
+            --project="$project_id" \
+            --display-name="Pottery App Backend Runtime" \
+            --description="Service account used by the backend API for Cloud Storage, Firestore, and Firebase access"
+        success "Created service account: $service_account"
+    else
+        log "Service account already exists: $service_account"
     fi
 
-    log "Granting Firestore access to service account..."
+    log "Granting Firestore access..."
     gcloud projects add-iam-policy-binding "$project_id" \
         --member="serviceAccount:$service_account" \
         --role="roles/datastore.user" \
         --quiet
 
-    log "Granting Firebase viewer access to service account..."
+    log "Granting CORS Manager role..."
+    gcloud projects add-iam-policy-binding "$project_id" \
+        --member="serviceAccount:$service_account" \
+        --role="roles/storage.corsManager" \
+        --quiet
+
+    log "Granting Firebase viewer access..."
     gcloud projects add-iam-policy-binding "$project_id" \
         --member="serviceAccount:$service_account" \
         --role="roles/firebase.viewer" \
         --quiet
 
-    log "Granting Cloud Storage admin access to service account..."
+    log "Granting Cloud Storage admin access..."
     gcloud projects add-iam-policy-binding "$project_id" \
         --member="serviceAccount:$service_account" \
         --role="roles/storage.admin" \
+        --quiet
+
+    log "Granting Cloud Storage object admin access..."
+    gcloud projects add-iam-policy-binding "$project_id" \
+        --member="serviceAccount:$service_account" \
+        --role="roles/storage.objectAdmin" \
         --quiet
 
     success "Service account permissions configured for $project_id"

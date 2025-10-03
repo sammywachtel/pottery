@@ -29,7 +29,7 @@
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
 	<key>GIDClientID</key>
-	<string>1073709451179-eg98ubeha74vcva7rnfpts1sjir3fol5.apps.googleusercontent.com</string>
+	<string>1073709451179-7a1ho6ods7tork3a14um4vo90tqt6vve.apps.googleusercontent.com</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -37,7 +37,7 @@
 			<string>REVERSED_CLIENT_ID</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>com.googleusercontent.apps.1073709451179-eg98ubeha74vcva7rnfpts1sjir3fol5</string>
+				<string>com.googleusercontent.apps.1073709451179-7a1ho6ods7tork3a14um4vo90tqt6vve</string>
 			</array>
 		</dict>
 	</array>

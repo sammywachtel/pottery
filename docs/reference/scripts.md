@@ -4,15 +4,28 @@ Complete reference for all scripts and utilities in the Pottery Catalog Applicat
 
 ## 📁 Script Locations
 
-### Backend Scripts (`backend/scripts/`)
+### Infrastructure Scripts (`scripts/backend/`)
 
 | Script | Purpose | Usage |
 |--------|---------|-------|
 | `setup-firebase-complete.sh` | Complete Firebase environment setup | `./setup-firebase-complete.sh` |
-| `setup-firebase-environments.sh` | Multi-environment Firebase setup | `./setup-firebase-environments.sh` |
 | `manage-cors.sh` | Cloud Storage CORS configuration | `./manage-cors.sh` |
 | `setup-infrastructure.sh` | GCP infrastructure setup | `./setup-infrastructure.sh` |
 | `test-cors.sh` | Test CORS configuration | `./test-cors.sh` |
+| `run_migration.py` | Database migration utility | `python run_migration.py` |
+| `setup_supabase_local.sh` | Local Supabase setup | `./setup_supabase_local.sh` |
+| `deploy-dev.sh` | Deploy backend to Cloud Run dev | `./deploy-dev.sh` |
+| `deploy-prod.sh` | Deploy backend to Cloud Run prod | `./deploy-prod.sh` |
+| `deploy-local.sh` | Run backend locally with Docker | `./deploy-local.sh` |
+| `fix-signed-urls.sh` | Fix signed URL configuration | `./fix-signed-urls.sh` |
+
+### Frontend Scripts (`frontend/scripts/`)
+
+| Script | Purpose | Usage |
+|--------|---------|-------|
+| `build_dev.sh` | Build Flutter app for development | `./build_dev.sh [debug\|release\|appbundle]` |
+| `build_prod.sh` | Build Flutter app for production | `./build_prod.sh [android\|appbundle\|ios]` |
+| `setup_firebase.sh` | Setup Firebase for Flutter | `./setup_firebase.sh` |
 
 ### Deployment Scripts (`backend/`)
 
@@ -85,11 +98,11 @@ flutter build web \
 
 **Purpose**: Automated setup of complete Firebase environment with both dev and prod projects
 
-**Location**: `backend/scripts/setup-firebase-complete.sh`
+**Location**: `scripts/backend/setup-firebase-complete.sh`
 
 **Usage**:
 ```bash
-cd backend/scripts
+cd scripts/backend
 ./setup-firebase-complete.sh
 ```
 
@@ -113,42 +126,15 @@ cd backend/scripts
 - Firebase CLI installed and authenticated
 - Billing account linked to projects
 
-### `setup-firebase-environments.sh`
-
-**Purpose**: Create production Firebase project based on existing dev environment
-
-**Location**: `backend/scripts/setup-firebase-environments.sh`
-
-**Usage**:
-```bash
-cd backend/scripts
-./setup-firebase-environments.sh
-```
-
-**Configuration**:
-```bash
-DEV_PROJECT_ID="pottery-app-456522"
-PROD_PROJECT_ID="pottery-app-prod"
-REGION="us-central1"
-BUCKET_LOCATION="us-central1"
-```
-
-**Features**:
-- Automatic billing account detection
-- API enablement
-- Service account creation
-- OAuth client setup guidance
-- Environment file generation
-
 ### `manage-cors.sh`
 
 **Purpose**: Configure CORS settings for Cloud Storage buckets
 
-**Location**: `backend/scripts/manage-cors.sh`
+**Location**: `scripts/backend/manage-cors.sh`
 
 **Usage**:
 ```bash
-cd backend/scripts
+cd scripts/backend
 ./manage-cors.sh [BUCKET_NAME]
 ```
 

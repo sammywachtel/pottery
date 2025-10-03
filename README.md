@@ -52,7 +52,7 @@ cd backend
 ./run_docker_local.sh
 
 # 3. Start the frontend (new terminal)
-./scripts/frontend/run-web-local.sh
+./frontend/scripts/build_dev.sh web
 ```
 
 **Access the application:**
@@ -68,7 +68,7 @@ git clone <repository-url>
 cd pottery-backend
 
 # 2. Start the frontend (connects to Cloud Run dev)
-./scripts/frontend/run-web-dev.sh
+./frontend/scripts/build_dev.sh web
 ```
 
 **Access the application:**

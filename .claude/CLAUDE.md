@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Full-stack pottery catalog application:
 - **backend/** - FastAPI application for managing pottery items with photos, using Google Cloud services (Firestore for metadata, Cloud Storage for photos)
-- **frontend/** - Flutter mobile application (to be implemented)
+- **frontend/** - Flutter application for web, iOS, Android, and macOS with multi-app build system
 
 ## Key Architecture
 
@@ -28,16 +28,19 @@ Full-stack pottery catalog application:
 
 ### Local Development
 ```bash
-# Navigate to backend directory
-cd backend
-
-# Run locally with Docker (reads .env.local)
+# Run locally with Docker
+cd scripts/backend
 ./run_docker_local.sh
 
 # Run in debug mode (PyCharm remote debugger on port 5678)
 ./run_docker_local.sh --debug
 
+# Run with specific environment
+./run_docker_local.sh --env=dev  # or --env=local
+
 # Run without Docker (requires env vars)
+cd backend
+export $(cat .env.local | xargs)
 python main.py
 ```
 
@@ -64,25 +67,32 @@ pytest --cov=. --cov-report=html
 
 ### Deployment
 ```bash
-# Navigate to backend directory
-cd backend
+# Deploy to development
+cd scripts/backend
+./build_and_deploy.sh --env=dev
 
-# Deploy to Google Cloud Run (reads .env.deploy)
-./build_and_deploy.sh
+# Deploy to production
+./build_and_deploy.sh --env=prod
+
+# Or use wrapper scripts
+./deploy-dev.sh   # Deploy to dev
+./deploy-prod.sh  # Deploy to prod (with confirmation)
 ```
 
 ## Environment Configuration
 
-Three separate `.env` files for different contexts:
-- `.env.local` - Local Docker development
-- `.env.test` - Test environment
-- `.env.deploy` - Production deployment
+Environment files are located in `backend/` directory:
+- `.env.local` - Local Docker development (legacy)
+- `.env.dev` - Development environment (default)
+- `.env.prod` - Production environment
+- `.env.test` - Integration testing
 
 Required variables:
 - `GCP_PROJECT_ID` - Google Cloud project
 - `GCS_BUCKET_NAME` - Storage bucket for photos
 - `HOST_KEY_PATH` (local only) - Path to service account key
-- `JWT_SECRET_KEY` - Secret for JWT signing
+- `FIREBASE_PROJECT_ID` - Firebase project for authentication
+- `JWT_SECRET_KEY` - Secret for JWT signing (legacy, for backward compatibility)
 
 ## API Documentation
 
@@ -126,3 +136,95 @@ curl -H "Authorization: Bearer {token}" \
 - Global exception handlers for HTTPException, ValidationError, GoogleCloudError
 - Structured error responses with proper HTTP status codes
 - Detailed logging for debugging
+
+## Documentation Structure
+
+The backend documentation follows the **Diátaxis framework** for clear, use-case driven organization:
+
+### Getting Started (Tutorials)
+- **backend/docs/getting-started/local-development.md** - Quick start for local development
+- Located in: `backend/docs/getting-started/`
+
+### How-To Guides (Task-Oriented)
+- **backend/docs/how-to/setup-production.md** - Complete production setup guide
+- **backend/docs/how-to/deploy-environments.md** - Deploy to dev/prod environments
+- **backend/docs/how-to/setup-service-accounts.md** - Service account creation
+- **backend/docs/how-to/troubleshoot-common-issues.md** - Common problems and solutions
+- Located in: `backend/docs/how-to/`
+
+### Reference (Information-Oriented)
+- **backend/docs/reference/scripts.md** - Complete scripts documentation
+- **backend/docs/reference/environment-variables.md** - All configuration options
+- **backend/docs/reference/api-endpoints.md** - API reference
+- Located in: `backend/docs/reference/`
+
+### Explanation (Understanding-Oriented)
+- **backend/docs/explanation/architecture.md** - System design decisions
+- **backend/docs/explanation/multi-environment.md** - Environment separation strategy
+- **backend/docs/explanation/authentication.md** - Authentication flow and design
+- Located in: `backend/docs/explanation/`
+
+### Navigation Hub
+- **backend/README.md** - Main entry point with "I want to..." navigation links
+
+### Legacy Documentation
+- **backend/README-old.md** - Archived original README
+- **backend/README-environments-old.md** - Archived environment guide
+
+**Finding Information:**
+- Start with `backend/README.md` for navigation
+- Use getting-started guides for first-time setup
+- Use how-to guides for specific tasks
+- Use reference docs to look up details
+- Use explanation docs to understand why things work the way they do
+
+## Frontend Documentation
+
+The frontend documentation also follows the **Diátaxis framework** for use-case driven organization:
+
+### Getting Started (Tutorials)
+- **frontend/docs/getting-started/local-development.md** - Quick start for local Flutter development
+- Located in: `frontend/docs/getting-started/`
+
+### How-To Guides (Task-Oriented)
+- **frontend/docs/how-to/build-and-deploy.md** - Build and deploy for all platforms and environments
+- **frontend/docs/how-to/deploy-play-store.md** - Complete Google Play Store deployment guide
+- **frontend/docs/how-to/troubleshooting.md** - Debug and fix common issues
+- Located in: `frontend/docs/how-to/`
+
+### Reference (Information-Oriented)
+- **frontend/docs/reference/build-scripts.md** - Complete build scripts documentation
+- Located in: `frontend/docs/reference/`
+
+### Explanation (Understanding-Oriented)
+- **frontend/docs/explanation/multi-app-system.md** - Multi-app build system architecture
+- Located in: `frontend/docs/explanation/`
+
+### Navigation Hub
+- **frontend/README.md** - Main entry point with "I want to..." navigation links
+
+### Legacy Documentation
+- **frontend/README-old.md** - Archived original README
+- **frontend/scripts/README-old.md** - Archived scripts README
+- **frontend/scripts/README-multi-app-old.md** - Archived multi-app README
+
+### Multi-App Build System
+The frontend uses Android product flavors to create three independent app installations:
+- **Pottery Studio Local** (`com.pottery.app.local`) - Local Docker backend
+- **Pottery Studio Dev** (`com.pottery.app.dev`) - Cloud Run dev backend
+- **Pottery Studio** (`com.pottery.app`) - Cloud Run prod backend
+
+All three apps can coexist on the same device for efficient development and testing.
+
+### Build Scripts Location
+All frontend build scripts are in `frontend/scripts/`:
+- `build_dev.sh` - Development builds (local or dev)
+- `build_prod.sh` - Production builds
+- `setup_firebase.sh` - Firebase configuration
+
+**Finding Information:**
+- Start with `frontend/README.md` for navigation
+- Use getting-started guide for local development setup
+- Use how-to guide for building and deploying
+- Use reference docs for build script details
+- Use explanation docs to understand the multi-app system

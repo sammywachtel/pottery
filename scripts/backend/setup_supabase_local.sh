@@ -69,11 +69,11 @@ cat > .env.supabase.local.generated << EOF
 
 # Supabase Local Stack URLs
 SUPABASE_URL=http://localhost:54321
-SUPABASE_ANON_KEY=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
-SUPABASE_SERVICE_ROLE_KEY=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
+SUPABASE_ANON_KEY=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0  # pragma: allowlist secret
+SUPABASE_SERVICE_ROLE_KEY=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU  # pragma: allowlist secret
 
 # Database Connection
-DATABASE_URL=postgresql://postgres:postgres@localhost:54322/postgres
+DATABASE_URL=postgresql://postgres:postgres@localhost:54322/postgres  # pragma: allowlist secret
 
 # Storage Configuration
 SUPABASE_STORAGE_URL=http://localhost:54321/storage/v1
@@ -233,7 +233,7 @@ INSERT INTO photos (
 EOF
 
 # Apply test data
-psql "postgresql://postgres:postgres@localhost:54322/postgres" -f /tmp/test_data.sql
+psql "postgresql://postgres:postgres@localhost:54322/postgres" -f /tmp/test_data.sql  # pragma: allowlist secret
 rm /tmp/test_data.sql
 
 echo "✅ Test data created"
@@ -250,8 +250,8 @@ echo "  • Studio (GUI): http://localhost:54323"
 echo "  • InBucket (Email): http://localhost:54324"
 echo ""
 echo "🔑 Authentication Keys:"
-echo "  • Anon Key: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0"
-echo "  • Service Role Key: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU"
+echo "  • Anon Key: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0"  # pragma: allowlist secret
+echo "  • Service Role Key: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU"  # pragma: allowlist secret
 echo ""
 echo "📝 Next Steps:"
 echo "  1. Copy .env.supabase.local.generated to .env.local"

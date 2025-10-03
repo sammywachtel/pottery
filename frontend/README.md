@@ -1,116 +1,351 @@
-# Pottery Frontend (Flutter)
+# Pottery Catalog Flutter App
 
-A Flutter application that provides a full-featured interface for the pottery inventory backend. The app targets web, iOS, and Android and is ready for deployment on Google Cloud Platform (GCP).
+A Flutter application providing a full-featured interface for the pottery inventory backend. Supports web, iOS, and Android with a multi-app build system for efficient development.
 
-## Prerequisites
+## 🚀 Quick Start
 
-- Flutter SDK >= 3.19 (3.22 recommended) with Dart >= 3.3
-- Run `flutter create .` inside `frontend/` once if platform folders (android/ios/web) are missing
-- Android/iOS toolchains as required for mobile builds
-- For web builds: Chrome (for `flutter run -d chrome`)
-- Google Cloud SDK (for deployment)
-- Backend API reachable via HTTPS (Cloud Run URL or local instance)
+Choose your path:
 
-## Project structure
+### I Want To...
+
+**→ Develop Locally** (5 minutes)
+Follow: [Local Development Guide](docs/getting-started/local-development.md)
+
+**→ Build for Production** (10 minutes)
+Follow: [Build & Deploy Guide](docs/how-to/build-and-deploy.md)
+
+**→ Deploy to Google Play Store** (30 minutes)
+Follow: [Play Store Deployment Guide](docs/how-to/deploy-play-store.md)
+
+**→ Install Production App via USB** (2 minutes)
+See: [Build & Deploy Guide - Install APK via USB](docs/how-to/build-and-deploy.md#install-apk-via-usb)
+
+**→ Debug Production App** (5 minutes)
+See: [Troubleshooting Guide](docs/how-to/troubleshooting.md)
+
+**→ Understand the Multi-App System**
+Read: [Multi-App Explanation](docs/explanation/multi-app-system.md)
+
+**→ Look Up Build Scripts**
+See: [Build Scripts Reference](docs/reference/build-scripts.md)
+
+---
+
+## Architecture Overview
+
+```
+┌─────────────────────────────────────┐
+│    Flutter App (Multi-Platform)     │
+│    ▸ Web (Chrome, Safari, Firefox)  │
+│    ▸ Android (Mobile, Tablet)       │
+│    ▸ iOS (iPhone, iPad)             │
+│    ▸ macOS (Desktop)                │
+└──────┬──────────────────────────────┘
+       │ Firebase Auth Token
+       ▼
+┌─────────────────────────────────────┐
+│    Pottery API (FastAPI)            │
+│    ▸ Cloud Run (Serverless)         │
+│    ▸ Firebase Auth Verification     │
+└──────┬─────────────────┬────────────┘
+       │                 │
+       ▼                 ▼
+┌──────────────┐  ┌────────────────┐
+│  Firestore   │  │ Cloud Storage  │
+│  (Metadata)  │  │ (Photo Files)  │
+└──────────────┘  └────────────────┘
+```
+
+**Key Features:**
+- Multi-environment build system (local/dev/prod)
+- Firebase Authentication
+- Real-time data sync with Firestore
+- Photo management with Cloud Storage
+- Responsive design for all platforms
+- Hot reload for rapid development
+
+---
+
+## Multi-App Build System
+
+**Three independent app installations** for efficient development:
+
+| App Name | Package ID | Backend | Build Script |
+|----------|------------|---------|--------------|
+| **Pottery Studio Local** | `com.pottery.app.local` | Local Docker | `./build_dev.sh` (option 1) |
+| **Pottery Studio Dev** | `com.pottery.app.dev` | Cloud Run Dev | `./build_dev.sh` (option 2) |
+| **Pottery Studio** | `com.pottery.app` | Cloud Run Prod | `./build_prod.sh` |
+
+**Benefits:**
+- All three apps coexist on same device
+- No uninstall/reinstall cycles
+- Easy environment comparison
+- Preserved app state per environment
+
+Learn more: [Multi-App System Explanation](docs/explanation/multi-app-system.md)
+
+---
+
+## Documentation
+
+### 📘 Getting Started
+
+- **[Local Development](docs/getting-started/local-development.md)** - Run the app locally in 5 minutes
+
+### 📗 How-To Guides
+
+- **[Build & Deploy](docs/how-to/build-and-deploy.md)** - Build and deploy for all platforms and environments
+- **[Deploy to Play Store](docs/how-to/deploy-play-store.md)** - Complete Google Play Store deployment guide
+- **[Troubleshooting](docs/how-to/troubleshooting.md)** - Debug and fix common issues
+
+### 📕 Reference
+
+- **[Build Scripts](docs/reference/build-scripts.md)** - Complete build script documentation
+
+### 📙 Explanation
+
+- **[Multi-App System](docs/explanation/multi-app-system.md)** - How and why the multi-app system works
+
+---
+
+## Project Structure
 
 ```
 frontend/
-  lib/
-    src/
-      app.dart                     # Root MaterialApp
-      config/app_config.dart       # Environment config (API base URL)
-      core/app_exception.dart      # Domain exceptions
-      data/                        # Models, repositories, API client
-      features/
-        auth/                      # Login state & view
-        items/                     # Item listing, detail, forms
-        photos/                    # Photo upload workflow
-      widgets/                     # Shared widgets (splash)
-  assets/stages.json               # Stage metadata for dropdowns
-  deployment/                      # Docker/nginx assets for web hosting
-  Dockerfile                       # Multi-stage build for Cloud Run
-  cloudbuild.yaml                  # Example Cloud Build pipeline
+├── lib/
+│   └── src/
+│       ├── app.dart                 # Root MaterialApp
+│       ├── config/
+│       │   └── app_config.dart      # Environment configuration
+│       ├── core/
+│       │   └── app_exception.dart   # Domain exceptions
+│       ├── data/                    # Models, repositories, API client
+│       ├── features/
+│       │   ├── auth/                # Authentication
+│       │   ├── items/               # Item management
+│       │   └── photos/              # Photo upload
+│       └── widgets/                 # Shared widgets
+├── assets/
+│   └── stages.json                  # Pottery stages data
+├── scripts/
+│   ├── build_dev.sh                 # Development builds
+│   ├── build_prod.sh                # Production builds
+│   └── setup_firebase.sh            # Firebase configuration
+├── docs/                            # Documentation
+├── Dockerfile                       # Web deployment
+└── cloudbuild.yaml                  # Cloud Build pipeline
 ```
 
-## Configuration
+---
 
-The app reads the API base URL from `API_BASE_URL` using `--dart-define`. Defaults to `http://localhost:8000` for local work. For production builds (web or mobile) override the value:
+## Key Technologies
+
+- **Framework:** Flutter 3.22+ (Dart 3.3+)
+- **State Management:** Provider / Riverpod
+- **Authentication:** Firebase Auth
+- **Backend:** FastAPI on Cloud Run
+- **Database:** Firestore
+- **Storage:** Cloud Storage
+- **Platforms:** Web, Android, iOS, macOS
+
+---
+
+## Common Commands
+
+### Development
 
 ```bash
-flutter run -d chrome --dart-define=API_BASE_URL=https://pottery-api.yourcompany.dev
-flutter build web --dart-define=API_BASE_URL=$PROD_API_URL
-```
+# Run locally with backend
+cd scripts
+./build_dev.sh
 
-## Local development
-
-```bash
-cd frontend
-flutter pub get
+# Hot reload development (web)
 flutter run -d chrome --dart-define=API_BASE_URL=http://localhost:8000
-```
 
-For Android or iOS targets pick the appropriate device (`flutter devices`) and pass the same `--dart-define`.
-
-### Testing & analysis
-
-```bash
-flutter analyze
+# Run tests
 flutter test
+
+# Analyze code
+flutter analyze
 ```
 
-## Building for production (web)
+### Production
 
 ```bash
-flutter build web --release --dart-define=API_BASE_URL=https://pottery-api.example.com
+# Build Android APK
+cd scripts
+./build_prod.sh
+
+# Build for iOS
+./build_prod.sh ios
+
+# Build for web
+./build_prod.sh web
+
+# Build all platforms
+./build_prod.sh all
 ```
 
-The compiled assets are written to `build/web`. They can be served by any static host (e.g., Cloud Storage + Cloud CDN) or containerized via the provided Dockerfile.
+---
 
-## GCP deployment (Cloud Run)
+## Prerequisites
 
-The included `Dockerfile` builds the Flutter web bundle and serves it with nginx. An example Cloud Build pipeline is provided in `cloudbuild.yaml`.
+- Flutter SDK >= 3.19 (3.22 recommended)
+- Dart >= 3.3
+- Android Studio / Xcode (for mobile)
+- Chrome (for web development)
+- Docker (for local backend)
+- Google Cloud SDK (for deployment)
 
-### Build & deploy manually
+**Check installation:**
+```bash
+flutter doctor
+```
+
+---
+
+## Quick Links
+
+**For Developers:**
+- [Local Development Setup](docs/getting-started/local-development.md)
+- [Build Scripts Reference](docs/reference/build-scripts.md)
+- [Multi-App System](docs/explanation/multi-app-system.md)
+
+**For DevOps:**
+- [Build & Deploy Guide](docs/how-to/build-and-deploy.md)
+- [Play Store Deployment](docs/how-to/deploy-play-store.md)
+- [Production Deployment](docs/how-to/build-and-deploy.md#production-deployment)
+
+**Backend:**
+- [Backend Documentation](../backend/README.md)
+- [Backend API Docs](../backend/docs/reference/api-endpoints.md)
+
+---
+
+## Environment Configuration
+
+The app uses `--dart-define` for configuration:
 
 ```bash
-cd frontend
-PROJECT_ID="your-gcp-project"
-REGION="us-central1"
-IMAGE="gcr.io/$PROJECT_ID/pottery-frontend:latest"
-API_BASE="https://pottery-api-1073709451179.us-central1.run.app"
+# Local development
+flutter run -d chrome \
+  --dart-define=API_BASE_URL=http://localhost:8000 \
+  --dart-define=ENVIRONMENT=development
 
-docker build \
-  --build-arg API_BASE_URL=$API_BASE \
-  -t $IMAGE .
-
-gcloud run deploy pottery-frontend \
-  --image $IMAGE \
-  --platform managed \
-  --region $REGION \
-  --allow-unauthenticated
+# Production
+flutter build apk \
+  --dart-define=API_BASE_URL=https://pottery-api-prod.run.app \
+  --dart-define=ENVIRONMENT=production \
+  --flavor prod
 ```
 
-### Using Cloud Build
+**Available variables:**
+- `API_BASE_URL` - Backend API endpoint
+- `ENVIRONMENT` - Environment name (development/production)
+- `DEBUG_ENABLED` - Enable debug features (true/false)
+- `FLAVOR` - App flavor (local/dev/prod)
 
-The `cloudbuild.yaml` expects two substitutions:
+---
 
-- `_API_BASE_URL` – backend endpoint for the production build
-- `IMAGE` – Artifact Registry/Container Registry target (defaults provided)
+## Development Workflow
 
-Trigger Cloud Build with:
+### 1. Local Development
 
 ```bash
-gcloud builds submit . --config=cloudbuild.yaml --substitutions=_API_BASE_URL=$API_BASE
+# Start backend
+cd ../scripts/backend
+./run_docker_local.sh
+
+# Run Flutter app
+cd ../../frontend/scripts
+./build_dev.sh  # Choose option 1: Local
 ```
 
-Cloud Run will serve the compiled SPA on port 8080. The nginx configuration rewrites unknown routes to `index.html`, keeping Flutter routing functional.
+### 2. Cloud Testing
 
-## Environment variables for runtime
+```bash
+# Test with Cloud Run dev backend
+cd scripts
+./build_dev.sh  # Choose option 2: Dev
+```
 
-Because Flutter web apps bake the base URL at build time, ensure the `API_BASE_URL` passed during build points to the correct backend environment. For multi-environment support, build separate images (e.g., staging vs production) with the corresponding API value.
+### 3. Production Build
 
-## Next steps
+```bash
+# Build production app
+cd scripts
+./build_prod.sh
+```
 
-- Configure Google Cloud IAM/Secrets for storing API credentials if required.
-- Set up HTTPS Load Balancer or Cloud CDN in front of Cloud Run for better performance.
-- Integrate CI to run `flutter analyze` and `flutter test` before build triggers.
+---
+
+## Platform Support
+
+### Web ✅
+- Chrome, Safari, Firefox
+- Responsive design
+- PWA capabilities
+- Deploy to Cloud Run, Firebase Hosting, or static host
+
+### Android ✅
+- Phone and tablet support
+- Material Design 3
+- Multi-app system (3 flavors)
+
+### iOS ✅
+- iPhone and iPad support
+- Cupertino widgets
+- Requires provisioning profiles per flavor
+
+### macOS ✅
+- Desktop support
+- Native performance
+- Similar configuration to iOS
+
+---
+
+## Troubleshooting
+
+### Common Issues
+
+**App won't install:**
+```bash
+# Clean install
+CLEAN_INSTALL=true ./build_dev.sh
+```
+
+**Build failures:**
+```bash
+flutter clean
+flutter pub get
+./build_dev.sh
+```
+
+**Can't connect to backend:**
+```bash
+# Check backend is running
+docker ps | grep pottery-backend
+
+# Verify your Mac's IP
+ifconfig en0 | grep inet
+```
+
+See [Troubleshooting Guide](docs/getting-started/local-development.md#troubleshooting) for more.
+
+---
+
+## Support
+
+- **Documentation:** See [docs/](docs/) directory
+- **Backend Issues:** See [Backend README](../backend/README.md)
+- **Build Issues:** See [Build Scripts Reference](docs/reference/build-scripts.md)
+- **Flutter Docs:** https://flutter.dev/docs
+
+---
+
+## Legacy Documentation
+
+Previous documentation has been archived:
+- [README-old.md](README-old.md) - Original comprehensive README
+
+This is kept for reference but may contain outdated information. Please use the new documentation structure in [docs/](docs/).

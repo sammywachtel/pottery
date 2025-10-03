@@ -37,15 +37,15 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-# Main play: set environment-specific configuration
+# Main play: set environment-specific configuration and load env file
 case $ENVIRONMENT in
   dev|development)
     echo "🔧 Fixing Signed URL Generation for DEVELOPMENT Cloud Run"
-    SERVICE_NAME="pottery-api-dev"
+    ENV_FILE="${BACKEND_DIR}/.env.dev"
     ;;
   prod|production)
     echo "🔧 Fixing Signed URL Generation for PRODUCTION Cloud Run"
-    SERVICE_NAME="pottery-api-prod"
+    ENV_FILE="${BACKEND_DIR}/.env.prod"
     ;;
   *)
     echo "Error: Invalid environment '$ENVIRONMENT'. Use 'dev' or 'prod'."
@@ -53,12 +53,24 @@ case $ENVIRONMENT in
     ;;
 esac
 
+# Load environment variables
+if [ ! -f "$ENV_FILE" ]; then
+    echo "Error: Environment file not found: $ENV_FILE"
+    exit 1
+fi
+
+echo "Loading environment from: $ENV_FILE"
+set -a  # Export all variables
+source "$ENV_FILE"
+set +a
+
 echo "============================================="
 
-# Configuration
-PROJECT_ID="pottery-app-456522"
+# Configuration from environment
+PROJECT_ID="${GCP_PROJECT_ID}"
+SERVICE_NAME="${BUILD_SERVICE_NAME}"
 SERVICE_ACCOUNT="pottery-app-sa@${PROJECT_ID}.iam.gserviceaccount.com"
-KEY_FILE="$HOME/.gsutil/pottery-app-sa-456522-key.json"
+KEY_FILE="$HOME/.gsutil/pottery-app-sa-${PROJECT_ID}-key.json"
 
 # Step 1: Check if service account key exists locally
 if [ ! -f "$KEY_FILE" ]; then

@@ -171,6 +171,132 @@ SUCCESS_HTML = """
 </html>
 """
 
+PRIVACY_POLICY_HTML = """
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Pottery Studio - Privacy Policy</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+            line-height: 1.6;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        h2 {
+            color: #555;
+            font-size: 20px;
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+        p, li {
+            color: #666;
+            margin-bottom: 10px;
+        }
+        ul {
+            margin-left: 20px;
+        }
+        .last-updated {
+            color: #999;
+            font-size: 14px;
+            margin-bottom: 30px;
+        }
+        .contact {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Privacy Policy</h1>
+        <p class="last-updated">Last updated: October 2, 2025</p>
+
+        <h2>Overview</h2>
+        <p>Pottery Studio ("the App") is a private family organization app for tracking pottery items. This app is restricted to authorized family members only.</p>
+
+        <h2>Information We Collect</h2>
+        <p>The App collects and stores the following information:</p>
+        <ul>
+            <li><strong>Account Information:</strong> Email address and name from Google Sign-In</li>
+            <li><strong>Pottery Item Data:</strong> Information about your pottery pieces including descriptions, measurements, stages, and notes</li>
+            <li><strong>Photos:</strong> Images you upload of your pottery items</li>
+            <li><strong>Usage Data:</strong> Basic app usage and error logs for troubleshooting</li>
+        </ul>
+
+        <h2>How We Use Your Information</h2>
+        <p>Your information is used solely for:</p>
+        <ul>
+            <li>Storing and managing your pottery inventory</li>
+            <li>Syncing your data across your devices</li>
+            <li>Authenticating your identity</li>
+            <li>Improving app functionality and fixing bugs</li>
+        </ul>
+
+        <h2>Data Storage and Security</h2>
+        <p>All data is stored securely using Google Cloud services:</p>
+        <ul>
+            <li>Pottery item data is stored in Google Cloud Firestore</li>
+            <li>Photos are stored in Google Cloud Storage</li>
+            <li>Authentication is handled by Google Firebase Authentication</li>
+            <li>All data is encrypted in transit and at rest</li>
+        </ul>
+
+        <h2>Data Sharing</h2>
+        <p><strong>We do not share your data with third parties.</strong> Your information is private and restricted to your family organization only.</p>
+
+        <h2>Data Retention</h2>
+        <p>Your data is retained as long as your account is active. You can request deletion of your account and all associated data at any time.</p>
+
+        <h2>Your Rights</h2>
+        <p>You have the right to:</p>
+        <ul>
+            <li>Access your personal data</li>
+            <li>Correct inaccurate data</li>
+            <li>Request deletion of your account and data</li>
+            <li>Export your data</li>
+        </ul>
+
+        <h2>Account Deletion</h2>
+        <p>To delete your account and all associated data, please visit our <a href="/account/delete">account deletion page</a>. Account deletion requests are processed within 30 days.</p>
+
+        <h2>Children's Privacy</h2>
+        <p>This app is designed for use within a family organization and may be used by family members of all ages. We do not knowingly collect personal information from children outside of the family organization context.</p>
+
+        <h2>Changes to This Policy</h2>
+        <p>We may update this privacy policy from time to time. We will notify you of any changes by updating the "Last updated" date at the top of this policy.</p>
+
+        <div class="contact">
+            <h2>Contact Us</h2>
+            <p>If you have questions about this privacy policy or wish to exercise your rights, please visit our account deletion page or contact the app administrator within your family organization.</p>
+        </div>
+    </div>
+</body>
+</html>
+"""
+
+
+@router.get("/privacy-policy", response_class=HTMLResponse)
+async def privacy_policy():
+    """Display privacy policy for Google Play compliance."""
+    return HTMLResponse(content=PRIVACY_POLICY_HTML)
+
 
 @router.get("/delete", response_class=HTMLResponse)
 async def show_delete_form():

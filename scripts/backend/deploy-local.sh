@@ -17,11 +17,8 @@ echo "========================================="
 # Load environment configuration
 source "$CONFIG_DIR/env.local.sh"
 
-# Navigate to backend directory
-cd "$BACKEND_DIR"
-
 # Run the local Docker script
-./run_docker_local.sh
+"$SCRIPT_DIR/run_docker_local.sh"
 
 echo "✅ Backend is running locally at http://localhost:8000"
 echo "📋 API Documentation: http://localhost:8000/api/docs"

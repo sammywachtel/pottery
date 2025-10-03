@@ -64,6 +64,14 @@ Future<void> _initializeFirebase(AppConfig config) async {
       debugPrint('❌ Firebase initialization failed: $e');
     }
 
+    // Check if Firebase was actually already initialized despite the error
+    if (Firebase.apps.isNotEmpty) {
+      if (kDebugMode) {
+        debugPrint('✅ Firebase already initialized (ignoring error)');
+      }
+      return; // Firebase is already initialized, no need to retry
+    }
+
     // In production, try fallback initialization
     if (config.isProduction) {
       try {

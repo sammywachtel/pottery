@@ -95,7 +95,7 @@ flutter test
 Use the automated setup script to create the production Firebase project:
 
 ```bash
-cd backend/scripts
+cd scripts/backend
 ./setup-firebase-complete.sh
 ```
 

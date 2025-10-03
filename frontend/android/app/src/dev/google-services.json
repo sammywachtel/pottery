@@ -1,0 +1,106 @@
+{
+  "project_info": {
+    "project_number": "1073709451179",
+    "project_id": "pottery-app-456522",
+    "storage_bucket": "pottery-app-456522.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1073709451179:android:0b8ada7f20cbc7c6feb4ee",
+        "android_client_info": {
+          "package_name": "com.pottery.app.dev"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1073709451179-eg98ubeha74vcva7rnfpts1sjir3fol5.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.pottery.app.dev",
+            "certificate_hash": "2202f45637afbf1cb6837729561328a148d27dcb"
+          }
+        },
+        {
+          "client_id": "1073709451179-kdelqrhtmqpsv8o5f9qh92epqb37c3bt.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.pottery.app.dev",
+            "certificate_hash": "20c192fa1c83595fe90a46708c2c737f66d2111a"
+          }
+        },
+        {
+          "client_id": "1073709451179-mfob4geui8jo3pf8eac2ao7jmi4daa8g.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBBdbgkweVL7JMwZotWf2s-wYEz3paYHJk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1073709451179-mfob4geui8jo3pf8eac2ao7jmi4daa8g.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1073709451179-5f95mnrqt7l71632h4677j31d9t5ron3.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.pottery.app.local"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1073709451179:android:e81ae60dbd2d78abfeb4ee",
+        "android_client_info": {
+          "package_name": "com.pottery.app.local"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1073709451179-7n2dv3h5v6ve8qkdf848vstv8icnr9ln.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.pottery.app.local",
+            "certificate_hash": "2202f45637afbf1cb6837729561328a148d27dcb"
+          }
+        },
+        {
+          "client_id": "1073709451179-mfob4geui8jo3pf8eac2ao7jmi4daa8g.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBBdbgkweVL7JMwZotWf2s-wYEz3paYHJk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1073709451179-mfob4geui8jo3pf8eac2ao7jmi4daa8g.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1073709451179-5f95mnrqt7l71632h4677j31d9t5ron3.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.pottery.app.local"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

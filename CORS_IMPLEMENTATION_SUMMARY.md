@@ -27,7 +27,7 @@ backend/infrastructure/
 
 ### Management Scripts
 ```
-backend/scripts/
+scripts/backend/
 ├── manage-cors.sh                     # Main CORS management script
 ├── setup-infrastructure.sh           # Complete infrastructure setup
 └── test-cors.sh                      # CORS testing and validation

@@ -15,7 +15,8 @@ set -e  # Exit on any error
 
 # Script directory for relative path resolution
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-BACKEND_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+BACKEND_DIR="${PROJECT_ROOT}/backend"
 
 # Color codes for output formatting
 RED='\033[0;31m'

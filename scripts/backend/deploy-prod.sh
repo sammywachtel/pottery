@@ -24,11 +24,8 @@ fi
 # Load environment configuration
 source "$CONFIG_DIR/env.prod.sh"
 
-# Navigate to backend directory
-cd "$BACKEND_DIR"
-
 # Deploy to Cloud Run
-./build_and_deploy.sh --env=prod
+"$SCRIPT_DIR/build_and_deploy.sh" --env=prod
 
 echo "✅ Backend deployed to: https://pottery-api-prod.run.app"
 echo "📋 View logs: gcloud run services logs read pottery-api-prod --region=us-central1"

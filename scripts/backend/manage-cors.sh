@@ -23,7 +23,8 @@ fi
 
 # Script directory for relative path resolution
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-BACKEND_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+BACKEND_DIR="${PROJECT_ROOT}/backend"
 INFRASTRUCTURE_DIR="${BACKEND_DIR}/infrastructure"
 
 # Color codes for output formatting
@@ -72,17 +73,25 @@ EOF
 
 # Load environment variables based on context
 load_environment() {
+  # Check if environment variables are already set (e.g., by setup-infrastructure.sh)
+  if [ -n "${GCP_PROJECT_ID}" ] && [ -n "${GCS_BUCKET_NAME}" ]; then
+    log_info "Using environment variables from parent process"
+    log_info "Loaded GCP_PROJECT_ID: ${GCP_PROJECT_ID}"
+    log_info "Loaded GCS_BUCKET_NAME: ${GCS_BUCKET_NAME}"
+    return 0
+  fi
+
   local env_file=""
 
   # Determine which env file to load
   if [ -f "${BACKEND_DIR}/.env.local" ]; then
     env_file="${BACKEND_DIR}/.env.local"
     log_info "Loading environment from .env.local"
-  elif [ -f "${BACKEND_DIR}/.env.deploy" ]; then
-    env_file="${BACKEND_DIR}/.env.deploy"
-    log_info "Loading environment from .env.deploy"
+  elif [ -f "${BACKEND_DIR}/.env.prod" ]; then
+    env_file="${BACKEND_DIR}/.env.prod"
+    log_info "Loading environment from .env.prod"
   else
-    log_error "No environment file found. Expected .env.local or .env.deploy in ${BACKEND_DIR}"
+    log_error "No environment file found. Expected .env.local or .env.prod in ${BACKEND_DIR}"
     return 1
   fi
 
@@ -103,10 +112,21 @@ validate_prerequisites() {
     exit 1
   fi
 
-  # Check if authenticated
-  if ! gcloud auth list --filter=status:ACTIVE --format="value(account)" | grep -q .; then
-    log_error "No active gcloud authentication found. Run 'gcloud auth login' first."
-    exit 1
+  # Authenticate with service account if key file is provided
+  if [ -n "${DEPLOYMENT_SERVICE_ACCOUNT_KEY_FILE}" ] && [ -f "${DEPLOYMENT_SERVICE_ACCOUNT_KEY_FILE}" ]; then
+    log_info "Authenticating with service account key: ${DEPLOYMENT_SERVICE_ACCOUNT_KEY_FILE}"
+    if gcloud auth activate-service-account --key-file="${DEPLOYMENT_SERVICE_ACCOUNT_KEY_FILE}" >/dev/null 2>&1; then
+      log_success "Service account authentication successful"
+    else
+      log_error "Failed to authenticate with service account"
+      exit 1
+    fi
+  else
+    # Check if already authenticated
+    if ! gcloud auth list --filter=status:ACTIVE --format="value(account)" | grep -q .; then
+      log_error "No active gcloud authentication found. Run 'gcloud auth login' or set DEPLOYMENT_SERVICE_ACCOUNT_KEY_FILE."
+      exit 1
+    fi
   fi
 
   local current_project=$(gcloud config get-value project 2>/dev/null || echo "")

@@ -4,6 +4,11 @@
 # Usage: ./build_and_deploy.sh [--env=<environment>]
 # Environments: dev (default), prod
 
+# Calculate directory paths
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+BACKEND_DIR="${PROJECT_ROOT}/backend"
+
 # --- Parse Command Line Arguments ---
 ENVIRONMENT="dev"  # Default to development
 while [[ $# -gt 0 ]]; do
@@ -32,11 +37,11 @@ done
 # --- Validate Environment ---
 case $ENVIRONMENT in
   dev|development)
-    ENV_FILE=".env.dev"
+    ENV_FILE="${BACKEND_DIR}/.env.dev"
     echo "🚀 Deploying to DEVELOPMENT environment"
     ;;
   prod|production)
-    ENV_FILE=".env.prod"
+    ENV_FILE="${BACKEND_DIR}/.env.prod"
     echo "🏭 Deploying to PRODUCTION environment"
     ;;
   *)
@@ -54,8 +59,8 @@ if [ -f "${ENV_FILE}" ]; then
   set +a
 else
   echo "Error: Environment file ${ENV_FILE} not found."
-  echo "Available files:"
-  ls -la .env.* 2>/dev/null || echo "No .env files found"
+  echo "Available files in backend directory:"
+  ls -la "${BACKEND_DIR}"/.env.* 2>/dev/null || echo "No .env files found"
   exit 1
 fi
 
@@ -152,7 +157,7 @@ echo "Submitting build to Cloud Build for image: ${IMAGE_URL}"
 # Note: The *deployment* SA needs roles/cloudbuild.builds.editor to trigger builds.
 # Note: Cloud Build's *own* service account ([PROJECT_NUMBER]@cloudbuild.gserviceaccount.com)
 # needs roles/artifactregistry.writer to push the image to the repo.
-gcloud builds submit --tag "${IMAGE_URL}" --project "${PROJECT_ID}"
+gcloud builds submit --tag "${IMAGE_URL}" --project "${PROJECT_ID}" "${BACKEND_DIR}"
 
 # Check if the build succeeded
 if [ $? -ne 0 ]; then
@@ -181,8 +186,7 @@ echo "Deployment successful for service ${SERVICE_NAME}."
 
 # --- Setup Infrastructure Components ---
 echo "Setting up infrastructure components..."
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-INFRA_SCRIPT="${SCRIPT_DIR}/scripts/setup-infrastructure.sh"
+INFRA_SCRIPT="${SCRIPT_DIR}/setup-infrastructure.sh"
 
 if [ -x "${INFRA_SCRIPT}" ]; then
   echo "Configuring GCS bucket CORS for production..."
@@ -199,7 +203,7 @@ echo "Deployment complete for service ${SERVICE_NAME}."
 # Victory lap: configure signed URL generation to work properly in Cloud Run
 echo ""
 echo "Configuring signed URL generation..."
-FIX_URLS_SCRIPT="${SCRIPT_DIR}/scripts/backend/fix-signed-urls.sh"
+FIX_URLS_SCRIPT="${SCRIPT_DIR}/fix-signed-urls.sh"
 
 if [ -x "${FIX_URLS_SCRIPT}" ]; then
   echo "Running signed URL fix for ${ENVIRONMENT} environment..."
@@ -207,7 +211,7 @@ if [ -x "${FIX_URLS_SCRIPT}" ]; then
   echo "Signed URL configuration completed."
 else
   echo "WARNING: Signed URL fix script not found at ${FIX_URLS_SCRIPT}"
-  echo "You may need to manually run: scripts/backend/fix-signed-urls.sh --env=${ENVIRONMENT}"
+  echo "You may need to manually run: ${SCRIPT_DIR}/fix-signed-urls.sh --env=${ENVIRONMENT}"
 fi
 
 echo ""

@@ -1,5 +1,7 @@
+import 'dart:io' show Platform;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 import '../../core/app_exception.dart';
 import '../models/auth_session.dart';
@@ -10,9 +12,14 @@ class FirebaseAuthService {
   FirebaseAuthService() : _auth = FirebaseAuth.instance;
 
   final FirebaseAuth _auth;
-  // Let GoogleSignIn automatically use the correct client ID from google-services.json (Android)
-  // or from environment configuration (Web)
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
+
+  // Configure GoogleSignIn with explicit iOS client ID for macOS
+  // On macOS, we need to use the iOS OAuth client for Google Sign-In
+  late final GoogleSignIn _googleSignIn = GoogleSignIn(
+    clientId: (!kIsWeb && Platform.isMacOS)
+        ? '1073709451179-7a1ho6ods7tork3a14um4vo90tqt6vve.apps.googleusercontent.com'
+        : null, // Auto-detect for other platforms
+  );
 
   /// Stream of authentication state changes
   /// Emits User when authenticated, null when not

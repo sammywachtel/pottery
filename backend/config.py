@@ -48,7 +48,9 @@ class Settings(BaseSettings):
         None, validation_alias="FIREBASE_AUTH_DOMAIN"
     )
 
-    # --- JWT Configuration (for test endpoint only) ---
+    # --- JWT Configuration (LEGACY - for backward compatibility only) ---
+    # TODO: Remove JWT_SECRET_KEY - not used with Firebase Auth
+    # Only kept for legacy compatibility
     jwt_secret_key: Optional[str] = Field(None, validation_alias="JWT_SECRET_KEY")
 
     @property

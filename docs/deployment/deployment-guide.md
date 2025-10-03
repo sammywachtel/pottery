@@ -39,7 +39,7 @@ The Pottery App uses a serverless architecture on Google Cloud Platform with aut
 Use the automated setup script:
 
 ```bash
-cd backend/scripts
+cd scripts/backend
 ./setup-firebase-complete.sh
 ```
 

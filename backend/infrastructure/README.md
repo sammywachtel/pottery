@@ -107,25 +107,43 @@ The CORS configuration is automatically applied when using existing workflows:
 
 The scripts automatically load configuration from:
 - `.env.local` (for local development)
-- `.env.deploy` (for deployment)
+- `.env.prod` (for production deployment)
 
 Required variables:
 - `GCP_PROJECT_ID` - Google Cloud project ID
 - `GCS_BUCKET_NAME` - Target storage bucket name
 
+Optional variables (for service account authentication):
+- `DEPLOYMENT_SERVICE_ACCOUNT_KEY_FILE` - Path to service account key file
+
 ## Prerequisites
 
-1. **Google Cloud SDK**: Install and authenticate
+1. **Service Account Setup**: Create backend runtime service account first
+   ```bash
+   # Authenticate with gcloud first
+   gcloud auth login
+   gcloud config set project pottery-app-456522
+
+   # Then create the runtime service account
+   cd scripts/backend
+   ./setup-service-account.sh pottery-app-456522
+   ```
+   This grants the required roles including `CORS Manager` for managing CORS configuration.
+
+2. **Google Cloud SDK**: Install and authenticate
    ```bash
    gcloud auth login
    gcloud config set project your-project-id
    ```
 
-2. **Permissions**: Your account/service account needs:
-   - `Storage Admin` or `Storage Object Admin` role
-   - Access to the target GCS bucket
+3. **Permissions**: The service account needs:
+   - `Storage Admin` - Required for bucket operations and CORS configuration management
+   - See `setup-service-account.sh` for complete role list
 
-3. **Environment Files**: Ensure `.env.local` or `.env.deploy` exists with required variables
+4. **Environment Files**: Ensure `.env.local` or `.env.prod` exists with required variables:
+   - `GCP_PROJECT_ID` - Google Cloud project ID
+   - `GCS_BUCKET_NAME` - Target storage bucket name
+   - `DEPLOYMENT_SERVICE_ACCOUNT_KEY_FILE` - Path to service account key (optional)
 
 ## Troubleshooting
 
