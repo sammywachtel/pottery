@@ -6,7 +6,55 @@
 
 set -e
 
+# Opening move: figure out where we are and navigate to frontend directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+FRONTEND_DIR="$(dirname "$SCRIPT_DIR")"
+
+# Check if pubspec.yaml exists in current directory (already in frontend/)
+if [ -f "pubspec.yaml" ]; then
+  echo "ℹ️  Running from frontend directory"
+elif [ -f "$FRONTEND_DIR/pubspec.yaml" ]; then
+  echo "ℹ️  Changing to frontend directory: $FRONTEND_DIR"
+  cd "$FRONTEND_DIR"
+else
+  echo "❌ Error: Cannot find pubspec.yaml"
+  echo "   Expected at: $FRONTEND_DIR/pubspec.yaml"
+  echo "   Please run this script from either:"
+  echo "   - Project root: ./frontend/scripts/build_dev.sh"
+  echo "   - Frontend dir: ./scripts/build_dev.sh"
+  exit 1
+fi
+
 echo "🚀 Building Flutter app for DEVELOPMENT environment..."
+
+# Check for help flag early
+if [[ "${1:-}" == "help" || "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+  echo "Usage: $0 [platform]"
+  echo ""
+  echo "Platforms:"
+  echo "  debug     Run in debug mode (default)"
+  echo "  release   Build Android APK"
+  echo "  appbundle Build AAB for Play Store (auto-increments version)"
+  echo "  aab       Alias for appbundle"
+  echo "  ios       Build iOS app"
+  echo "  macos     Build macOS app"
+  echo "  web       Build web app"
+  echo "  help      Show this help"
+  echo ""
+  echo "Environment Variables:"
+  echo "  API_BASE_URL    Override API base URL (default: http://localhost:8000)"
+  echo "  CLEAN_INSTALL   Uninstall old app before installing (default: false)"
+  echo "  FLAVOR          Set flavor (local/dev) - skips interactive selection"
+  echo ""
+  echo "Examples:"
+  echo "  $0                              # Run in debug mode"
+  echo "  $0 release                      # Build Android APK"
+  echo "  $0 appbundle                    # Build AAB for Play Store"
+  echo "  FLAVOR=dev $0 aab               # Build dev AAB (non-interactive)"
+  echo "  API_BASE_URL=https://dev.pottery.com $0 web  # Build web with custom API"
+  echo "  CLEAN_INSTALL=true $0           # Uninstall old app and run clean"
+  exit 0
+fi
 
 # App flavor and backend selection function
 select_flavor_and_backend() {
@@ -124,8 +172,8 @@ case "${1:-debug}" in
   "appbundle"|"aab")
     echo "🔨 Building AAB for Play Store (development)..."
 
-    # Opening move: read current version from pubspec.yaml
-    PUBSPEC_PATH="$(dirname "$(dirname "${BASH_SOURCE[0]}")")/pubspec.yaml"
+    # Opening move: read current version from pubspec.yaml (we're in frontend dir)
+    PUBSPEC_PATH="pubspec.yaml"
     CURRENT_VERSION=$(grep "^version:" "$PUBSPEC_PATH" | sed 's/version: //')
     BUILD_NAME=$(echo $CURRENT_VERSION | cut -d'+' -f1)
     BUILD_NUMBER=$(echo $CURRENT_VERSION | cut -d'+' -f2)
@@ -185,34 +233,6 @@ case "${1:-debug}" in
       --dart-define=ENVIRONMENT=$ENVIRONMENT \
       --dart-define=API_BASE_URL=$API_BASE_URL \
       --dart-define=DEBUG_ENABLED=$DEBUG_ENABLED
-    ;;
-
-  "help"|"-h"|"--help")
-    echo "Usage: $0 [platform]"
-    echo ""
-    echo "Platforms:"
-    echo "  debug     Run in debug mode (default)"
-    echo "  release   Build Android APK"
-    echo "  appbundle Build AAB for Play Store (auto-increments version)"
-    echo "  aab       Alias for appbundle"
-    echo "  ios       Build iOS app"
-    echo "  macos     Build macOS app"
-    echo "  web       Build web app"
-    echo "  help      Show this help"
-    echo ""
-    echo "Environment Variables:"
-    echo "  API_BASE_URL    Override API base URL (default: http://localhost:8000)"
-    echo "  CLEAN_INSTALL   Uninstall old app before installing (default: false)"
-    echo "  FLAVOR          Set flavor (local/dev) - skips interactive selection"
-    echo ""
-    echo "Examples:"
-    echo "  $0                              # Run in debug mode"
-    echo "  $0 release                      # Build Android APK"
-    echo "  $0 appbundle                    # Build AAB for Play Store"
-    echo "  FLAVOR=dev $0 aab               # Build dev AAB (non-interactive)"
-    echo "  API_BASE_URL=https://dev.pottery.com $0 web  # Build web with custom API"
-    echo "  CLEAN_INSTALL=true $0           # Uninstall old app and run clean"
-    exit 0
     ;;
 
   *)

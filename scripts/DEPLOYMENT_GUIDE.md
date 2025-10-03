@@ -163,8 +163,7 @@ echo "✅ Python dependencies installed!"
 
 ```bash
 # Build dev AAB with automatic version increment
-cd /Users/samwachtel/PycharmProjects/potteryapp/pottery-backend
-
+# Run from project root or frontend directory
 ./frontend/scripts/build_dev.sh appbundle
 
 # What this does:
@@ -191,8 +190,7 @@ Once you've created the `pottery-app-prod` Firebase project and configured it (s
 
 ```bash
 # Build production AAB with automatic version increment
-cd /Users/samwachtel/PycharmProjects/potteryapp/pottery-backend
-
+# Run from project root or frontend directory
 ./frontend/scripts/build_prod.sh appbundle
 
 # What this does:
