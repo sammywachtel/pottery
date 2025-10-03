@@ -240,6 +240,7 @@ case $DEPLOY_CHOICE in
     DEPLOYED_FRONTEND=true
     ;;
   3)
+    # Big play: Deploy backend first so app connects to fresh backend
     deploy_backend_local
     DEPLOYED_BACKEND=true
     deploy_frontend_local

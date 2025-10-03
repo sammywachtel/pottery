@@ -156,7 +156,7 @@ class _ItemDetailContent extends ConsumerWidget {
       try {
         await repository.setPrimaryPhoto(item.id, photo.id);
         messenger.showSnackBar(
-          SnackBar(content: Text('Set "${photo.stage}" as primary photo')),
+          const SnackBar(content: Text('Set as primary photo')),
         );
         await onRefresh();
         ref.invalidate(itemListProvider);
@@ -699,19 +699,43 @@ class _PhotoCard extends StatelessWidget {
           Expanded(
             child: GestureDetector(
               onTap: onTap,
-              child: photo.signedUrl != null
-                  ? ClipRRect(
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                      child: Image.network(
-                        photo.signedUrl!,
-                        fit: BoxFit.cover,
-                        width: double.infinity,
-                        errorBuilder: (_, __, ___) => const Center(
-                          child: Icon(Icons.broken_image_outlined, size: 48),
+              child: Stack(
+                children: [
+                  // Main play: Display the photo
+                  photo.signedUrl != null
+                      ? ClipRRect(
+                          borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                          child: Image.network(
+                            photo.signedUrl!,
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                            errorBuilder: (_, __, ___) => const Center(
+                              child: Icon(Icons.broken_image_outlined, size: 48),
+                            ),
+                          ),
+                        )
+                      : const Center(child: Icon(Icons.broken_image_outlined, size: 48)),
+
+                  // Victory lap: Show star indicator for primary photo
+                  if (photo.isPrimary)
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: Colors.black54,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.star,
+                          color: Colors.amber,
+                          size: 20,
                         ),
                       ),
-                    )
-                  : const Center(child: Icon(Icons.broken_image_outlined, size: 48)),
+                    ),
+                ],
+              ),
             ),
           ),
           Padding(

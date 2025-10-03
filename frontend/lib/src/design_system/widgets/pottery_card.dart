@@ -338,7 +338,8 @@ class _PotteryCardState extends State<PotteryCard> with TickerProviderStateMixin
     if (widget.primaryPhotoUrl?.isNotEmpty == true) {
       return CachedNetworkImage(
         imageUrl: widget.primaryPhotoUrl!,
-        fit: BoxFit.cover,
+        // Here's where we preserve aspect ratio: contain maintains original proportions
+        fit: BoxFit.contain,
         width: double.infinity,
         height: double.infinity,
         placeholder: (context, url) => _buildPhotoPlaceholder(theme),
