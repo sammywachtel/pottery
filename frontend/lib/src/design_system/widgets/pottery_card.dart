@@ -337,11 +337,10 @@ class _PotteryCardState extends State<PotteryCard> with TickerProviderStateMixin
   Widget _buildPhotoDisplay(BuildContext context, ThemeData theme) {
     if (widget.primaryPhotoUrl?.isNotEmpty == true) {
       // Main play: Let image display at natural size, masonry grid handles layout
-      // Don't force AspectRatio since file dimensions may not match actual content
-      // (e.g., portrait composition in landscape file, missing/corrupt EXIF, etc.)
+      // Use fitWidth to fill card width while maintaining aspect ratio
       return CachedNetworkImage(
         imageUrl: widget.primaryPhotoUrl!,
-        fit: BoxFit.cover,
+        fit: BoxFit.fitWidth,
         width: double.infinity,
         placeholder: (context, url) => _buildPhotoPlaceholder(theme),
         errorWidget: (context, url, error) => _buildPhotoError(theme),
