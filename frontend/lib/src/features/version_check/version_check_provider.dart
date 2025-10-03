@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../data/api/api_client_provider.dart';
+import '../../data/datasources/api_client.dart';
 import '../../data/services/version_check_service.dart';
 
 /// Opening move: Provide version check service to the app

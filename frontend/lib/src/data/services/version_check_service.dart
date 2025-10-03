@@ -2,8 +2,8 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
-import '../api/api_client.dart';
-import 'exceptions.dart';
+import '../../core/app_exception.dart';
+import '../datasources/api_client.dart';
 
 /// Service to check app version compatibility with backend
 class VersionCheckService {
