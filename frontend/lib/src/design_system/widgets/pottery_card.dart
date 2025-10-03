@@ -104,11 +104,9 @@ class _PotteryCardState extends State<PotteryCard> with TickerProviderStateMixin
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Photo section with aspect ratio
-        AspectRatio(
-          // Main play: Use 3:4 portrait ratio (0.75) which matches most phone photos
-          // This prevents squishing and better displays pottery in natural orientation
-          aspectRatio: 0.75,
+        // Photo section - let image determine its own aspect ratio
+        ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(PotterySpacing.trim)),
           child: Stack(
             children: [
               _buildPhotoDisplay(context, theme),
@@ -340,11 +338,10 @@ class _PotteryCardState extends State<PotteryCard> with TickerProviderStateMixin
     if (widget.primaryPhotoUrl?.isNotEmpty == true) {
       return CachedNetworkImage(
         imageUrl: widget.primaryPhotoUrl!,
-        // Victory lap: BoxFit.cover fills container while maintaining aspect ratio
-        // Combined with 3:4 aspect ratio, this shows photos naturally without distortion
+        // Here's where we let the image breathe: no fixed dimensions
+        // Image displays at its natural aspect ratio - masonry grid handles layout
         fit: BoxFit.cover,
         width: double.infinity,
-        height: double.infinity,
         placeholder: (context, url) => _buildPhotoPlaceholder(theme),
         errorWidget: (context, url, error) => _buildPhotoError(theme),
         // Big play: Reduce fade durations to minimize flickering on cached images
@@ -361,56 +358,65 @@ class _PotteryCardState extends State<PotteryCard> with TickerProviderStateMixin
   }
 
   Widget _buildPhotoPlaceholder(ThemeData theme) {
-    return Container(
-      color: theme.colorScheme.surfaceVariant,
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.camera_alt_outlined,
-              size: widget.cardVariant == PotteryCardVariant.grid ? 32 : 24,
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-            if (widget.cardVariant == PotteryCardVariant.grid) ...[
-              PotterySpace.toolVertical,
-              Text(
-                'No photo yet',
-                style: theme.textTheme.tool.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-                textAlign: TextAlign.center,
+    // Victory lap: Give placeholder a reasonable aspect ratio when no photo present
+    // This prevents cards from collapsing to nothing
+    return AspectRatio(
+      aspectRatio: 0.75, // 3:4 portrait ratio
+      child: Container(
+        color: theme.colorScheme.surfaceVariant,
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.camera_alt_outlined,
+                size: widget.cardVariant == PotteryCardVariant.grid ? 32 : 24,
+                color: theme.colorScheme.onSurfaceVariant,
               ),
+              if (widget.cardVariant == PotteryCardVariant.grid) ...[
+                PotterySpace.toolVertical,
+                Text(
+                  'No photo yet',
+                  style: theme.textTheme.tool.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildPhotoError(ThemeData theme) {
-    return Container(
-      color: theme.colorScheme.errorContainer.withOpacity(0.1),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.broken_image_outlined,
-              size: widget.cardVariant == PotteryCardVariant.grid ? 32 : 24,
-              color: theme.colorScheme.error,
-            ),
-            if (widget.cardVariant == PotteryCardVariant.grid) ...[
-              PotterySpace.toolVertical,
-              Text(
-                'Photo unavailable',
-                style: theme.textTheme.tool.copyWith(
-                  color: theme.colorScheme.error,
-                ),
-                textAlign: TextAlign.center,
+    // Here's where we keep error state consistent with placeholder
+    return AspectRatio(
+      aspectRatio: 0.75, // 3:4 portrait ratio
+      child: Container(
+        color: theme.colorScheme.errorContainer.withOpacity(0.1),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.broken_image_outlined,
+                size: widget.cardVariant == PotteryCardVariant.grid ? 32 : 24,
+                color: theme.colorScheme.error,
               ),
+              if (widget.cardVariant == PotteryCardVariant.grid) ...[
+                PotterySpace.toolVertical,
+                Text(
+                  'Photo unavailable',
+                  style: theme.textTheme.tool.copyWith(
+                    color: theme.colorScheme.error,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
