@@ -6,6 +6,7 @@ class PhotoModel {
     this.signedUrl,
     this.imageNote,
     this.fileName,
+    this.isPrimary = false,
   });
 
   final String id;
@@ -14,6 +15,7 @@ class PhotoModel {
   final String? signedUrl;
   final String? imageNote;
   final String? fileName;
+  final bool isPrimary;
 
   factory PhotoModel.fromJson(Map<String, dynamic> json) {
     return PhotoModel(
@@ -23,6 +25,7 @@ class PhotoModel {
       signedUrl: json['signedUrl'] as String?,
       imageNote: json['imageNote'] as String?,
       fileName: json['fileName'] as String?,
+      isPrimary: json['isPrimary'] as bool? ?? false,
     );
   }
 
@@ -34,6 +37,7 @@ class PhotoModel {
       'signedUrl': signedUrl,
       'imageNote': imageNote,
       'fileName': fileName,
+      'isPrimary': isPrimary,
     }..removeWhere((_, value) => value == null);
   }
 }

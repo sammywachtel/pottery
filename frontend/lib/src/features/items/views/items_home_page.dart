@@ -461,18 +461,21 @@ class _PotteryItemCard extends StatelessWidget {
   String? _getPrimaryPhotoUrl() {
     if (item.photos.isEmpty) return null;
 
-    // Prefer final stage, then bisque, then greenware
-    for (final stage in ['final', 'bisque', 'greenware']) {
-      final stagePhoto = item.photos.where((p) =>
-        p.stage.toLowerCase() == stage).firstOrNull;
-      if (stagePhoto?.signedUrl != null) {
-        return stagePhoto!.signedUrl;
-      }
+    // Opening move: check if any photo is marked as primary
+    final primaryPhoto = item.photos.where((p) => p.isPrimary).firstOrNull;
+    if (primaryPhoto?.signedUrl != null) {
+      return primaryPhoto!.signedUrl;
     }
 
-    // Fallback to first photo with signedUrl
-    final photoWithUrl = item.photos.where((p) => p.signedUrl != null).firstOrNull;
-    return photoWithUrl?.signedUrl;
+    // Main play: if no primary photo, use the most recent photo (newest uploadedAt)
+    final photosWithUrl = item.photos.where((p) => p.signedUrl != null).toList();
+    if (photosWithUrl.isEmpty) return null;
+
+    // Sort by uploadedAt descending (most recent first)
+    photosWithUrl.sort((a, b) => b.uploadedAt.compareTo(a.uploadedAt));
+
+    // Victory lap: return the most recent photo
+    return photosWithUrl.first.signedUrl;
   }
 }
 
