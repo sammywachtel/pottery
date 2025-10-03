@@ -345,9 +345,9 @@ class _PotteryCardState extends State<PotteryCard> with TickerProviderStateMixin
           aspectRatio: widget.aspectRatio!,
           child: CachedNetworkImage(
             imageUrl: widget.primaryPhotoUrl!,
-            // Victory lap: Use contain to show full photo without cropping
-            // AspectRatio container ensures proper proportions
-            fit: BoxFit.contain,
+            // Victory lap: Use cover since AspectRatio container already matches photo
+            // Container is sized to photo's aspect ratio, so cover fills perfectly without cropping
+            fit: BoxFit.cover,
             width: double.infinity,
             placeholder: (context, url) => _buildPhotoPlaceholder(theme),
             errorWidget: (context, url, error) => _buildPhotoError(theme),

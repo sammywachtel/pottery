@@ -126,9 +126,17 @@ async def upload_photo(
     file_content = await file.read()  # Read file content
 
     # Opening move: Calculate aspect ratio from image dimensions
+    # Account for EXIF orientation since Flutter will auto-rotate on display
     aspect_ratio = None
     try:
         image = Image.open(io.BytesIO(file_content))
+
+        # Big play: Apply EXIF orientation to get display dimensions
+        # This ensures aspect ratio matches what user sees in Flutter
+        from PIL import ImageOps
+
+        image = ImageOps.exif_transpose(image)
+
         width, height = image.size
         if height > 0:
             aspect_ratio = width / height
