@@ -107,7 +107,9 @@
 29. **Create interactive master deployment script** - Unified deployment workflow for all environments
     - **Environment selection**: Ask user to choose local/dev/prod environment
     - **Deployment target selection**: Ask what to deploy (1. Backend Only, 2. Frontend Only, 3. Both)
-    - **USB phone detection**: Automatically detect connected Android device and install if present
+    - **USB phone detection**: Automatically detect connected Android device and install if present. Always deploy the
+        phone if detected and ensure that the environment is part of the name of the app on the side-loaded app.
+        (e.g, "Pottery Studio Docker SL", "Pottery Studio Dev SL" where SL is for side loaded)
     - **Auto-build AAB**: Always build app bundle when frontend is included (no need to remember)
     - **Post-deployment instructions**: Show next steps after completion
       - Where to find AAB for Google Play upload (`frontend/build/app/outputs/bundle/`)

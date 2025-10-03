@@ -66,7 +66,9 @@ cd scripts
 ### Frontend Deployment
 - Flutter SDK installed
 - Android SDK installed (for adb)
-- USB device connected (optional, for device installation)
+- USB device with USB debugging enabled (optional, for device installation)
+  - **First time:** Device will prompt "Allow USB debugging?" - tap Allow
+  - **After authorization:** Connection is automatic when plugged in
 - Backend running (for testing)
 
 ## Post-Deployment
@@ -122,11 +124,24 @@ After successful deployment, the script shows:
 
 ## Troubleshooting
 
-### "No USB device detected"
-- Connect Android device via USB
-- Enable USB debugging on device
-- Run `adb devices` to verify connection
+### "No USB device detected" or "Device unauthorized"
+**First-time setup:**
+1. Enable USB debugging on device:
+   - Settings → About Phone → Tap "Build Number" 7 times
+   - Settings → Developer Options → Enable "USB Debugging"
+2. Connect device via USB
+3. Tap "Allow" on device when prompted "Allow USB debugging?"
+4. Connection will be automatic on subsequent plugs
+
+**If previously authorized:**
+- Disconnect and reconnect USB cable
+- Run `adb devices` to verify connection shows "device" (not "unauthorized")
 - Try `adb kill-server && adb start-server`
+
+**Script behavior:**
+- Detects unauthorized devices and waits 10 seconds for authorization
+- Shows helpful prompts to tap "Allow" on device
+- Automatically retries after authorization
 
 ### "Port 8000 already in use"
 - Stop existing backend: `docker stop pottery-backend-local`

@@ -45,16 +45,36 @@ print_info() {
   echo -e "${BLUE}ℹ️  $1${NC}"
 }
 
-# Victory lap: Detect if USB phone is connected
+# Victory lap: Detect if USB phone is connected and authorized
 check_usb_device() {
-  if command -v adb &> /dev/null; then
-    # Check for connected devices (excluding emulators)
+  if ! command -v adb &> /dev/null; then
+    return 1
+  fi
+
+  # Check for connected and authorized devices (excluding emulators)
+  DEVICES=$(adb devices | grep -v "List of devices" | grep -v "emulator" | grep "device$" | wc -l)
+
+  if [ "$DEVICES" -gt 0 ]; then
+    DEVICE_NAME=$(adb devices | grep -v "List of devices" | grep -v "emulator" | grep "device$" | head -1 | awk '{print $1}')
+    return 0
+  fi
+
+  # Check if device is unauthorized (needs authorization on device)
+  UNAUTHORIZED=$(adb devices | grep -v "List of devices" | grep "unauthorized" | wc -l)
+  if [ "$UNAUTHORIZED" -gt 0 ]; then
+    print_warning "USB device detected but not authorized"
+    print_info "Please check your device and tap 'Allow USB debugging'"
+    print_info "Waiting 10 seconds for authorization..."
+    sleep 10
+    # Check again after waiting
     DEVICES=$(adb devices | grep -v "List of devices" | grep -v "emulator" | grep "device$" | wc -l)
     if [ "$DEVICES" -gt 0 ]; then
       DEVICE_NAME=$(adb devices | grep -v "List of devices" | grep -v "emulator" | grep "device$" | head -1 | awk '{print $1}')
+      print_success "Device authorized!"
       return 0
     fi
   fi
+
   return 1
 }
 
