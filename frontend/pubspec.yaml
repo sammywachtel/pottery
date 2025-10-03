@@ -1,5 +1,5 @@
 name: pottery_frontend
-version: 1.2.10+13
+version: 1.2.11+14
 description: Flutter frontend for the pottery inventory application.
 publish_to: 'none'
 

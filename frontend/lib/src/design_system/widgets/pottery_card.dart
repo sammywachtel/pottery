@@ -346,8 +346,8 @@ class _PotteryCardState extends State<PotteryCard> with TickerProviderStateMixin
         errorWidget: (context, url, error) => _buildPhotoError(theme),
         fadeInDuration: const Duration(milliseconds: 150),
         fadeOutDuration: const Duration(milliseconds: 50),
-        memCacheWidth: 400,
-        memCacheHeight: 400,
+        // Victory lap: Don't specify memCache dimensions to preserve aspect ratio
+        // Specifying both width and height would force square caching, squishing images
       );
     } else {
       return _buildPhotoPlaceholder(theme);
