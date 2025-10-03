@@ -132,6 +132,7 @@ deploy_frontend_local() {
     print_info "Building and installing debug version to USB device..."
     FLAVOR=local API_BASE_URL="http://$LOCAL_IP:8000" ./scripts/build_dev.sh debug
     print_success "App installed to USB device as 'Pottery Studio Local'"
+    print_info "Note: 'Installing profile' message is normal - wait 30-60s for completion"
     echo ""
   fi
 
