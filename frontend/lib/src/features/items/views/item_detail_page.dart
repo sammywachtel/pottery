@@ -152,12 +152,31 @@ class _ItemDetailContent extends ConsumerWidget {
       }
     }
 
+    Future<void> setPrimaryPhoto(PhotoModel photo) async {
+      try {
+        await repository.setPrimaryPhoto(item.id, photo.id);
+        messenger.showSnackBar(
+          SnackBar(content: Text('Set "${photo.stage}" as primary photo')),
+        );
+        await onRefresh();
+        ref.invalidate(itemListProvider);
+      } catch (error) {
+        messenger.showSnackBar(
+          SnackBar(content: Text('Failed to set primary photo: $error')),
+        );
+      }
+    }
+
     void _showPhotoViewer(BuildContext context, List<PhotoModel> photos, int initialIndex) {
       Navigator.of(context).push(
         MaterialPageRoute(
           builder: (_) => _PhotoViewerPage(
             photos: photos,
             initialIndex: initialIndex,
+            onSetPrimary: (photo) async {
+              Navigator.of(context).pop();
+              await setPrimaryPhoto(photo);
+            },
           ),
         ),
       );
@@ -387,6 +406,7 @@ class _ItemDetailContent extends ConsumerWidget {
                     child: _PhotoCard(
                       photo: photo,
                       onTap: () => _showPhotoViewer(context, item.photos, index),
+                      onSetPrimary: () => setPrimaryPhoto(photo),
                       onEdit: () => editPhoto(photo),
                       onDelete: () => deletePhoto(photo),
                     ),
@@ -658,12 +678,14 @@ class _PhotoCard extends StatelessWidget {
   const _PhotoCard({
     required this.photo,
     required this.onTap,
+    required this.onSetPrimary,
     required this.onEdit,
     required this.onDelete,
   });
 
   final PhotoModel photo;
   final VoidCallback onTap;
+  final VoidCallback onSetPrimary;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
@@ -707,6 +729,9 @@ class _PhotoCard extends StatelessWidget {
                     PopupMenuButton<_PhotoAction>(
                       onSelected: (action) {
                         switch (action) {
+                          case _PhotoAction.setPrimary:
+                            onSetPrimary();
+                            break;
                           case _PhotoAction.edit:
                             onEdit();
                             break;
@@ -715,15 +740,25 @@ class _PhotoCard extends StatelessWidget {
                             break;
                         }
                       },
-                      itemBuilder: (context) => const [
+                      itemBuilder: (context) => [
                         PopupMenuItem(
+                          value: _PhotoAction.setPrimary,
+                          child: ListTile(
+                            leading: Icon(
+                              photo.isPrimary ? Icons.star : Icons.star_outline,
+                              color: photo.isPrimary ? Colors.amber : null,
+                            ),
+                            title: Text(photo.isPrimary ? 'Primary photo' : 'Set as primary'),
+                          ),
+                        ),
+                        const PopupMenuItem(
                           value: _PhotoAction.edit,
                           child: ListTile(
                             leading: Icon(Icons.edit_outlined),
                             title: Text('Edit details'),
                           ),
                         ),
-                        PopupMenuItem(
+                        const PopupMenuItem(
                           value: _PhotoAction.delete,
                           child: ListTile(
                             leading: Icon(Icons.delete_outline),
@@ -754,7 +789,7 @@ class _PhotoCard extends StatelessWidget {
   }
 }
 
-enum _PhotoAction { edit, delete }
+enum _PhotoAction { setPrimary, edit, delete }
 
 // Opening move: Build a fullscreen photo viewer with swipe and pinch zoom
 // This lets users examine their pottery photos in detail
@@ -762,10 +797,12 @@ class _PhotoViewerPage extends StatefulWidget {
   const _PhotoViewerPage({
     required this.photos,
     required this.initialIndex,
+    required this.onSetPrimary,
   });
 
   final List<PhotoModel> photos;
   final int initialIndex;
+  final Future<void> Function(PhotoModel) onSetPrimary;
 
   @override
   State<_PhotoViewerPage> createState() => _PhotoViewerPageState();
@@ -859,6 +896,14 @@ class _PhotoViewerPageState extends State<_PhotoViewerPage> {
                             ),
                         ],
                       ),
+                    ),
+                    IconButton(
+                      icon: Icon(
+                        currentPhoto.isPrimary ? Icons.star : Icons.star_outline,
+                        color: currentPhoto.isPrimary ? Colors.amber : Colors.white,
+                      ),
+                      onPressed: () => widget.onSetPrimary(currentPhoto),
+                      tooltip: currentPhoto.isPrimary ? 'Primary photo' : 'Set as primary',
                     ),
                   ],
                 ),

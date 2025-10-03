@@ -164,6 +164,23 @@ class ItemRepository {
     }
   }
 
+  Future<PhotoModel> setPrimaryPhoto(String itemId, String photoId) async {
+    try {
+      final response = await _client.dio.patch(
+        '/api/items/$itemId/photos/$photoId/primary',
+      );
+      return PhotoModel.fromJson(
+        Map<String, dynamic>.from(response.data as Map),
+      );
+    } on DioException catch (error) {
+      final message = _extractErrorMessage(error, 'Failed to set primary photo');
+      throw AppException(message, statusCode: error.response?.statusCode);
+    } catch (error) {
+      if (error is AppException) rethrow;
+      throw AppException(error.toString());
+    }
+  }
+
   Map<String, dynamic> buildItemPayload({
     required String name,
     required String clayType,
