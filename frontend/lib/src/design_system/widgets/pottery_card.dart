@@ -106,7 +106,9 @@ class _PotteryCardState extends State<PotteryCard> with TickerProviderStateMixin
       children: [
         // Photo section with aspect ratio
         AspectRatio(
-          aspectRatio: 1.2, // Slightly wider than square for pottery photos
+          // Main play: Use 3:4 portrait ratio (0.75) which matches most phone photos
+          // This prevents squishing and better displays pottery in natural orientation
+          aspectRatio: 0.75,
           child: Stack(
             children: [
               _buildPhotoDisplay(context, theme),
@@ -338,8 +340,9 @@ class _PotteryCardState extends State<PotteryCard> with TickerProviderStateMixin
     if (widget.primaryPhotoUrl?.isNotEmpty == true) {
       return CachedNetworkImage(
         imageUrl: widget.primaryPhotoUrl!,
-        // Here's where we preserve aspect ratio: contain maintains original proportions
-        fit: BoxFit.contain,
+        // Victory lap: BoxFit.cover fills container while maintaining aspect ratio
+        // Combined with 3:4 aspect ratio, this shows photos naturally without distortion
+        fit: BoxFit.cover,
         width: double.infinity,
         height: double.infinity,
         placeholder: (context, url) => _buildPhotoPlaceholder(theme),
@@ -348,7 +351,7 @@ class _PotteryCardState extends State<PotteryCard> with TickerProviderStateMixin
         // Cached images display almost instantly, so fast fade prevents visual flash
         fadeInDuration: const Duration(milliseconds: 150),
         fadeOutDuration: const Duration(milliseconds: 50),
-        // Victory lap: Use disk and memory cache for maximum performance
+        // Main play: Use disk and memory cache for maximum performance
         memCacheWidth: 400, // Cache at reasonable resolution for list view
         memCacheHeight: 400,
       );

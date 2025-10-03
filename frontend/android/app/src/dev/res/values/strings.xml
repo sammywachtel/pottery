@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Opening move: Add SL suffix for sideloaded dev builds -->
+    <string name="app_name">Pottery Studio Dev SL</string>
+</resources>

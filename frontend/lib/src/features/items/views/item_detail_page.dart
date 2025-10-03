@@ -189,7 +189,11 @@ class _ItemDetailContent extends ConsumerWidget {
           : stagesAsync;
 
       final controller = TextEditingController(text: photo.imageNote ?? '');
-      String selectedStage = photo.stage;
+      // Here's where we dodge the dropdown error: ensure initial value exists in options
+      // If photo.stage isn't in the list, fall back to first option to prevent crash
+      String selectedStage = stageOptions.contains(photo.stage)
+          ? photo.stage
+          : stageOptions.first;
       final result = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
