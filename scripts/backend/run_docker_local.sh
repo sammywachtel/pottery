@@ -11,6 +11,7 @@ BACKEND_DIR="${PROJECT_ROOT}/backend"
 # Parse command line arguments
 DEBUG_MODE=false
 ENVIRONMENT="dev"  # Default to development
+SKIP_SETUP=false
 while [[ "$#" -gt 0 ]]; do
   case $1 in
     --debug) DEBUG_MODE=true; shift ;;
@@ -18,17 +19,20 @@ while [[ "$#" -gt 0 ]]; do
       ENVIRONMENT="${1#*=}"
       shift
       ;;
+    --skip-setup) SKIP_SETUP=true; shift ;;
     --help|-h)
-      echo "Usage: $0 [--debug] [--env=<environment>]"
+      echo "Usage: $0 [--debug] [--env=<environment>] [--skip-setup]"
       echo "Options:"
       echo "  --debug        Enable remote debugging on port 5678"
       echo "  --env=ENV      Environment to use (dev|local, default: dev)"
+      echo "  --skip-setup   Skip infrastructure setup (CORS configuration)"
       echo "  --help         Show this help message"
       echo ""
       echo "Examples:"
       echo "  $0                    # Run with dev environment"
       echo "  $0 --debug           # Run with debug mode enabled"
       echo "  $0 --env=local       # Use legacy .env.local file"
+      echo "  $0 --skip-setup      # Skip CORS setup (faster startup)"
       exit 0
       ;;
     *) echo "Unknown parameter: $1"; echo "Use --help for usage information"; exit 1 ;;
@@ -128,16 +132,20 @@ if [ $? -ne 0 ]; then echo "ERROR: Docker build failed." && exit 1; fi
 echo "Docker build successful."
 
 # Setup local infrastructure (including CORS)
-echo "Setting up local development infrastructure..."
-INFRA_SCRIPT="${SCRIPT_DIR}/setup-infrastructure.sh"
-
-if [ -x "${INFRA_SCRIPT}" ]; then
-  echo "Configuring GCS bucket CORS for local development..."
-  "${INFRA_SCRIPT}" local
+if [ "$SKIP_SETUP" = true ]; then
+  echo "⏭️  Skipping infrastructure setup (--skip-setup flag provided)"
 else
-  echo "WARNING: Infrastructure setup script not found at ${INFRA_SCRIPT}"
-  echo "You may need to manually configure GCS bucket CORS settings."
-  echo "Run: ${SCRIPT_DIR}/manage-cors.sh apply local"
+  echo "Setting up local development infrastructure..."
+  INFRA_SCRIPT="${SCRIPT_DIR}/setup-infrastructure.sh"
+
+  if [ -x "${INFRA_SCRIPT}" ]; then
+    echo "Configuring GCS bucket CORS for local development..."
+    "${INFRA_SCRIPT}" local
+  else
+    echo "WARNING: Infrastructure setup script not found at ${INFRA_SCRIPT}"
+    echo "You may need to manually configure GCS bucket CORS settings."
+    echo "Run: ${SCRIPT_DIR}/manage-cors.sh apply local"
+  fi
 fi
 
 # Run the Docker container

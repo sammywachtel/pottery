@@ -96,7 +96,9 @@ deploy_backend_local() {
 
   print_info "Starting local Docker backend..."
   cd "$BACKEND_SCRIPTS_DIR"
-  ./run_docker_local.sh --env=local
+  # Skip infrastructure setup to avoid gcloud authentication issues
+  # CORS should already be configured from initial setup
+  ./run_docker_local.sh --env=local --skip-setup
 
   print_success "Backend deployed successfully!"
   echo ""
