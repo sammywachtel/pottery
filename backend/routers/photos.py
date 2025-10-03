@@ -103,8 +103,11 @@ async def upload_photo(
     Handles photo upload, GCS storage, and Firestore metadata update for items
     belonging to the authenticated user.
     """
-    # Get the item, checking ownership - unused but validates ownership
-    _ = await _get_item_or_404(item_id, user_id=current_user.username)
+    # Get the item, checking ownership
+    item = await _get_item_or_404(item_id, user_id=current_user.username)
+
+    # Check if any photo is already marked as primary
+    has_primary = any(photo.isPrimary for photo in item.photos)
     if not file.content_type:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -151,12 +154,14 @@ async def upload_photo(
         )
 
     # 2. Create Photo metadata model
+    # Opening move: If no primary photo exists yet, make this one primary
     new_photo = Photo(
         id=photo_id,
         gcsPath=gcs_path,
         stage=photo_stage,
         imageNote=photo_note,
         fileName=file.filename,
+        isPrimary=not has_primary,  # Auto-primary if no existing primary
         # uploadedAt is set by default in the model
     )
 
@@ -369,6 +374,82 @@ async def delete_photo(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to remove photo metadata from item.",
+        )
+
+
+@router.patch(
+    "/{photo_id}/primary",
+    response_model=PhotoResponse,
+    summary="Set Primary Photo",
+    description=(
+        "Sets a photo as the primary display photo for an item. "
+        "Only one photo can be primary per item - all other photos will be "
+        "automatically unmarked as primary."
+    ),
+    responses={
+        status.HTTP_200_OK: {"description": "Successful Response"},
+        status.HTTP_401_UNAUTHORIZED: {
+            "model": HTTPError,
+            "description": "Not authenticated",
+        },
+        status.HTTP_403_FORBIDDEN: {
+            "model": HTTPError,
+            "description": "Forbidden - Item belongs to another user",
+        },
+        # Inherits 404 (item or photo), 500 from router defaults
+    },
+)
+async def set_primary_photo(
+    item_id: str,
+    photo_id: str,
+    current_user: User = Depends(get_current_active_user),
+):
+    """
+    Sets the specified photo as the primary photo for the item.
+    All other photos in the item will be automatically set to non-primary.
+    """
+    # Get the item, checking ownership - unused but validates ownership
+    _ = await _get_item_or_404(item_id, user_id=current_user.username)
+
+    try:
+        updated_photo = await firestore_service.set_primary_photo(
+            item_id, photo_id, user_id=current_user.username
+        )
+
+        if updated_photo is None:
+            logger.warning(
+                f"Photo {photo_id} not found in item {item_id} during primary photo "
+                f"set attempt or item doesn't belong to user {current_user.username}."
+            )
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Photo with ID '{photo_id}' not found in item '{item_id}'.",
+            )
+
+        # Generate signed URL for the updated photo and return response
+        photo_response = await _create_photo_response(updated_photo)
+        return photo_response
+
+    except ConnectionError as e:
+        logger.error(
+            f"Firestore connection error during primary photo set for item "
+            f"{item_id}, photo {photo_id}: {e}",
+            exc_info=True,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Database service unavailable.",
+        )
+    except HTTPException as http_exc:
+        raise http_exc  # Re-raise 404s etc.
+    except Exception as e:
+        logger.error(
+            f"Unexpected error setting primary photo {photo_id} in item {item_id}: {e}",
+            exc_info=True,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to set primary photo.",
         )
 
 

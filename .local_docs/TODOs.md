@@ -37,7 +37,7 @@
    - Add UI to mark a photo as primary (e.g., star icon on photo in detail view)
    - Add `isPrimary` boolean field to Photo model
    - Backend endpoint to update primary photo for item
-   - List view displays primary photo, or first photo if none selected
+   - List view displays primary photo, or most recent photo if none selected
    - Reference: `pottery-backend/backend/models.py`, `pottery-backend/backend/routers/items.py`
 
 5. **Display cone value on item detail view screen** (under glaze value) - Field exists in form, needs to show on detail view

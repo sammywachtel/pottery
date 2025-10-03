@@ -543,3 +543,74 @@ async def update_photo_details_in_item(
             exc_info=True,
         )
         raise
+
+
+async def set_primary_photo(
+    item_id: str, photo_id: str, user_id: str = None
+) -> Optional[Photo]:
+    """
+    Sets a photo as the primary photo for an item.
+    Ensures only one photo is marked as primary by setting isPrimary=True for the
+    target photo and isPrimary=False for all other photos in the item.
+    If user_id is provided, only updates the photo if the item belongs to that user.
+    If user_id is None, updates the photo regardless of ownership (admin functionality).
+    """
+    db, items_collection = _ensure_firestore_client()
+    try:
+        # Opening move: verify item exists and user has access
+        item = await get_item_by_id(item_id, user_id)
+        if not item:
+            if user_id:
+                logger.warning(
+                    f"User {user_id} attempted to set primary photo in item {item_id} "
+                    f"which either doesn't exist or doesn't belong to them."
+                )
+            else:
+                logger.warning(
+                    f"Cannot set primary photo {photo_id}, item {item_id} not found."
+                )
+            return None
+
+        doc_ref = items_collection.document(item_id)
+        updated_photos_list = []
+        target_photo_model: Optional[Photo] = None
+        photo_found = False
+
+        # Main play: loop through photos and set isPrimary appropriately
+        for p in item.photos:
+            photo_dict = p.model_dump()
+            if p.id == photo_id:
+                # Victory moment: mark this one as primary
+                photo_found = True
+                photo_dict["isPrimary"] = True
+                target_photo_model = Photo(**photo_dict)
+                logger.debug(f"Setting photo {photo_id} as primary in item {item_id}")
+            else:
+                # Supporting cast: ensure all others are not primary
+                photo_dict["isPrimary"] = False
+            updated_photos_list.append(photo_dict)
+
+        if not photo_found:
+            logger.warning(
+                f"Photo {photo_id} not found within item {item_id}. "
+                f"Cannot set as primary."
+            )
+            return None
+
+        # Final whistle: persist the changes
+        await doc_ref.update(
+            {
+                "photos": updated_photos_list,
+                "updatedDateTime": datetime.now(timezone.utc),
+            }
+        )
+
+        logger.info(f"Set photo {photo_id} as primary for item {item_id}")
+        return target_photo_model
+
+    except Exception as e:
+        logger.error(
+            f"Error setting primary photo {photo_id} for item {item_id}: {e}",
+            exc_info=True,
+        )
+        raise

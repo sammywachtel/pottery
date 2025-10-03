@@ -34,6 +34,10 @@ class PhotoBase(BaseModel):
     fileName: Optional[str] = Field(
         None, description="Original filename, useful for display"
     )
+    isPrimary: bool = Field(
+        default=False,
+        description="Whether this photo is the primary display photo for the item",
+    )
 
 
 class Photo(PhotoBase):
@@ -75,10 +79,13 @@ class PhotoResponse(PhotoBase):
 
 
 class PhotoUpdate(BaseModel):
-    """Schema for updating photo metadata fields (stage, imageNote)."""
+    """Schema for updating photo metadata fields (stage, imageNote, isPrimary)."""
 
     stage: Optional[str] = Field(None, description="New stage for the photo")
     imageNote: Optional[str] = Field(None, description="New note for the photo")
+    isPrimary: Optional[bool] = Field(
+        None, description="Whether this is the primary photo"
+    )
 
 
 # --- Pottery Item Schemas ---
