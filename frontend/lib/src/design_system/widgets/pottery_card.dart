@@ -27,7 +27,6 @@ class PotteryCard extends StatefulWidget {
     this.showStageIndicator = true,
     this.showDate = true,
     this.cardVariant = PotteryCardVariant.grid,
-    this.aspectRatio,
   });
 
   final String name;
@@ -44,7 +43,6 @@ class PotteryCard extends StatefulWidget {
   final bool showStageIndicator;
   final bool showDate;
   final PotteryCardVariant cardVariant;
-  final double? aspectRatio;
 
   @override
   State<PotteryCard> createState() => _PotteryCardState();
@@ -338,28 +336,9 @@ class _PotteryCardState extends State<PotteryCard> with TickerProviderStateMixin
 
   Widget _buildPhotoDisplay(BuildContext context, ThemeData theme) {
     if (widget.primaryPhotoUrl?.isNotEmpty == true) {
-      // Main play: Use photo's natural aspect ratio if available
-      // This lets landscape photos be wide, portrait photos be tall
-      if (widget.aspectRatio != null) {
-        return AspectRatio(
-          aspectRatio: widget.aspectRatio!,
-          child: CachedNetworkImage(
-            imageUrl: widget.primaryPhotoUrl!,
-            // Victory lap: Use cover since AspectRatio container already matches photo
-            // Container is sized to photo's aspect ratio, so cover fills perfectly without cropping
-            fit: BoxFit.cover,
-            width: double.infinity,
-            placeholder: (context, url) => _buildPhotoPlaceholder(theme),
-            errorWidget: (context, url, error) => _buildPhotoError(theme),
-            fadeInDuration: const Duration(milliseconds: 150),
-            fadeOutDuration: const Duration(milliseconds: 50),
-            memCacheWidth: 400,
-            memCacheHeight: 400,
-          ),
-        );
-      }
-
-      // Fallback for photos without aspect ratio (use cover to fill space)
+      // Main play: Let image display at natural size, masonry grid handles layout
+      // Don't force AspectRatio since file dimensions may not match actual content
+      // (e.g., portrait composition in landscape file, missing/corrupt EXIF, etc.)
       return CachedNetworkImage(
         imageUrl: widget.primaryPhotoUrl!,
         fit: BoxFit.cover,

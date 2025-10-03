@@ -4,7 +4,6 @@ import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:intl/intl.dart';
 
 import '../../auth/controllers/auth_controller.dart';
-import '../../../data/models/photo.dart';
 import '../../../data/models/pottery_item.dart';
 import '../../../data/repositories/item_repository.dart';
 import '../../../design_system/widgets/pottery_card.dart';
@@ -478,29 +477,27 @@ class _PotteryItemCardState extends State<_PotteryItemCard>
       onLongPress: widget.onLongPress,
       heroTag: 'item-${widget.item.id}',
       cardVariant: PotteryCardVariant.grid,
-      aspectRatio: _getPrimaryPhoto()?.aspectRatio,
     );
   }
 
-  PhotoModel? _getPrimaryPhoto() {
+  String? _getPrimaryPhotoUrl() {
     if (widget.item.photos.isEmpty) return null;
 
     // Check if any photo is marked as primary
     final primaryPhoto = widget.item.photos.where((p) => p.isPrimary).firstOrNull;
-    if (primaryPhoto != null) {
-      return primaryPhoto;
+    if (primaryPhoto?.signedUrl != null) {
+      return primaryPhoto!.signedUrl;
     }
 
     // If no primary photo, use the most recent photo (newest uploadedAt)
-    final photos = widget.item.photos.toList();
-    photos.sort((a, b) => b.uploadedAt.compareTo(a.uploadedAt));
+    final photosWithUrl = widget.item.photos.where((p) => p.signedUrl != null).toList();
+    if (photosWithUrl.isEmpty) return null;
 
-    return photos.first;
-  }
+    // Sort by uploadedAt descending (most recent first)
+    photosWithUrl.sort((a, b) => b.uploadedAt.compareTo(a.uploadedAt));
 
-  String? _getPrimaryPhotoUrl() {
-    final primaryPhoto = _getPrimaryPhoto();
-    return primaryPhoto?.signedUrl;
+    // Victory lap: return the most recent photo
+    return photosWithUrl.first.signedUrl;
   }
 }
 
