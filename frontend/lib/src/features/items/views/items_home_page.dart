@@ -197,14 +197,12 @@ class _ItemsHomePageState extends ConsumerState<ItemsHomePage> {
     );
   }
 
-  // Big play: Adaptive grid columns that respect image aspect ratios
-  // Mobile gets single column so landscape photos can breathe at full width
-  // Larger screens can afford multiple columns without cropping
+  // Helper function to determine grid columns based on screen width
   int _getCrossAxisCount(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
-    if (width > 900) return 3; // Desktop - 3 columns
-    if (width > 600) return 2; // Tablet - 2 columns
-    return 1; // Mobile - single column (fixes landscape cropping)
+    if (width > 900) return 4; // Desktop
+    if (width > 600) return 3; // Tablet
+    return 2; // Mobile
   }
 
   // Sort items based on current criteria and direction
