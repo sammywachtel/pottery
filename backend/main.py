@@ -211,6 +211,23 @@ async def read_root():
     return {"message": f"Welcome to the {settings.api_title}!"}
 
 
+# --- Version Endpoint ---
+@app.get("/api/version", tags=["Version"], summary="Get API Version")
+async def get_version():
+    """
+    Returns backend version and minimum required frontend version.
+
+    Frontend apps should check this endpoint on startup to ensure compatibility.
+    If the frontend version is older than min_frontend_version, the app should
+    prompt the user to update from Google Play Store.
+    """
+    logger.info("Version check endpoint '/api/version' accessed.")
+    return {
+        "backend_version": settings.api_version,
+        "min_frontend_version": settings.min_frontend_version,
+    }
+
+
 # --- Main Execution Block (for local development) ---
 if __name__ == "__main__":
     # Ensure port is accessed *after* settings is initialized
