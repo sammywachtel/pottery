@@ -4,6 +4,7 @@ import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:intl/intl.dart';
 
 import '../../auth/controllers/auth_controller.dart';
+import '../../../data/models/photo.dart';
 import '../../../data/models/pottery_item.dart';
 import '../../../data/repositories/item_repository.dart';
 import '../../../design_system/widgets/pottery_card.dart';
@@ -167,24 +168,11 @@ class _ItemsHomePageState extends ConsumerState<ItemsHomePage> {
               slivers: [
                 SliverPadding(
                   padding: const EdgeInsets.all(PotterySpacing.clay),
-                  sliver: SliverStaggeredGrid.countBuilder(
+                  sliver: SliverMasonryGrid.count(
                     crossAxisCount: _getCrossAxisCount(context),
                     mainAxisSpacing: PotterySpacing.trim,
                     crossAxisSpacing: PotterySpacing.trim,
-                    itemCount: sortedItems.length,
-                    // Big play: Adaptive column spans based on photo aspect ratio
-                    // Landscape photos span 2 columns, portrait/square span 1
-                    staggeredTileBuilder: (index) {
-                      final item = sortedItems[index];
-                      final primaryPhoto = item.photos.where((p) => p.isPrimary).firstOrNull
-                          ?? item.photos.firstOrNull;
-
-                      // If photo is landscape (aspect > 1.3), span 2 columns
-                      if (primaryPhoto != null && (primaryPhoto.aspectRatio ?? 1.0) > 1.3) {
-                        return const StaggeredTile.fit(2); // Landscape spans 2
-                      }
-                      return const StaggeredTile.fit(1); // Portrait/square spans 1
-                    },
+                    childCount: sortedItems.length,
                     itemBuilder: (context, index) {
                       final item = sortedItems[index];
                       return _PotteryItemCard(
@@ -490,27 +478,29 @@ class _PotteryItemCardState extends State<_PotteryItemCard>
       onLongPress: widget.onLongPress,
       heroTag: 'item-${widget.item.id}',
       cardVariant: PotteryCardVariant.grid,
+      aspectRatio: _getPrimaryPhoto()?.aspectRatio,
     );
   }
 
-  String? _getPrimaryPhotoUrl() {
+  PhotoModel? _getPrimaryPhoto() {
     if (widget.item.photos.isEmpty) return null;
 
     // Check if any photo is marked as primary
     final primaryPhoto = widget.item.photos.where((p) => p.isPrimary).firstOrNull;
-    if (primaryPhoto?.signedUrl != null) {
-      return primaryPhoto!.signedUrl;
+    if (primaryPhoto != null) {
+      return primaryPhoto;
     }
 
     // If no primary photo, use the most recent photo (newest uploadedAt)
-    final photosWithUrl = widget.item.photos.where((p) => p.signedUrl != null).toList();
-    if (photosWithUrl.isEmpty) return null;
+    final photos = widget.item.photos.toList();
+    photos.sort((a, b) => b.uploadedAt.compareTo(a.uploadedAt));
 
-    // Sort by uploadedAt descending (most recent first)
-    photosWithUrl.sort((a, b) => b.uploadedAt.compareTo(a.uploadedAt));
+    return photos.first;
+  }
 
-    // Victory lap: return the most recent photo
-    return photosWithUrl.first.signedUrl;
+  String? _getPrimaryPhotoUrl() {
+    final primaryPhoto = _getPrimaryPhoto();
+    return primaryPhoto?.signedUrl;
   }
 }
 

@@ -27,6 +27,7 @@ class PotteryCard extends StatefulWidget {
     this.showStageIndicator = true,
     this.showDate = true,
     this.cardVariant = PotteryCardVariant.grid,
+    this.aspectRatio,
   });
 
   final String name;
@@ -43,6 +44,7 @@ class PotteryCard extends StatefulWidget {
   final bool showStageIndicator;
   final bool showDate;
   final PotteryCardVariant cardVariant;
+  final double? aspectRatio;
 
   @override
   State<PotteryCard> createState() => _PotteryCardState();
@@ -336,10 +338,9 @@ class _PotteryCardState extends State<PotteryCard> with TickerProviderStateMixin
 
   Widget _buildPhotoDisplay(BuildContext context, ThemeData theme) {
     if (widget.primaryPhotoUrl?.isNotEmpty == true) {
-      return CachedNetworkImage(
+      final imageWidget = CachedNetworkImage(
         imageUrl: widget.primaryPhotoUrl!,
-        // Here's where we let the image breathe: no fixed dimensions
-        // Image displays at its natural aspect ratio - masonry grid handles layout
+        // Here's where we let the image breathe: masonry grid handles layout
         fit: BoxFit.cover,
         width: double.infinity,
         placeholder: (context, url) => _buildPhotoPlaceholder(theme),
@@ -352,6 +353,17 @@ class _PotteryCardState extends State<PotteryCard> with TickerProviderStateMixin
         memCacheWidth: 400, // Cache at reasonable resolution for list view
         memCacheHeight: 400,
       );
+
+      // Main play: Use photo's natural aspect ratio if available
+      // This lets landscape photos be wide, portrait photos be tall
+      if (widget.aspectRatio != null) {
+        return AspectRatio(
+          aspectRatio: widget.aspectRatio!,
+          child: imageWidget,
+        );
+      }
+
+      return imageWidget;
     } else {
       return _buildPhotoPlaceholder(theme);
     }
