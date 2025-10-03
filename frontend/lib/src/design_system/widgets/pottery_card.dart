@@ -338,32 +338,39 @@ class _PotteryCardState extends State<PotteryCard> with TickerProviderStateMixin
 
   Widget _buildPhotoDisplay(BuildContext context, ThemeData theme) {
     if (widget.primaryPhotoUrl?.isNotEmpty == true) {
-      final imageWidget = CachedNetworkImage(
-        imageUrl: widget.primaryPhotoUrl!,
-        // Here's where we let the image breathe: masonry grid handles layout
-        fit: BoxFit.cover,
-        width: double.infinity,
-        placeholder: (context, url) => _buildPhotoPlaceholder(theme),
-        errorWidget: (context, url, error) => _buildPhotoError(theme),
-        // Big play: Reduce fade durations to minimize flickering on cached images
-        // Cached images display almost instantly, so fast fade prevents visual flash
-        fadeInDuration: const Duration(milliseconds: 150),
-        fadeOutDuration: const Duration(milliseconds: 50),
-        // Main play: Use disk and memory cache for maximum performance
-        memCacheWidth: 400, // Cache at reasonable resolution for list view
-        memCacheHeight: 400,
-      );
-
       // Main play: Use photo's natural aspect ratio if available
       // This lets landscape photos be wide, portrait photos be tall
       if (widget.aspectRatio != null) {
         return AspectRatio(
           aspectRatio: widget.aspectRatio!,
-          child: imageWidget,
+          child: CachedNetworkImage(
+            imageUrl: widget.primaryPhotoUrl!,
+            // Victory lap: Use contain to show full photo without cropping
+            // AspectRatio container ensures proper proportions
+            fit: BoxFit.contain,
+            width: double.infinity,
+            placeholder: (context, url) => _buildPhotoPlaceholder(theme),
+            errorWidget: (context, url, error) => _buildPhotoError(theme),
+            fadeInDuration: const Duration(milliseconds: 150),
+            fadeOutDuration: const Duration(milliseconds: 50),
+            memCacheWidth: 400,
+            memCacheHeight: 400,
+          ),
         );
       }
 
-      return imageWidget;
+      // Fallback for photos without aspect ratio (use cover to fill space)
+      return CachedNetworkImage(
+        imageUrl: widget.primaryPhotoUrl!,
+        fit: BoxFit.cover,
+        width: double.infinity,
+        placeholder: (context, url) => _buildPhotoPlaceholder(theme),
+        errorWidget: (context, url, error) => _buildPhotoError(theme),
+        fadeInDuration: const Duration(milliseconds: 150),
+        fadeOutDuration: const Duration(milliseconds: 50),
+        memCacheWidth: 400,
+        memCacheHeight: 400,
+      );
     } else {
       return _buildPhotoPlaceholder(theme);
     }
