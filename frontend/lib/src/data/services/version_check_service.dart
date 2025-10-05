@@ -67,8 +67,13 @@ class VersionCheckService {
   /// Returns true if current < required
   bool _isVersionOutdated(String current, String required) {
     try {
-      final currentParts = current.split('.').map(int.parse).toList();
-      final requiredParts = required.split('.').map(int.parse).toList();
+      // Opening move: Strip build number (+XX) from version strings
+      // e.g., "1.4.0+20" becomes "1.4.0"
+      final currentClean = current.split('+').first;
+      final requiredClean = required.split('+').first;
+
+      final currentParts = currentClean.split('.').map(int.parse).toList();
+      final requiredParts = requiredClean.split('.').map(int.parse).toList();
 
       // Ensure we have at least 3 parts (major.minor.patch)
       while (currentParts.length < 3) {

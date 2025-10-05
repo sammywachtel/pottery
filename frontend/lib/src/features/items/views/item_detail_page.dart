@@ -12,7 +12,7 @@ import '../../../data/repositories/item_repository.dart';
 import '../../../design_system/pottery_typography.dart';
 import '../../../design_system/pottery_spacing.dart';
 import '../../../design_system/pottery_colors.dart';
-import '../../../design_system/widgets/stage_indicator.dart';
+import '../../../design_system/widgets/stage_selector.dart';
 import '../../photos/controllers/stage_provider.dart';
 import '../../photos/views/photo_upload_sheet.dart';
 import '../controllers/item_providers.dart';
@@ -26,10 +26,126 @@ class ItemDetailPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final itemAsync = ref.watch(itemDetailProvider(itemId));
+    final repository = ref.watch(itemRepositoryProvider);
 
     Future<void> refresh() async {
       ref.invalidate(itemDetailProvider(itemId));
       await ref.read(itemDetailProvider(itemId).future);
+    }
+
+    Future<void> archiveItem(PotteryItemModel item) async {
+      final messenger = ScaffoldMessenger.of(context);
+
+      // Big play: Show warning if item is broken
+      String dialogContent;
+      if (item.isArchived) {
+        dialogContent = 'This item will be shown in the main list again.';
+      } else if (item.isBroken) {
+        dialogContent = 'Archiving this item will also mark it as not broken. Archived items are hidden from the main list but can be viewed by enabling "Include Archived" in the filter menu.';
+      } else {
+        dialogContent = 'Archived items are hidden from the main list but can be viewed by enabling "Include Archived" in the filter menu.';
+      }
+
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(item.isArchived ? 'Unarchive item' : 'Archive item'),
+          content: Text(dialogContent),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text(item.isArchived ? 'Unarchive' : 'Archive'),
+            ),
+          ],
+        ),
+      );
+
+      if (confirmed != true) return;
+
+      try {
+        // Opening move: Broken and archived are mutually exclusive
+        // If archiving, uncheck broken (archived = complete/filed away)
+        final updates = <String, dynamic>{'isArchived': !item.isArchived};
+        if (!item.isArchived && item.isBroken) {
+          updates['isBroken'] = false;
+        }
+
+        await repository.updateItem(item.id, updates);
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(
+              item.isArchived
+                ? 'Item unarchived'
+                : (item.isBroken ? 'Item archived and marked as not broken' : 'Item archived')
+            ),
+          ),
+        );
+        await refresh();
+        ref.invalidate(itemListProvider);
+      } catch (error) {
+        messenger.showSnackBar(
+          SnackBar(content: Text('Failed to update: $error')),
+        );
+      }
+    }
+
+    Future<void> deleteItem(PotteryItemModel item) async {
+      final messenger = ScaffoldMessenger.of(context);
+      final navigator = Navigator.of(context);
+
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Delete item'),
+          content: RichText(
+            text: TextSpan(
+              style: Theme.of(context).textTheme.bodyMedium,
+              children: [
+                const TextSpan(text: 'Are you sure you want to delete "'),
+                TextSpan(
+                  text: item.name,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const TextSpan(
+                  text: '"?\n\nThis will permanently delete the item and all its photos from storage. This action cannot be undone.',
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: FilledButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.error,
+              ),
+              child: const Text('Delete'),
+            ),
+          ],
+        ),
+      );
+
+      if (confirmed != true) return;
+
+      try {
+        await repository.deleteItem(item.id);
+        messenger.showSnackBar(
+          const SnackBar(content: Text('Item deleted successfully')),
+        );
+        ref.invalidate(itemListProvider);
+        navigator.pop(); // Navigate back to list
+      } catch (error) {
+        messenger.showSnackBar(
+          SnackBar(content: Text('Failed to delete item: $error')),
+        );
+      }
     }
 
     return Scaffold(
@@ -40,6 +156,38 @@ class ItemDetailPage extends ConsumerWidget {
             icon: const Icon(Icons.refresh),
             onPressed: refresh,
           ),
+          // Item actions menu - battle-hardened item management
+          itemAsync.when(
+            data: (item) => PopupMenuButton<String>(
+              onSelected: (value) {
+                if (value == 'archive') {
+                  archiveItem(item);
+                } else if (value == 'delete') {
+                  deleteItem(item);
+                }
+              },
+              itemBuilder: (context) => [
+                PopupMenuItem(
+                  value: 'archive',
+                  child: ListTile(
+                    leading: Icon(
+                      item.isArchived ? Icons.unarchive : Icons.archive_outlined,
+                    ),
+                    title: Text(item.isArchived ? 'Unarchive' : 'Archive'),
+                  ),
+                ),
+                const PopupMenuItem(
+                  value: 'delete',
+                  child: ListTile(
+                    leading: Icon(Icons.delete_outline, color: Colors.red),
+                    title: Text('Delete item', style: TextStyle(color: Colors.red)),
+                  ),
+                ),
+              ],
+            ),
+            loading: () => const SizedBox.shrink(),
+            error: (_, __) => const SizedBox.shrink(),
+          ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -47,6 +195,9 @@ class ItemDetailPage extends ConsumerWidget {
           final created = await showModalBottomSheet<bool>(
             context: context,
             isScrollControlled: true,
+            // Security checkpoint: Prevent accidental dismissal of photo upload
+            isDismissible: false,
+            enableDrag: false,
             builder: (_) => PhotoUploadSheet(itemId: itemId),
           );
           if (created == true) {
@@ -89,7 +240,7 @@ class ItemDetailPage extends ConsumerWidget {
   }
 }
 
-class _ItemDetailContent extends ConsumerWidget {
+class _ItemDetailContent extends ConsumerStatefulWidget {
   const _ItemDetailContent({
     required this.item,
     required this.onRefresh,
@@ -99,10 +250,19 @@ class _ItemDetailContent extends ConsumerWidget {
   final Future<void> Function() onRefresh;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_ItemDetailContent> createState() => _ItemDetailContentState();
+}
+
+class _ItemDetailContentState extends ConsumerState<_ItemDetailContent> {
+  bool _isUpdatingStage = false;
+  bool _isUpdatingBroken = false;
+
+  @override
+  Widget build(BuildContext context) {
     final repository = ref.watch(itemRepositoryProvider);
     final messenger = ScaffoldMessenger.of(context);
     final dateFormatter = DateFormat.yMMMd().add_jm();
+    final item = widget.item;
 
     Future<void> editItem() async {
       final updated = await Navigator.of(context).push<bool>(
@@ -111,7 +271,7 @@ class _ItemDetailContent extends ConsumerWidget {
         ),
       );
       if (updated == true) {
-        await onRefresh();
+        await widget.onRefresh();
         ref.invalidate(itemListProvider);
       }
     }
@@ -144,7 +304,7 @@ class _ItemDetailContent extends ConsumerWidget {
         messenger.showSnackBar(
           const SnackBar(content: Text('Photo removed')),
         );
-        await onRefresh();
+        await widget.onRefresh();
       } catch (error) {
         messenger.showSnackBar(
           SnackBar(content: Text('Failed to delete photo: $error')),
@@ -158,7 +318,7 @@ class _ItemDetailContent extends ConsumerWidget {
         messenger.showSnackBar(
           const SnackBar(content: Text('Set as primary photo')),
         );
-        await onRefresh();
+        await widget.onRefresh();
         ref.invalidate(itemListProvider);
       } catch (error) {
         messenger.showSnackBar(
@@ -194,48 +354,90 @@ class _ItemDetailContent extends ConsumerWidget {
       String selectedStage = stageOptions.contains(photo.stage)
           ? photo.stage
           : stageOptions.first;
+
+      // Opening move: Track initial values to detect unsaved changes
+      final initialStage = selectedStage;
+      final initialNote = photo.imageNote ?? '';
+
       final result = await showDialog<bool>(
         context: context,
-        builder: (context) => AlertDialog(
+        builder: (dialogContext) => AlertDialog(
           title: const Text('Update photo details'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              DropdownButtonFormField<String>(
-                value: selectedStage,
-                items: stageOptions
-                    .map(
-                      (stage) => DropdownMenuItem(
-                        value: stage,
-                        child: Text(stage),
-                      ),
-                    )
-                    .toList(),
-                onChanged: (value) {
-                  if (value != null) {
-                    selectedStage = value;
-                  }
-                },
-                decoration: const InputDecoration(labelText: 'Stage'),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: controller,
-                decoration: const InputDecoration(
-                  labelText: 'Note (optional)',
+          content: StatefulBuilder(
+            builder: (context, setState) => Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                DropdownButtonFormField<String>(
+                  value: selectedStage,
+                  items: stageOptions
+                      .map(
+                        (stage) => DropdownMenuItem(
+                          value: stage,
+                          child: Text(stage),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() {
+                        selectedStage = value;
+                      });
+                    }
+                  },
+                  decoration: const InputDecoration(labelText: 'Stage'),
                 ),
-                maxLines: 3,
-              ),
-            ],
+                const SizedBox(height: 12),
+                TextField(
+                  controller: controller,
+                  decoration: const InputDecoration(
+                    labelText: 'Note (optional)',
+                  ),
+                  maxLines: 3,
+                ),
+              ],
+            ),
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
+              onPressed: () async {
+                // Security checkpoint: Check for unsaved changes before canceling
+                final hasChanges = selectedStage != initialStage ||
+                    controller.text.trim() != initialNote;
+
+                if (!hasChanges) {
+                  Navigator.of(dialogContext).pop(false);
+                  return;
+                }
+
+                // Big play: Warn about unsaved changes
+                final confirmDiscard = await showDialog<bool>(
+                  context: dialogContext,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Discard Changes?'),
+                    content: const Text(
+                        'You have unsaved changes. Are you sure you want to discard them?'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(false),
+                        child: const Text('Keep Editing'),
+                      ),
+                      FilledButton(
+                        onPressed: () => Navigator.of(context).pop(true),
+                        child: const Text('Discard'),
+                      ),
+                    ],
+                  ),
+                );
+
+                if (confirmDiscard == true && dialogContext.mounted) {
+                  Navigator.of(dialogContext).pop(false);
+                }
+              },
               child: const Text('Cancel'),
             ),
             FilledButton(
-              onPressed: () => Navigator.of(context).pop(true),
+              onPressed: () => Navigator.of(dialogContext).pop(true),
               child: const Text('Save'),
             ),
           ],
@@ -258,7 +460,7 @@ class _ItemDetailContent extends ConsumerWidget {
         messenger.showSnackBar(
           const SnackBar(content: Text('Photo updated')),
         );
-        await onRefresh();
+        await widget.onRefresh();
       } catch (error) {
         messenger.showSnackBar(
           SnackBar(content: Text('Failed to update photo: $error')),
@@ -267,7 +469,7 @@ class _ItemDetailContent extends ConsumerWidget {
     }
 
     return RefreshIndicator(
-      onRefresh: onRefresh,
+      onRefresh: widget.onRefresh,
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -303,10 +505,54 @@ class _ItemDetailContent extends ConsumerWidget {
                           ),
                         ),
                         PotterySpace.trimHorizontal,
-                        StageIndicator(
-                          stages: item.currentStatus.toCurrentStatusStageMap(),
-                          size: StageIndicatorSize.medium,
-                        ),
+                        // Big play: Show loading indicator during stage update
+                        _isUpdatingStage
+                            ? const SizedBox(
+                                width: 120,
+                                height: 32,
+                                child: Center(
+                                  child: SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                  ),
+                                ),
+                              )
+                            : StageSelector(
+                                selectedStage: item.currentStatus,
+                                onStageSelected: (newStage) async {
+                                  // Opening move: Update item stage with loading feedback
+                                  setState(() => _isUpdatingStage = true);
+                                  try {
+                                    await repository.updateItem(
+                                      item.id,
+                                      {'currentStatus': newStage},
+                                    );
+                                    await widget.onRefresh();
+                                    if (mounted) {
+                                      messenger.showSnackBar(
+                                        SnackBar(
+                                          content: Text('Stage updated to ${newStage.toUpperCase()}'),
+                                        ),
+                                      );
+                                    }
+                                  } catch (error) {
+                                    if (mounted) {
+                                      messenger.showSnackBar(
+                                        SnackBar(
+                                          content: Text('Failed to update stage: $error'),
+                                          backgroundColor: Theme.of(context).colorScheme.error,
+                                        ),
+                                      );
+                                    }
+                                  } finally {
+                                    if (mounted) {
+                                      setState(() => _isUpdatingStage = false);
+                                    }
+                                  }
+                                },
+                                size: StageSelectorSize.medium,
+                              ),
                       ],
                     ),
                   ],
@@ -419,6 +665,59 @@ class _ItemDetailContent extends ConsumerWidget {
               ),
             ),
           const SizedBox(height: 24),
+          // Big play: Show broken checkbox for all items (can break at any stage)
+          CheckboxListTile(
+            title: const Text('Broken'),
+            subtitle: Text(item.isArchived
+              ? 'Marking as broken will unarchive this item'
+              : 'Mark this item as broken'),
+            value: item.isBroken,
+            onChanged: _isUpdatingBroken ? null : (value) async {
+              if (value == null) return;
+              setState(() => _isUpdatingBroken = true);
+              try {
+                // Opening move: Broken and archived are mutually exclusive
+                // If marking as broken, unarchive it (broken items need attention)
+                final updates = <String, dynamic>{'isBroken': value};
+                if (value && item.isArchived) {
+                  updates['isArchived'] = false;
+                }
+
+                await repository.updateItem(item.id, updates);
+                if (mounted) {
+                  messenger.showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        value
+                          ? (item.isArchived ? 'Marked as broken and unarchived' : 'Marked as broken')
+                          : 'Unmarked as broken'
+                      ),
+                    ),
+                  );
+                }
+                await widget.onRefresh();
+              } catch (error) {
+                if (mounted) {
+                  messenger.showSnackBar(
+                    SnackBar(content: Text('Failed to update: $error')),
+                  );
+                }
+              } finally {
+                if (mounted) {
+                  setState(() => _isUpdatingBroken = false);
+                }
+              }
+            },
+            secondary: _isUpdatingBroken
+                ? const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : null,
+            controlAffinity: ListTileControlAffinity.leading,
+          ),
+          const SizedBox(height: 16),
           // Measurements Section with modern grid layout
           if (item.measurements != null) ...[
             Text('Measurements', style: Theme.of(context).textTheme.ceramic),
@@ -705,13 +1004,13 @@ class _PhotoCard extends StatelessWidget {
               onTap: onTap,
               child: Stack(
                 children: [
-                  // Main play: Display the photo
+                  // Main play: Display the photo - use contain to show full image
                   photo.signedUrl != null
                       ? ClipRRect(
                           borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
                           child: Image.network(
                             photo.signedUrl!,
-                            fit: BoxFit.cover,
+                            fit: BoxFit.contain,
                             width: double.infinity,
                             errorBuilder: (_, __, ___) => const Center(
                               child: Icon(Icons.broken_image_outlined, size: 48),
@@ -750,9 +1049,14 @@ class _PhotoCard extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      photo.stage,
-                      style: Theme.of(context).textTheme.titleMedium,
+                    // Opening move: Wrap in Expanded to prevent overflow
+                    Expanded(
+                      child: Text(
+                        photo.stage,
+                        style: Theme.of(context).textTheme.titleMedium,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                     PopupMenuButton<_PhotoAction>(
                       onSelected: (action) {

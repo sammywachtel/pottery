@@ -271,6 +271,61 @@ async def update_item_metadata(
         raise
 
 
+async def patch_item_fields(
+    item_id: str, update_fields: dict, user_id: str = None
+) -> Optional[PotteryItem]:
+    """
+    Opening move: Partially update specific fields without full model.
+    Useful for toggling flags like isBroken or isArchived.
+
+    Args:
+        item_id: The ID of the item to update
+        update_fields: Dictionary of fields to update (e.g., {'isBroken': True})
+        user_id: If provided, only updates if item belongs to this user
+
+    Returns:
+        Updated PotteryItem if successful, None if not found or permission denied
+    """
+    db, items_collection = _ensure_firestore_client()
+
+    try:
+        doc_ref = items_collection.document(item_id)
+        doc_snapshot = await doc_ref.get()
+
+        if not doc_snapshot.exists:
+            logger.warning(f"Attempted to patch non-existent item with ID: {item_id}")
+            return None
+
+        # Big play: Check ownership if user_id provided
+        item_data = doc_snapshot.to_dict()
+        if user_id and item_data.get("user_id") != user_id:
+            logger.warning(
+                f"User {user_id} attempted to patch item {item_id} "
+                f"which belongs to user {item_data.get('user_id')}."
+            )
+            return None
+
+        # Main play: Always set updatedDateTime on any field update
+        update_fields["updatedDateTime"] = datetime.now(timezone.utc)
+
+        logger.debug(f"Patching item {item_id} with fields: {update_fields}")
+        await doc_ref.update(update_fields)
+
+        # Victory lap: Retrieve and return updated item
+        updated_item = await get_item_by_id(item_id, user_id)
+        if updated_item:
+            logger.info(f"Patched fields for item with ID: {item_id}")
+        return updated_item
+
+    except Exception:
+        logger.error(
+            f"Error patching item {item_id} in Firestore. Fields attempted: "
+            f"{update_fields}",
+            exc_info=True,
+        )
+        raise
+
+
 async def delete_item_and_photos(item_id: str, user_id: str = None) -> bool:
     """
     Deletes a pottery item document from Firestore.

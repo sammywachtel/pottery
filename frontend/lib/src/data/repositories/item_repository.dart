@@ -80,7 +80,9 @@ class ItemRepository {
     Map<String, dynamic> payload,
   ) async {
     try {
-      final response = await _client.dio.put('/api/items/$id', data: payload);
+      // Opening move: Use PATCH for partial updates (isBroken, isArchived, etc.)
+      // Use PUT only when updating the full item model
+      final response = await _client.dio.patch('/api/items/$id', data: payload);
       return PotteryItemModel.fromJson(
         Map<String, dynamic>.from(response.data as Map),
       );

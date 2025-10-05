@@ -114,28 +114,26 @@ class _EnvironmentFirebaseConfig {
   );
 
   /// Production environment Firebase options
-  /// NOTE: These will be populated by setup-firebase-complete.sh
-  /// Placeholder values until production project is created
+  /// Victory lap: Configured with actual production Firebase project
   static const production = _EnvironmentFirebaseConfig(
     web: FirebaseOptions(
       apiKey: 'AIzaSyCtS6iPBQV4iPv8dFqIcXx4zYJxxxCSPak',
-      appId: '1:89677836881:web:b39b608caa9f3e79647e70',
+      appId: '1:89677836881:web:892e3174c807201a647e70',
       messagingSenderId: '89677836881',
       projectId: 'pottery-app-prod',
       authDomain: 'pottery-app-prod.firebaseapp.com',
       storageBucket: 'pottery-app-prod.firebasestorage.app',
-      measurementId: 'G-PLACEHOLDER',
     ),
     android: FirebaseOptions(
       apiKey: 'AIzaSyCtS6iPBQV4iPv8dFqIcXx4zYJxxxCSPak',
-      appId: '1:89677836881:web:b39b608caa9f3e79647e70',
+      appId: '1:89677836881:android:3467ec7e9f6018b3647e70',
       messagingSenderId: '89677836881',
       projectId: 'pottery-app-prod',
       storageBucket: 'pottery-app-prod.firebasestorage.app',
     ),
     ios: FirebaseOptions(
       apiKey: 'AIzaSyCtS6iPBQV4iPv8dFqIcXx4zYJxxxCSPak',
-      appId: '1:89677836881:web:b39b608caa9f3e79647e70',
+      appId: '1:89677836881:android:3467ec7e9f6018b3647e70', // TODO: Create iOS app and update
       messagingSenderId: '89677836881',
       projectId: 'pottery-app-prod',
       storageBucket: 'pottery-app-prod.firebasestorage.app',
@@ -143,7 +141,7 @@ class _EnvironmentFirebaseConfig {
     ),
     macos: FirebaseOptions(
       apiKey: 'AIzaSyCtS6iPBQV4iPv8dFqIcXx4zYJxxxCSPak',
-      appId: '1:89677836881:web:b39b608caa9f3e79647e70',
+      appId: '1:89677836881:android:3467ec7e9f6018b3647e70', // TODO: Create iOS app and update
       messagingSenderId: '89677836881',
       projectId: 'pottery-app-prod',
       storageBucket: 'pottery-app-prod.firebasestorage.app',
@@ -151,7 +149,7 @@ class _EnvironmentFirebaseConfig {
     ),
     windows: FirebaseOptions(
       apiKey: 'AIzaSyCtS6iPBQV4iPv8dFqIcXx4zYJxxxCSPak',
-      appId: '1:89677836881:web:b39b608caa9f3e79647e70',
+      appId: '1:89677836881:web:892e3174c807201a647e70',
       messagingSenderId: '89677836881',
       projectId: 'pottery-app-prod',
       authDomain: 'pottery-app-prod.firebaseapp.com',

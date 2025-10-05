@@ -327,6 +327,82 @@ async def update_item(
         )
 
 
+@router.patch(
+    "/{item_id}",
+    response_model=PotteryItemResponse,
+    summary="Partially Update Pottery Item",
+    description=(
+        "Partially updates a pottery item's fields (e.g., isBroken, isArchived) "
+        "belonging to the authenticated user. Only the provided fields are updated."
+    ),
+    responses={
+        status.HTTP_200_OK: {"description": "Successful Response"},
+        status.HTTP_401_UNAUTHORIZED: {
+            "model": HTTPError,
+            "description": "Not authenticated",
+        },
+        status.HTTP_403_FORBIDDEN: {
+            "model": HTTPError,
+            "description": "Forbidden - Item belongs to another user",
+        },
+        status.HTTP_404_NOT_FOUND: {
+            "model": HTTPError,
+            "description": "Item not found",
+        },
+        status.HTTP_503_SERVICE_UNAVAILABLE: {
+            "model": HTTPError,
+            "description": "Service Unavailable",
+        },
+    },
+)
+async def patch_item(
+    item_id: str,
+    update_data: dict,
+    current_user: User = Depends(get_current_active_user),
+):
+    """
+    Big play: Partially update item fields without requiring full model.
+    Useful for toggling boolean flags like isBroken or isArchived.
+    """
+    try:
+        # Opening move: Update only the provided fields in Firestore
+        # Ownership check happens inside patch_item_fields
+        updated_item = await firestore_service.patch_item_fields(
+            item_id, update_data, user_id=current_user.username
+        )
+
+        if updated_item is None:
+            logger.warning(
+                f"Item {item_id} not found during patch for "
+                f"user {current_user.username}"
+            )
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Pottery item with ID '{item_id}' not found.",
+            )
+
+        # Victory lap: Return updated item with fresh signed URLs
+        response_item = await _create_item_response(updated_item)
+        return response_item
+
+    except ConnectionError as e:
+        logger.error(
+            f"Service connection error in patch_item for {item_id}: {e}", exc_info=True
+        )
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Backend service unavailable.",
+        )
+    except HTTPException as http_exc:
+        raise http_exc
+    except Exception as e:
+        logger.error(f"Error patching item {item_id}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to patch item.",
+        )
+
+
 @router.delete(
     "/{item_id}",
     status_code=status.HTTP_204_NO_CONTENT,

@@ -8,7 +8,7 @@ import '../../../data/repositories/item_repository.dart';
 class ItemFormState {
   ItemFormState({
     this.id,
-    this.name = '',
+    this.name = '-',  // Default placeholder name
     this.clayType = '',
     this.location = '',
     DateTime? createdDateTime,

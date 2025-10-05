@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/models/measurement_detail.dart';
 import '../../../data/models/pottery_item.dart';
 import '../../../data/repositories/item_repository.dart';
+import '../../../design_system/pottery_colors.dart';
 import '../controllers/item_form_state.dart';
 import '../controllers/item_providers.dart';
 
@@ -18,8 +19,10 @@ class ItemFormPage extends ConsumerStatefulWidget {
 
 class _ItemFormPageState extends ConsumerState<ItemFormPage> {
   late ItemFormState _formState;
+  late ItemFormState _initialFormState;
   final _formKey = GlobalKey<FormState>();
   bool _isSubmitting = false;
+  bool _hasUnsavedChanges = false;
 
   late final TextEditingController _nameController;
   late final TextEditingController _clayTypeController;
@@ -38,6 +41,8 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
     _formState = widget.existingItem == null
         ? ItemFormState()
         : ItemFormState.fromItem(widget.existingItem!);
+    // Opening move: Save initial state to detect unsaved changes
+    _initialFormState = _formState;
 
     _nameController = TextEditingController(text: _formState.name);
     _clayTypeController = TextEditingController(text: _formState.clayType);
@@ -55,6 +60,23 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
     _finalControllers = _MeasurementControllers.fromDetail(
       _formState.finalMeasurement,
     );
+
+    // Big play: Track changes on all text fields
+    _nameController.addListener(_checkForChanges);
+    _clayTypeController.addListener(_checkForChanges);
+    _locationController.addListener(_checkForChanges);
+    _glazeController.addListener(_checkForChanges);
+    _coneController.addListener(_checkForChanges);
+    _noteController.addListener(_checkForChanges);
+    _greenwareControllers.height.addListener(_checkForChanges);
+    _greenwareControllers.width.addListener(_checkForChanges);
+    _greenwareControllers.depth.addListener(_checkForChanges);
+    _bisqueControllers.height.addListener(_checkForChanges);
+    _bisqueControllers.width.addListener(_checkForChanges);
+    _bisqueControllers.depth.addListener(_checkForChanges);
+    _finalControllers.height.addListener(_checkForChanges);
+    _finalControllers.width.addListener(_checkForChanges);
+    _finalControllers.depth.addListener(_checkForChanges);
   }
 
   @override
@@ -69,6 +91,76 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
     _bisqueControllers.dispose();
     _finalControllers.dispose();
     super.dispose();
+  }
+
+  // Main play: Check if any field has changed from initial state
+  void _checkForChanges() {
+    final hasChanges = _nameController.text.trim() != (_initialFormState.name) ||
+        _clayTypeController.text.trim() != (_initialFormState.clayType ?? '') ||
+        _locationController.text.trim() != (_initialFormState.location ?? '') ||
+        _glazeController.text.trim() != (_initialFormState.glaze ?? '') ||
+        _coneController.text.trim() != (_initialFormState.cone ?? '') ||
+        _noteController.text.trim() != (_initialFormState.note ?? '') ||
+        _formState.currentStatus != _initialFormState.currentStatus ||
+        _formState.createdDateTime != _initialFormState.createdDateTime ||
+        _measurementHasChanged(_greenwareControllers, _initialFormState.greenware) ||
+        _measurementHasChanged(_bisqueControllers, _initialFormState.bisque) ||
+        _measurementHasChanged(_finalControllers, _initialFormState.finalMeasurement);
+
+    if (hasChanges != _hasUnsavedChanges) {
+      setState(() => _hasUnsavedChanges = hasChanges);
+    }
+  }
+
+  // Victory lap: Check if measurement values have changed
+  bool _measurementHasChanged(_MeasurementControllers controllers, MeasurementDetail? initial) {
+    final currentHeight = controllers.height.text.trim();
+    final currentWidth = controllers.width.text.trim();
+    final currentDepth = controllers.depth.text.trim();
+
+    final initialHeight = initial?.height?.toString() ?? '';
+    final initialWidth = initial?.width?.toString() ?? '';
+    final initialDepth = initial?.depth?.toString() ?? '';
+
+    return currentHeight != initialHeight || currentWidth != initialWidth || currentDepth != initialDepth;
+  }
+
+  // Big play: Show unsaved changes dialog when user tries to leave
+  Future<bool> _handleBackNavigation() async {
+    if (!_hasUnsavedChanges || _isSubmitting) {
+      return true; // Allow navigation if no changes or already submitting
+    }
+
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Unsaved Changes'),
+        content: const Text('You have unsaved changes. What would you like to do?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop('cancel'),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop('discard'),
+            child: const Text('Discard Changes'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop('save'),
+            child: const Text('Save and Close'),
+          ),
+        ],
+      ),
+    );
+
+    if (result == 'save') {
+      // Security checkpoint: Validate and save before closing
+      await _submit();
+      return !mounted; // Only allow navigation if save succeeded and we unmounted
+    } else if (result == 'discard') {
+      return true; // Allow navigation, discard changes
+    }
+    return false; // Cancel, stay on page
   }
 
   Future<void> _selectDateTime() async {
@@ -96,6 +188,7 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
           ),
         );
       });
+      _checkForChanges();
       return;
     }
 
@@ -110,6 +203,7 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
         ),
       );
     });
+    _checkForChanges();
   }
 
   MeasurementDetail? _parseMeasurement(_MeasurementControllers controllers) {
@@ -200,9 +294,19 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
   Widget build(BuildContext context) {
     final title = widget.existingItem == null ? 'Create Pottery Item' : 'Edit Pottery Item';
 
-    return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      body: Form(
+    // Security checkpoint: Intercept back navigation to check for unsaved changes
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (bool didPop) async {
+        if (didPop) return;
+        final shouldPop = await _handleBackNavigation();
+        if (shouldPop && context.mounted) {
+          Navigator.of(context).pop();
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(title: Text(title)),
+        body: Form(
         key: _formKey,
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
@@ -242,16 +346,38 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
                 decoration: const InputDecoration(
                   labelText: 'Current Status',
                 ),
-                items: const [
-                  DropdownMenuItem(value: 'greenware', child: Text('Greenware')),
-                  DropdownMenuItem(value: 'bisque', child: Text('Bisque')),
-                  DropdownMenuItem(value: 'final', child: Text('Final')),
+                items: [
+                  DropdownMenuItem(
+                    value: 'greenware',
+                    child: _StageDropdownItem(
+                      stage: 'greenware',
+                      label: 'Greenware',
+                      isSelected: _formState.currentStatus == 'greenware',
+                    ),
+                  ),
+                  DropdownMenuItem(
+                    value: 'bisque',
+                    child: _StageDropdownItem(
+                      stage: 'bisque',
+                      label: 'Bisque',
+                      isSelected: _formState.currentStatus == 'bisque',
+                    ),
+                  ),
+                  DropdownMenuItem(
+                    value: 'final',
+                    child: _StageDropdownItem(
+                      stage: 'final',
+                      label: 'Final',
+                      isSelected: _formState.currentStatus == 'final',
+                    ),
+                  ),
                 ],
                 onChanged: (value) {
                   if (value != null) {
                     setState(() {
                       _formState = _formState.copyWith(currentStatus: value);
                     });
+                    _checkForChanges();
                   }
                 },
               ),
@@ -303,6 +429,7 @@ class _ItemFormPageState extends ConsumerState<ItemFormPage> {
             ],
           ),
         ),
+      ),
       ),
     );
   }
@@ -390,5 +517,63 @@ class _MeasurementControllers {
     height.dispose();
     width.dispose();
     depth.dispose();
+  }
+}
+
+/// Dropdown item with circular stage indicator icon
+class _StageDropdownItem extends StatelessWidget {
+  const _StageDropdownItem({
+    required this.stage,
+    required this.label,
+    required this.isSelected,
+  });
+
+  final String stage;
+  final String label;
+  final bool isSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final stageColor = PotteryColors.getStageColor(stage);
+    final badgeLabel = label.substring(0, 1); // G, B, or F
+
+    return Row(
+      children: [
+        // Big play: Circle icon matching StageIndicator styling
+        Container(
+          width: 24,
+          height: 24,
+          decoration: BoxDecoration(
+            color: isSelected ? stageColor : Colors.transparent,
+            border: Border.all(
+              color: stageColor.withOpacity(isSelected ? 1.0 : 0.5),
+              width: isSelected ? 0 : 1.5,
+            ),
+            shape: BoxShape.circle,
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: stageColor.withOpacity(0.3),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Center(
+            child: Text(
+              badgeLabel,
+              style: TextStyle(
+                color: isSelected ? Colors.white : stageColor,
+                fontSize: 12,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Text(label),
+      ],
+    );
   }
 }

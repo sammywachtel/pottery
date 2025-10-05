@@ -16,7 +16,7 @@ echo "🏭 Building Flutter app for PRODUCTION environment..."
 # Build configuration
 ENVIRONMENT="production"
 FLAVOR="prod"
-API_BASE_URL="${API_BASE_URL:-https://pottery-api-prod-89677836881.us-central1.run.app}"
+API_BASE_URL="${API_BASE_URL:-https://pottery-api-prod-4svtnkpwda-uc.a.run.app}"
 DEBUG_ENABLED="false"
 
 # Security check

@@ -245,7 +245,7 @@ echo "================================================"
 echo ""
 echo "📋 Access Information:"
 echo "  • API URL: http://localhost:54321"
-echo "  • Database URL: postgresql://postgres:postgres@localhost:54322/postgres"
+echo "  • Database URL: postgresql://postgres:postgres@localhost:54322/postgres"  # pragma: allowlist secret
 echo "  • Studio (GUI): http://localhost:54323"
 echo "  • InBucket (Email): http://localhost:54324"
 echo ""

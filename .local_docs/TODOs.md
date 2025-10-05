@@ -2,11 +2,91 @@
 
 ## 🔥 In Progress
 
-*(No tasks currently in progress)*
+*(No tasks currently in progress - ready for next feature!)*
 
 ## ✅ Recently Completed
 
-### Current Session (feature/primary-photo-selection branch)
+### Current Session
+
+- ✅ **Archive and Broken item management** - Complete visibility system with mutual exclusivity
+  - Added `isArchived` and `isBroken` boolean fields to PotteryItem model (backend + frontend)
+  - Implemented PATCH endpoint for partial item updates (no more validation errors)
+  - Added "Archive Item" menu option in item detail view with confirmation dialog
+  - Added "Broken" checkbox in item detail view (for all stages, not just Final)
+  - Made broken and archived mutually exclusive at item level (auto-clears when setting the other)
+  - Added visual badges: amber 'A' for archived, red 'B' for broken items
+  - Added "Show only archived items" and "Show only broken items" filters
+  - Filters are mutually exclusive (enabling one disables the other)
+  - Default view hides both archived and broken items
+  - Fixed timestamp display: now shows lastUpdatedDateTime instead of createdDateTime
+  - Sorting by date now uses updatedDateTime (falls back to createdDateTime)
+  - Reference: `items_home_page.dart:365-378`, `item_detail_page.dart`, `backend/routers/items.py`
+
+- ✅ **Enhanced filter UI with clear AND/OR logic** - Reorganized filter dialog for clarity
+  - Added section headers: VISIBILITY, FIRING STAGE, LOCATION
+  - Added explanatory text under each section explaining filter behavior
+  - Changed toggle labels from "Show" to "Include/Show only" for clarity
+  - Added subtitles explaining mutual exclusivity
+  - Added active filter count badge on filter button (shows number of active filter categories)
+  - Date range filter moved to VISIBILITY section
+  - Reference: `items_home_page.dart:817-1019`
+
+- ✅ **Default stage to Greenware** - Pre-selected on item creation (item_form_state.dart:15)
+
+- ✅ **Display cone value on detail view** - Shows under glaze value (item_detail_page.dart)
+
+- ✅ **Delete Item with cascade** - Deletes item and all photos from GCS (items.py delete_item endpoint)
+
+- ✅ **Fix carousel image display** - Images use BoxFit.contain, no cropping (item_detail_page.dart)
+
+- ✅ **Photo captions/descriptions** - imageNote field editable and displayed (photo.dart, item_detail_page.dart)
+
+- ✅ **Circular radio buttons for stage advancement** - Improved stage selection UI
+  - Created StageSelector widget with G/B/F circular radio buttons
+  - Shows progression: B selected shows G+B filled, F selected shows G+B+F filled
+  - Current stage highlighted with extra border and shadow
+  - Added to item detail view for quick stage changes (horizontally arranged with help icon)
+  - Enhanced item form dropdown with G/B/F circle icons showing filled/unfilled states
+  - Help dialog explains pottery firing stages (Greenware → Bisque → Final)
+  - Matches photo overlay badge styling for consistency
+  - Loading indicators during stage update (CircularProgressIndicator replaces selector)
+  - Loading indicators on broken checkbox (shows spinner, disables checkbox)
+  - Prevents double-taps by disabling controls during backend updates
+  - Reference: `stage_selector.dart`, `item_detail_page.dart:256-719`, `item_form_page.dart:345-384`
+
+### Previous Session (feature/primary-photo-selection branch)
+
+- ✅ **Fixed production deployment issues** - Resolved Firebase config and backend URL errors
+  - Fixed production Firebase config: Android appId was using web appId (caused initialization failure)
+  - Fixed version parsing: Now strips build number (+XX) before comparing versions
+  - Fixed prod backend URL: Updated to correct Cloud Run URL (pottery-api-prod-4svtnkpwda-uc.a.run.app)
+  - Production app now initializes and connects to backend successfully
+
+- ✅ **Photo upload protection** - Prevent accidental photo loss
+  - Disabled tap-outside and swipe-down dismissal of upload sheet
+  - Added explicit Cancel button in header
+  - Shows "Discard Photo?" warning if photo selected and user tries to cancel
+  - Only warns if photo has been selected (allows cancel without warning if empty)
+
+- ✅ **Unsaved changes warning** - Prevent accidental data loss when leaving edit screens
+  - Added change tracking to item form (all fields: name, clay type, location, glaze, cone, notes, status, measurements, date/time)
+  - Added PopScope widget to intercept back navigation
+  - Shows dialog with 3 options: "Save and close" / "Discard changes" / "Cancel"
+  - Applied to item form page (creates and edits)
+  - Applied to photo edit dialog (stage and notes)
+  - Tracks dirty state and only warns if changes detected
+
+- ✅ **Interactive deployment script - dev/prod expansion** - Complete cloud deployment support
+  - Added environment selection menu: 1) Local/Docker, 2) Dev (Cloud Run), 3) Prod (Cloud Run)
+  - Implemented `deploy_backend_dev()` - deploys to Cloud Run dev environment
+  - Implemented `deploy_frontend_dev()` - builds and installs dev app with Cloud Run URL
+  - Implemented `deploy_backend_prod()` - deploys to Cloud Run prod with safety confirmation
+  - Implemented `deploy_frontend_prod()` - builds production app with confirmation dialog
+  - Added `check_gcloud_auth()` - verifies gcloud CLI authentication before deployments
+  - Added environment-specific completion instructions (show_dev_instructions, show_prod_instructions)
+  - Production deployments require typed confirmations: "DEPLOY TO PROD" and "BUILD PROD"
+  - Production skips USB installation (signature conflicts, uses Play Store internal testing)
+  - Script location: `scripts/deploy.sh` (executable, all environments supported)
 
 - ✅ **Primary photo selection with star indicators** - Full UI implementation
   - Added `isPrimary` boolean field to Photo model (backend + frontend)
@@ -92,116 +172,82 @@
 
 ### Pottery App Features - High Priority
 
-3. **Display last updated date on item list screen** - Show last updated date instead of created date
-   - Show the most recent date between item update and photo upload
-   - Consider showing both created and updated dates (e.g., "Updated 2d ago")
-   - Reference: `frontend/lib/src/features/items/views/items_home_page.dart` (_PotteryItemCard)
+3. **Implement full-text search** - Search across all fields
+   - Search bar for pottery items
+   - Search across: name, clay type, location, glaze, notes, cone
+   - Real-time search as user types
+   - Reference: `frontend/lib/src/features/items/views/items_home_page.dart`
 
-4. **Quick stage advancement** - Add quick method to change item stage on detail view screen
-   - Add stage selector/stepper at top of item detail view (near current status badge)
-   - Allow quick stage advancement: Greenware → Bisque → Final
-   - Show confirmation dialog before changing stage
-   - Consider adding timestamps for each stage transition
-   - Reference: `frontend/lib/src/features/items/views/item_detail_page.dart`
-
-5. **Default stage to Greenware on create/edit screen** - Pre-select Greenware as default stage
-   - Set "Greenware" as default value in item form dropdown/selector
-   - Saves user from having to remember to select it every time
-   - Most pottery starts at greenware stage
-   - Reference: `frontend/lib/src/features/items/views/item_form_page.dart`
-
-6. **Warn about unsaved changes** - Prevent accidental data loss when leaving edit screens
-   - Detect if form has unsaved changes (use Form dirty state tracking)
-   - Show dialog when user tries to navigate back or close screen
-   - Dialog options: "Save and close" / "Discard changes" / "Cancel"
-   - Apply to both item form and photo edit dialogs
-   - Reference: `frontend/lib/src/features/items/views/item_form_page.dart`, `item_detail_page.dart`
-
-7. **Display cone value on item detail view screen** (under glaze value) - Field exists in form, needs to show on detail view
-
-8. **Add modified/updated datetime tracking** - Track when items are edited or photos are added/deleted
-
-9. Add filtering functionality to pottery item list
-
-10. Implement search bar for pottery items (search all fields including descriptions)
-
-11. Add filter options: clay type, location, created/updated date ranges, glaze, status
-
-12. Add description/caption field to photos
-
-13. Add weight field to measurement details for each pottery stage (greenware, bisque, final)
+4. Add weight field to measurement details for each pottery stage (greenware, bisque, final)
 
 ### Measurement Features
 
-14. Develop camera-based dimension measurement feature for pottery pieces
-15. Implement photo analysis for measuring pottery dimensions with reference object
-16. Add measurement clarification notes (maximum height, width, depth vs base dimensions)
-17. Update measurement UI screens with maximum dimension guidance
+5. Develop camera-based dimension measurement feature for pottery pieces
+6. Implement photo analysis for measuring pottery dimensions with reference object
+7. Add measurement clarification notes (maximum height, width, depth vs base dimensions)
+8. Update measurement UI screens with maximum dimension guidance
 
 ### Privacy & Compliance
 
-18. Create privacy policy document for pottery app
-19. Implement in-app consent dialogs for data collection
-20. Add proper permission request flows for camera and storage access
-21. Add transparent data handling disclosures in app UI
-22. Implement proper age verification for child privacy protection (if applicable)
-23. Add Delete Account button in app settings (link to deletion form)
+9. Create privacy policy document for pottery app
+10. Implement in-app consent dialogs for data collection
+11. Add proper permission request flows for camera and storage access
+12. Add transparent data handling disclosures in app UI
+13. Implement proper age verification for child privacy protection (if applicable)
+14. Add Delete Account button in app settings (link to deletion form)
 
 ### Code Quality & Infrastructure
 
-24. Add comprehensive integration tests for photo upload/delete flow
-25. Add unit tests for new Cone field validation
-26. Consider adding photo compression before upload to reduce storage costs
-27. Implement caching strategy for item list to improve performance
+15. **Debug app crashes on photo capture** - Investigate random crashes when "take photo" clicked
+   - App sometimes crashes on physical devices during photo capture
+   - Investigate camera permission handling
+   - Check memory usage during image processing
+   - Add crash reporting/logging to identify root cause
+   - Test on multiple devices to reproduce consistently
+   - Reference: `frontend/lib/src/features/photos/views/photo_upload_sheet.dart`
 
-### DevOps & Deployment
-
-28. **Expand interactive deployment script to dev/prod environments** - Add cloud deployment support
-    - ✅ Local/Docker track complete (see Recently Completed section)
-    - **Dev environment support** - Deploy to Google Cloud Run (dev)
-      - Build and deploy backend to Cloud Run dev
-      - Build frontend with dev backend URL
-      - gcloud authentication check before deployment
-    - **Prod environment support** - Deploy to Google Cloud Run (prod)
-      - Build and deploy backend to Cloud Run prod
-      - Build frontend with prod backend URL
-      - IAM role verification
-      - Production safety checks and confirmations
-    - **Authentication verification**: For cloud deployments (dev/prod backend)
-      - Check if user is logged in with `gcloud auth list`
-      - Verify account has required IAM roles (documented in `backend/docs/how-to/setup-production.md`)
-      - Prompt user to login with correct account if needed
-      - List required roles: Cloud Run Admin, Artifact Registry Writer, etc.
-    - **Reference**: Existing scripts in `scripts/backend/deploy-dev.sh`, `deploy-prod.sh`
-    - **Location**: `scripts/deploy.sh` (already exists for local/Docker)
+16. Add comprehensive integration tests for photo upload/delete flow
+17. Add unit tests for new Cone field validation
+18. Consider adding photo compression before upload to reduce storage costs
+19. Implement caching strategy for item list to improve performance
 
 ---
 
 ## Summary
 
 - **0** tasks in progress
-- **20** tasks recently completed (9 from current session)
-- **28** tasks pending
+- **33** tasks recently completed (22 from current session)
+- **19** tasks pending
   - 2 Firebase/Auth
-  - 11 High priority app features
+  - 2 High priority app features
   - 4 Measurement features
   - 6 Privacy/compliance
-  - 4 Infrastructure/quality
-  - 1 DevOps/deployment (dev/prod expansion)
+  - 5 Infrastructure/quality
 
 ## Notes
 
 ### Current Session Highlights
-- **Version:** Frontend v1.2.5+8, Backend v0.2.0 (min_frontend_version: 1.2.3)
-- **Branch:** feature/primary-photo-selection
-- Photo display completely overhauled: adaptive aspect ratios, single-column mobile layout
-- Deployment workflow streamlined: interactive script with USB detection and AAB building
-- Version checking prevents backend/frontend compatibility issues
-- All photo-related UX issues resolved: flickering, cropping, star indicators
+- **Focus:** Archive/Broken item management, filter UI improvements, stage advancement UX
+- **22 tasks completed** (archive/broken system, filters, timestamps, stage selector, plus verified features)
+- Implemented complete archive/broken visibility system with mutual exclusivity
+- Enhanced filter UI with clear section headers and explanatory text
+- Created circular radio button stage selector (G/B/F) with progression display
+  - Shows all completed stages filled (B shows G+B, F shows G+B+F)
+  - Loading indicators prevent double-taps during backend updates
+  - Help dialog explains pottery firing stages
+- Enhanced form dropdown with circle icons showing filled/unfilled states
+- Fixed timestamp display to show lastUpdatedDateTime instead of createdDateTime
+- Added PATCH endpoint for partial item updates (fixes validation errors)
+- Added visual badges (amber 'A' for archived, red 'B' for broken)
+- Filters now "show only" instead of "include" for clearer behavior
+- Active filter count badge shows number of active filter categories
+- Loading feedback on broken checkbox prevents double-clicks
+- Verified default stage (Greenware), cone display, delete cascade, carousel fixes, and photo captions all working
 
 ### General Notes
 - Primary photo selection complete: Users can set primary photo via three-dots menu, fullscreen viewer, or photo carousel
 - Form fields have been updated: Name (required), Clay Type (optional text), Location (optional), Cone (optional text)
 - Scripts consolidated: Infrastructure scripts in `scripts/backend/`, frontend build scripts in `frontend/scripts/`
 - Photo deletion bug fixed: Photos now properly persist after delete and re-upload
-- Deployment script location: `scripts/deploy.sh` (local/Docker complete, dev/prod pending)
+- Deployment script: `scripts/deploy.sh` (supports local/Docker, dev Cloud Run, prod Cloud Run)
+- Unsaved changes protection: Applied to item form and photo edit dialog with smart change detection

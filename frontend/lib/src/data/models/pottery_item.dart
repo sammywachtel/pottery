@@ -13,6 +13,8 @@ class PotteryItemModel {
     this.glaze,
     this.cone,
     this.note,
+    this.isBroken = false,
+    this.isArchived = false,
     this.updatedDateTime,
     this.measurements,
     this.photos = const [],
@@ -28,6 +30,8 @@ class PotteryItemModel {
   final String? glaze;
   final String? cone;
   final String? note;
+  final bool isBroken;
+  final bool isArchived;
   final DateTime? updatedDateTime;
   final Measurements? measurements;
   final List<PhotoModel> photos;
@@ -45,6 +49,8 @@ class PotteryItemModel {
       glaze: json['glaze'] as String?,
       cone: json['cone'] as String?,
       note: json['note'] as String?,
+      isBroken: json['isBroken'] as bool? ?? false,
+      isArchived: json['isArchived'] as bool? ?? false,
       updatedDateTime: json['updatedDateTime'] != null
           ? DateTime.parse(json['updatedDateTime'] as String)
           : null,
@@ -75,6 +81,8 @@ class PotteryItemModel {
       'glaze': glaze,
       'cone': cone,
       'note': note,
+      'isBroken': isBroken,
+      'isArchived': isArchived,
       if (updatedDateTime != null) 'updatedDateTime': updatedDateTime!.toIso8601String(),
       if (measurements != null) 'measurements': measurements!.toJson(),
       'photos': photos.map((photo) => photo.toJson()).toList(),
@@ -92,6 +100,8 @@ class PotteryItemModel {
     String? glaze,
     String? cone,
     String? note,
+    bool? isBroken,
+    bool? isArchived,
     DateTime? updatedDateTime,
     Measurements? measurements,
     List<PhotoModel>? photos,
@@ -107,6 +117,8 @@ class PotteryItemModel {
       glaze: glaze ?? this.glaze,
       cone: cone ?? this.cone,
       note: note ?? this.note,
+      isBroken: isBroken ?? this.isBroken,
+      isArchived: isArchived ?? this.isArchived,
       updatedDateTime: updatedDateTime ?? this.updatedDateTime,
       measurements: measurements ?? this.measurements,
       photos: photos ?? this.photos,

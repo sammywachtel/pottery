@@ -111,6 +111,14 @@ class PotteryItemBase(BaseModel):
     cone: Optional[str] = None
     location: str
     note: Optional[str] = None
+    isBroken: bool = Field(
+        default=False,
+        description="Whether the finished item is broken (applies to final stage)",
+    )
+    isArchived: bool = Field(
+        default=False,
+        description="Whether the item is archived (hidden from default view)",
+    )
     createdDateTime: datetime = Field(
         ...,
         description="Timestamp item was created/started (UTC)",
