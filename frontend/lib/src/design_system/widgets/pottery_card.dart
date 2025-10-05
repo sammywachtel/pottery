@@ -21,6 +21,8 @@ class PotteryCard extends StatefulWidget {
     this.currentStatus,
     this.createdDateTime,
     this.lastUpdatedDateTime,
+    this.isBroken = false,
+    this.isArchived = false,
     this.onTap,
     this.onLongPress,
     this.heroTag,
@@ -37,6 +39,8 @@ class PotteryCard extends StatefulWidget {
   final String? currentStatus;
   final DateTime? createdDateTime;
   final DateTime? lastUpdatedDateTime;
+  final bool isBroken;
+  final bool isArchived;
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
   final String? heroTag;
@@ -60,9 +64,18 @@ class _PotteryCardState extends State<PotteryCard> with TickerProviderStateMixin
         ? _buildListContent(context, theme, stages)
         : _buildGridContent(context, theme, stages);
 
+    // Big play: Apply special background colors for archived/broken items
+    Color? cardColor;
+    if (widget.isArchived) {
+      cardColor = Colors.amber.shade50;  // Subtle amber tint for archived items
+    } else if (widget.isBroken) {
+      cardColor = theme.colorScheme.errorContainer.withOpacity(0.15);
+    }
+
     Widget card = Card(
       clipBehavior: Clip.antiAlias,
       elevation: _isPressed ? 1 : 2,
+      color: cardColor,
       child: InkWell(
         onTap: widget.onTap,
         onLongPress: widget.onLongPress,
@@ -104,12 +117,44 @@ class _PotteryCardState extends State<PotteryCard> with TickerProviderStateMixin
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Photo section with aspect ratio
-        AspectRatio(
-          aspectRatio: 1.2, // Slightly wider than square for pottery photos
+        // Photo section - let image determine its own aspect ratio
+        ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(PotterySpacing.trim)),
           child: Stack(
             children: [
               _buildPhotoDisplay(context, theme),
+
+              // Archived/Broken status badges - top-left corner
+              if (widget.isArchived || widget.isBroken)
+                Positioned(
+                  top: PotterySpacing.tool,
+                  left: PotterySpacing.tool,
+                  child: Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: widget.isArchived
+                        ? Colors.amber.shade700  // Warm amber for "filed away" feel
+                        : theme.colorScheme.error,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: widget.isArchived
+                          ? Colors.amber.shade900
+                          : theme.colorScheme.onError,
+                        width: 2,
+                      ),
+                    ),
+                    child: Center(
+                      child: Text(
+                        widget.isArchived ? 'A' : 'B',
+                        style: theme.textTheme.labelLarge?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
 
               // Stage indicator overlay (top-right)
               if (widget.showStageIndicator)
@@ -225,7 +270,42 @@ class _PotteryCardState extends State<PotteryCard> with TickerProviderStateMixin
             child: SizedBox(
               width: 64,
               height: 64,
-              child: _buildPhotoDisplay(context, theme),
+              child: Stack(
+                children: [
+                  _buildPhotoDisplay(context, theme),
+                  // Archived/Broken status badge for list variant - compact
+                  if (widget.isArchived || widget.isBroken)
+                    Positioned(
+                      top: 4,
+                      left: 4,
+                      child: Container(
+                        width: 24,
+                        height: 24,
+                        decoration: BoxDecoration(
+                          color: widget.isArchived
+                            ? Colors.amber.shade700
+                            : theme.colorScheme.error,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: widget.isArchived
+                              ? Colors.amber.shade900
+                              : theme.colorScheme.onError,
+                            width: 1.5,
+                          ),
+                        ),
+                        child: Center(
+                          child: Text(
+                            widget.isArchived ? 'A' : 'B',
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
 
@@ -336,15 +416,18 @@ class _PotteryCardState extends State<PotteryCard> with TickerProviderStateMixin
 
   Widget _buildPhotoDisplay(BuildContext context, ThemeData theme) {
     if (widget.primaryPhotoUrl?.isNotEmpty == true) {
+      // Main play: Let image display at natural size, masonry grid handles layout
+      // Use fitWidth to fill card width while maintaining aspect ratio
       return CachedNetworkImage(
         imageUrl: widget.primaryPhotoUrl!,
-        fit: BoxFit.cover,
+        fit: BoxFit.fitWidth,
         width: double.infinity,
-        height: double.infinity,
         placeholder: (context, url) => _buildPhotoPlaceholder(theme),
         errorWidget: (context, url, error) => _buildPhotoError(theme),
-        fadeInDuration: const Duration(milliseconds: 300),
-        fadeOutDuration: const Duration(milliseconds: 100),
+        fadeInDuration: const Duration(milliseconds: 150),
+        fadeOutDuration: const Duration(milliseconds: 50),
+        // Victory lap: Don't specify memCache dimensions to preserve aspect ratio
+        // Specifying both width and height would force square caching, squishing images
       );
     } else {
       return _buildPhotoPlaceholder(theme);
@@ -352,56 +435,65 @@ class _PotteryCardState extends State<PotteryCard> with TickerProviderStateMixin
   }
 
   Widget _buildPhotoPlaceholder(ThemeData theme) {
-    return Container(
-      color: theme.colorScheme.surfaceVariant,
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.camera_alt_outlined,
-              size: widget.cardVariant == PotteryCardVariant.grid ? 32 : 24,
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-            if (widget.cardVariant == PotteryCardVariant.grid) ...[
-              PotterySpace.toolVertical,
-              Text(
-                'No photo yet',
-                style: theme.textTheme.tool.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-                textAlign: TextAlign.center,
+    // Victory lap: Give placeholder a reasonable aspect ratio when no photo present
+    // This prevents cards from collapsing to nothing
+    return AspectRatio(
+      aspectRatio: 0.75, // 3:4 portrait ratio
+      child: Container(
+        color: theme.colorScheme.surfaceVariant,
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.camera_alt_outlined,
+                size: widget.cardVariant == PotteryCardVariant.grid ? 32 : 24,
+                color: theme.colorScheme.onSurfaceVariant,
               ),
+              if (widget.cardVariant == PotteryCardVariant.grid) ...[
+                PotterySpace.toolVertical,
+                Text(
+                  'No photo yet',
+                  style: theme.textTheme.tool.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildPhotoError(ThemeData theme) {
-    return Container(
-      color: theme.colorScheme.errorContainer.withOpacity(0.1),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.broken_image_outlined,
-              size: widget.cardVariant == PotteryCardVariant.grid ? 32 : 24,
-              color: theme.colorScheme.error,
-            ),
-            if (widget.cardVariant == PotteryCardVariant.grid) ...[
-              PotterySpace.toolVertical,
-              Text(
-                'Photo unavailable',
-                style: theme.textTheme.tool.copyWith(
-                  color: theme.colorScheme.error,
-                ),
-                textAlign: TextAlign.center,
+    // Here's where we keep error state consistent with placeholder
+    return AspectRatio(
+      aspectRatio: 0.75, // 3:4 portrait ratio
+      child: Container(
+        color: theme.colorScheme.errorContainer.withOpacity(0.1),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.broken_image_outlined,
+                size: widget.cardVariant == PotteryCardVariant.grid ? 32 : 24,
+                color: theme.colorScheme.error,
               ),
+              if (widget.cardVariant == PotteryCardVariant.grid) ...[
+                PotterySpace.toolVertical,
+                Text(
+                  'Photo unavailable',
+                  style: theme.textTheme.tool.copyWith(
+                    color: theme.colorScheme.error,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
@@ -411,18 +503,24 @@ class _PotteryCardState extends State<PotteryCard> with TickerProviderStateMixin
     final dateToShow = widget.lastUpdatedDateTime ?? widget.createdDateTime;
     if (dateToShow == null) return '';
 
+    // Opening move: Compare calendar dates, not time differences
+    // This fixes the bug where "Today 6:31 PM" shows for yesterday's timestamp
     final now = DateTime.now();
     final localDate = dateToShow.toLocal();
-    final difference = now.difference(localDate).inDays;
 
-    if (difference == 0) {
+    // Big play: Normalize to date-only (midnight) for accurate day comparison
+    final nowDate = DateTime(now.year, now.month, now.day);
+    final itemDate = DateTime(localDate.year, localDate.month, localDate.day);
+    final dayDifference = nowDate.difference(itemDate).inDays;
+
+    if (dayDifference == 0) {
       return 'Today ${DateFormat.jm().format(localDate)}';
-    } else if (difference == 1) {
+    } else if (dayDifference == 1) {
       return 'Yesterday';
-    } else if (difference < 7) {
-      return '${difference}d ago';
-    } else if (difference < 30) {
-      return '${(difference / 7).floor()}w ago';
+    } else if (dayDifference < 7) {
+      return '${dayDifference}d ago';
+    } else if (dayDifference < 30) {
+      return '${(dayDifference / 7).floor()}w ago';
     } else {
       return DateFormat.yMd().format(localDate);
     }
@@ -472,6 +570,10 @@ class CompactPotteryCard extends StatelessWidget {
                       ? CachedNetworkImage(
                           imageUrl: primaryPhotoUrl!,
                           fit: BoxFit.cover,
+                          fadeInDuration: const Duration(milliseconds: 150),
+                          fadeOutDuration: const Duration(milliseconds: 50),
+                          memCacheWidth: 100, // Small cache for tiny thumbnails
+                          memCacheHeight: 100,
                           placeholder: (context, url) => Container(
                             color: theme.colorScheme.surfaceVariant,
                             child: Icon(

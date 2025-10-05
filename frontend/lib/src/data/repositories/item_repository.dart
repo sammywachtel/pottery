@@ -80,7 +80,9 @@ class ItemRepository {
     Map<String, dynamic> payload,
   ) async {
     try {
-      final response = await _client.dio.put('/api/items/$id', data: payload);
+      // Opening move: Use PATCH for partial updates (isBroken, isArchived, etc.)
+      // Use PUT only when updating the full item model
+      final response = await _client.dio.patch('/api/items/$id', data: payload);
       return PotteryItemModel.fromJson(
         Map<String, dynamic>.from(response.data as Map),
       );
@@ -157,6 +159,23 @@ class ItemRepository {
       );
     } on DioException catch (error) {
       final message = _extractErrorMessage(error, 'Failed to update photo');
+      throw AppException(message, statusCode: error.response?.statusCode);
+    } catch (error) {
+      if (error is AppException) rethrow;
+      throw AppException(error.toString());
+    }
+  }
+
+  Future<PhotoModel> setPrimaryPhoto(String itemId, String photoId) async {
+    try {
+      final response = await _client.dio.patch(
+        '/api/items/$itemId/photos/$photoId/primary',
+      );
+      return PhotoModel.fromJson(
+        Map<String, dynamic>.from(response.data as Map),
+      );
+    } on DioException catch (error) {
+      final message = _extractErrorMessage(error, 'Failed to set primary photo');
       throw AppException(message, statusCode: error.response?.statusCode);
     } catch (error) {
       if (error is AppException) rethrow;

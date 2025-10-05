@@ -21,3 +21,4 @@ quality-reports/
 htmlcov/
 .pytest_cache/
 .mypy_cache/
+/scripts/migration/

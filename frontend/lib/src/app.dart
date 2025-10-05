@@ -5,6 +5,7 @@ import 'design_system/pottery_theme.dart';
 import 'features/auth/controllers/auth_controller.dart';
 import 'features/auth/views/login_view.dart';
 import 'features/items/views/items_home_page.dart';
+import 'features/version_check/version_guard.dart';
 import 'widgets/splash_screen.dart';
 
 class PotteryApp extends ConsumerWidget {
@@ -22,7 +23,9 @@ class PotteryApp extends ConsumerWidget {
     } else if (!authState.isAuthenticated) {
       home = const LoginView();
     } else {
-      home = const ItemsHomePage();
+      // Big play: Wrap home page with version check guard
+      // This checks backend version on app startup and shows update dialog if needed
+      home = const VersionGuard(child: ItemsHomePage());
     }
 
     return MaterialApp(

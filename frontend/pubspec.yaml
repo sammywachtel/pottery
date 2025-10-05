@@ -1,5 +1,5 @@
 name: pottery_frontend
-version: 1.1.0+2
+version: 1.8.0+35
 description: Flutter frontend for the pottery inventory application.
 publish_to: 'none'
 
@@ -26,6 +26,9 @@ dependencies:
   firebase_core: ^3.6.0
   firebase_auth: ^5.3.1
   google_sign_in: ^6.2.1
+  # Version checking and app store linking
+  package_info_plus: ^8.0.0
+  url_launcher: ^6.3.0
 
 dev_dependencies:
   flutter_test:

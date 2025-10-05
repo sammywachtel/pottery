@@ -143,6 +143,36 @@ class _PhotoUploadSheetState extends ConsumerState<PhotoUploadSheet> {
     }
   }
 
+  // Security checkpoint: Warn before discarding photo
+  Future<bool> _handleCancel() async {
+    // Opening move: If no photo selected, allow cancel without warning
+    if (_previewBytes == null) {
+      return true;
+    }
+
+    // Big play: Photo is selected, warn about losing it
+    final confirmDiscard = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Discard Photo?'),
+        content: const Text(
+            'You have selected a photo. Are you sure you want to discard it?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Keep Editing'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Discard'),
+          ),
+        ],
+      ),
+    );
+
+    return confirmDiscard ?? false;
+  }
+
   Future<void> _submit() async {
     if (_pickedFile == null || _previewBytes == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -192,36 +222,62 @@ class _PhotoUploadSheetState extends ConsumerState<PhotoUploadSheet> {
   Widget build(BuildContext context) {
     final stagesAsync = ref.watch(stagesProvider);
 
-    return Padding(
-      padding: EdgeInsets.only(
-        left: 16,
-        right: 16,
-        top: 16,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 16,
-      ),
-      child: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 48,
-                  height: 4,
-                  margin: const EdgeInsets.only(bottom: 16),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).dividerColor,
-                    borderRadius: BorderRadius.circular(2),
+    // Victory lap: Intercept back button to check for unsaved photo
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (bool didPop) async {
+        if (didPop) return;
+        final shouldPop = await _handleCancel();
+        if (shouldPop && context.mounted) {
+          Navigator.of(context).pop(false);
+        }
+      },
+      child: Padding(
+        padding: EdgeInsets.only(
+          left: 16,
+          right: 16,
+          top: 16,
+          bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+        ),
+        child: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 48,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).dividerColor,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
                   ),
                 ),
-              ),
-              Text(
-                'Upload photo',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 16),
+                // Big play: Add header with title and cancel button
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Upload photo',
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () async {
+                        final shouldClose = await _handleCancel();
+                        if (shouldClose && context.mounted) {
+                          Navigator.of(context).pop(false);
+                        }
+                      },
+                      child: const Text('Cancel'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
               stagesAsync.when(
                 data: (stages) {
                   final options = stages.isEmpty
@@ -347,6 +403,7 @@ class _PhotoUploadSheetState extends ConsumerState<PhotoUploadSheet> {
             ],
           ),
         ),
+      ),
       ),
     );
   }

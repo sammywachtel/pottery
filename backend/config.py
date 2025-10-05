@@ -121,7 +121,11 @@ class Settings(BaseSettings):
 
     # --- API Information (from OpenAPI spec) ---
     api_title: str = "Pottery Catalog API (Signed URLs)"
-    api_version: str = "0.2.0"
+    api_version: str = "0.3.0"
+    # Opening move: Track minimum frontend version required by this backend
+    # This prevents errors from version mismatches between frontend and backend
+    # v0.3.0 requires frontend >= 1.7.0 for PATCH endpoint, archive/broken features
+    min_frontend_version: str = "1.7.0"
     api_description: str = (
         "API for managing pottery items with Firestore and GCS, "
         "using signed URLs for photo access."

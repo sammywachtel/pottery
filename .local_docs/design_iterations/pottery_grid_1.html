@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pottery Grid - Variation 1: Adaptive Column Span</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f5f5;
+            padding: 16px;
+            max-width: 420px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .strategy {
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .strategy h2 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #8B4513;
+        }
+
+        .strategy-label {
+            font-weight: 600;
+            color: #666;
+            margin-top: 8px;
+        }
+
+        /* VARIATION 1: Adaptive Column Span Grid */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            grid-auto-flow: dense;
+        }
+
+        .card {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        /* Landscape photos span both columns */
+        .card.landscape {
+            grid-column: span 2;
+        }
+
+        /* Portrait and square stay in single column */
+        .card.portrait,
+        .card.square {
+            grid-column: span 1;
+        }
+
+        .photo {
+            width: 100%;
+            background: #e0e0e0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Landscape: 16:9 ratio, full width */
+        .card.landscape .photo {
+            padding-top: 56.25%; /* 16:9 */
+        }
+
+        /* Portrait: 3:4 ratio */
+        .card.portrait .photo {
+            padding-top: 133.33%; /* 3:4 */
+        }
+
+        /* Square: 1:1 ratio */
+        .card.square .photo {
+            padding-top: 100%; /* 1:1 */
+        }
+
+        .photo-label {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 12px;
+            color: #666;
+            text-align: center;
+            padding: 8px;
+        }
+
+        .info {
+            padding: 12px;
+        }
+
+        .item-name {
+            font-weight: 600;
+            font-size: 14px;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .clay-type {
+            font-size: 12px;
+            color: #8B4513;
+            margin-bottom: 2px;
+        }
+
+        .location {
+            font-size: 11px;
+            color: #999;
+            margin-bottom: 2px;
+        }
+
+        .date {
+            font-size: 11px;
+            color: #666;
+        }
+
+        .pros-cons {
+            margin-top: 16px;
+        }
+
+        .pros, .cons {
+            margin-bottom: 12px;
+        }
+
+        .pros h3, .cons h3 {
+            font-size: 13px;
+            margin-bottom: 4px;
+        }
+
+        .pros h3 {
+            color: #2d6a2d;
+        }
+
+        .cons h3 {
+            color: #c14545;
+        }
+
+        ul {
+            margin-left: 20px;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <h1>Variation 1: Adaptive Column Span</h1>
+
+    <div class="strategy">
+        <h2>Layout Strategy</h2>
+        <p>
+            <strong>Smart width detection:</strong> Landscape photos (wider than tall) automatically span both columns for full-width display,
+            while portrait and square photos stay in single columns. Uses CSS Grid with <code>grid-auto-flow: dense</code> to fill gaps intelligently.
+        </p>
+
+        <p class="strategy-label">How it handles aspect ratios:</p>
+        <p>
+            Each photo's container uses aspect-ratio-based padding to maintain its natural proportions without cropping.
+            Landscape = 16:9, Portrait = 3:4, Square = 1:1. The grid adapts the card width (1 or 2 columns) based on orientation.
+        </p>
+
+        <div class="pros-cons">
+            <div class="pros">
+                <h3>✓ Pros</h3>
+                <ul>
+                    <li>Zero cropping - all photos shown completely</li>
+                    <li>Landscape photos get proper prominence</li>
+                    <li>Dense packing minimizes whitespace</li>
+                    <li>Natural feel when scrolling (variety in layout)</li>
+                    <li>Easy to implement in Flutter with SliverGrid</li>
+                </ul>
+            </div>
+
+            <div class="cons">
+                <h3>✗ Cons</h3>
+                <ul>
+                    <li>Card heights vary significantly (can feel uneven)</li>
+                    <li>Landscape photos break the 2-column rhythm</li>
+                    <li>Grid ordering can be unpredictable with 'dense' packing</li>
+                    <li>Portrait photos may look small next to landscape ones</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid">
+        <!-- Portrait Photo 1 -->
+        <div class="card portrait">
+            <div class="photo">
+                <div class="photo-label">Portrait<br>3:4 ratio</div>
+            </div>
+            <div class="info">
+                <div class="item-name">Tall Vase</div>
+                <div class="clay-type">Stoneware</div>
+                <div class="location">Studio A</div>
+                <div class="date">Jan 15, 2025</div>
+            </div>
+        </div>
+
+        <!-- Square Photo 1 -->
+        <div class="card square">
+            <div class="photo">
+                <div class="photo-label">Square<br>1:1 ratio</div>
+            </div>
+            <div class="info">
+                <div class="item-name">Bowl</div>
+                <div class="clay-type">Porcelain</div>
+                <div class="location">Studio B</div>
+                <div class="date">Jan 14, 2025</div>
+            </div>
+        </div>
+
+        <!-- Landscape Photo 1 (spans 2 columns) -->
+        <div class="card landscape">
+            <div class="photo">
+                <div class="photo-label">Landscape (spans 2 columns)<br>16:9 ratio</div>
+            </div>
+            <div class="info">
+                <div class="item-name">Serving Platter</div>
+                <div class="clay-type">Terracotta</div>
+                <div class="location">Studio A</div>
+                <div class="date">Jan 13, 2025</div>
+            </div>
+        </div>
+
+        <!-- Portrait Photo 2 -->
+        <div class="card portrait">
+            <div class="photo">
+                <div class="photo-label">Portrait<br>3:4 ratio</div>
+            </div>
+            <div class="info">
+                <div class="item-name">Pitcher</div>
+                <div class="clay-type">Earthenware</div>
+                <div class="date">Jan 12, 2025</div>
+            </div>
+        </div>
+
+        <!-- Square Photo 2 -->
+        <div class="card square">
+            <div class="photo">
+                <div class="photo-label">Square<br>1:1 ratio</div>
+            </div>
+            <div class="info">
+                <div class="item-name">Cup</div>
+                <div class="clay-type">Stoneware</div>
+                <div class="location">Studio C</div>
+                <div class="date">Jan 11, 2025</div>
+            </div>
+        </div>
+
+        <!-- Landscape Photo 2 (spans 2 columns) -->
+        <div class="card landscape">
+            <div class="photo">
+                <div class="photo-label">Landscape (spans 2 columns)<br>16:9 ratio</div>
+            </div>
+            <div class="info">
+                <div class="item-name">Wide Bowl Set</div>
+                <div class="clay-type">Porcelain</div>
+                <div class="location">Studio A</div>
+                <div class="date">Jan 10, 2025</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

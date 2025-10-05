@@ -34,6 +34,8 @@ class _ItemsHomePageState extends ConsumerState<ItemsHomePage> {
   Set<String> _selectedStages = {};
   Set<String> _selectedLocations = {};
   DateTimeRange? _selectedDateRange;
+  bool _showArchived = false;
+  bool _showBroken = false;
 
   @override
   Widget build(BuildContext context) {
@@ -47,20 +49,26 @@ class _ItemsHomePageState extends ConsumerState<ItemsHomePage> {
 
     return Scaffold(
       appBar: AppBar(
+        // Here's where we fix overflow: flexible title that can shrink
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               Icons.handyman,
               color: Theme.of(context).colorScheme.primary,
-              size: 28,
+              size: 24, // Slightly smaller icon
             ),
-            const SizedBox(width: 8),
-            const Text('Pottery Studio'),
+            const SizedBox(width: 6),
+            const Flexible(
+              child: Text(
+                'Pottery Studio',
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
           ],
         ),
         actions: [
-          // Filter button with active indicator
+          // Opening move: Filter button with count badge showing active filters
           Stack(
             children: [
               IconButton(
@@ -73,11 +81,22 @@ class _ItemsHomePageState extends ConsumerState<ItemsHomePage> {
                   right: 8,
                   top: 8,
                   child: Container(
-                    width: 8,
-                    height: 8,
+                    constraints: const BoxConstraints(minWidth: 16),
+                    height: 16,
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
                     decoration: BoxDecoration(
                       color: Theme.of(context).colorScheme.primary,
-                      shape: BoxShape.circle,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Center(
+                      child: Text(
+                        '${_getActiveFilterCount()}',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onPrimary,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -155,6 +174,9 @@ class _ItemsHomePageState extends ConsumerState<ItemsHomePage> {
           return RefreshIndicator.adaptive(
             onRefresh: refresh,
             child: CustomScrollView(
+              // Opening move: Increase cache extent to keep more items alive off-screen
+              // This prevents photos from being disposed and reloaded during scroll
+              cacheExtent: 1000.0, // Keep ~3 screens worth of items cached
               slivers: [
                 SliverPadding(
                   padding: const EdgeInsets.all(PotterySpacing.clay),
@@ -207,9 +229,14 @@ class _ItemsHomePageState extends ConsumerState<ItemsHomePage> {
             : b.name.compareTo(a.name));
         break;
       case ItemSortCriteria.date:
-        sortedItems.sort((a, b) => _sortDirection == SortDirection.ascending
-            ? a.createdDateTime.compareTo(b.createdDateTime)
-            : b.createdDateTime.compareTo(a.createdDateTime));
+        // Big play: Sort by updated datetime (falls back to created if no updates)
+        sortedItems.sort((a, b) {
+          final aDate = a.updatedDateTime ?? a.createdDateTime;
+          final bDate = b.updatedDateTime ?? b.createdDateTime;
+          return _sortDirection == SortDirection.ascending
+              ? aDate.compareTo(bDate)
+              : bDate.compareTo(aDate);
+        });
         break;
       case ItemSortCriteria.stage:
         // Define stage order: greenware < bisque < final
@@ -269,8 +296,8 @@ class _ItemsHomePageState extends ConsumerState<ItemsHomePage> {
               },
             ),
             _SortOption(
-              title: 'Date created',
-              subtitle: 'When pottery was added',
+              title: 'Date updated',
+              subtitle: 'Most recently modified',
               icon: Icons.calendar_today,
               isSelected: _sortCriteria == ItemSortCriteria.date,
               onTap: () {
@@ -316,7 +343,7 @@ class _ItemsHomePageState extends ConsumerState<ItemsHomePage> {
                 },
               ),
             ),
-            PotterySpace.clayVertical,
+            // Victory lap: Removed extra bottom padding to fix 2px overflow
           ],
         ),
       ),
@@ -328,7 +355,7 @@ class _ItemsHomePageState extends ConsumerState<ItemsHomePage> {
       case ItemSortCriteria.name:
         return _sortDirection == SortDirection.ascending ? 'A to Z' : 'Z to A';
       case ItemSortCriteria.date:
-        return _sortDirection == SortDirection.ascending ? 'Oldest first' : 'Newest first';
+        return _sortDirection == SortDirection.ascending ? 'Least recent first' : 'Most recent first';
       case ItemSortCriteria.stage:
         return _sortDirection == SortDirection.ascending ? 'Greenware first' : 'Final first';
     }
@@ -337,6 +364,19 @@ class _ItemsHomePageState extends ConsumerState<ItemsHomePage> {
   // Filter items based on current filter criteria
   List<PotteryItemModel> _filterItems(List<PotteryItemModel> items) {
     return items.where((item) {
+      // Opening move: Archived and broken are exclusive filters
+      // When enabled, show ONLY those items, not include them
+      if (_showArchived) {
+        // Show only archived items
+        if (!item.isArchived) return false;
+      } else if (_showBroken) {
+        // Show only broken items
+        if (!item.isBroken) return false;
+      } else {
+        // Default: hide both archived and broken items
+        if (item.isArchived || item.isBroken) return false;
+      }
+
       // Filter by stages
       if (_selectedStages.isNotEmpty && !_selectedStages.contains(item.currentStatus.toLowerCase())) {
         return false;
@@ -364,7 +404,19 @@ class _ItemsHomePageState extends ConsumerState<ItemsHomePage> {
   bool _hasActiveFilters() {
     return _selectedStages.isNotEmpty ||
            _selectedLocations.isNotEmpty ||
-           _selectedDateRange != null;
+           _selectedDateRange != null ||
+           _showArchived ||
+           _showBroken;
+  }
+
+  // Big play: Count active filters for badge display
+  int _getActiveFilterCount() {
+    int count = 0;
+    if (_selectedStages.isNotEmpty) count++;
+    if (_selectedLocations.isNotEmpty) count++;
+    if (_selectedDateRange != null) count++;
+    if (_showArchived || _showBroken) count++; // Count as one visibility filter
+    return count;
   }
 
   // Get unique stages from all items
@@ -386,13 +438,17 @@ class _ItemsHomePageState extends ConsumerState<ItemsHomePage> {
         selectedStages: _selectedStages,
         selectedLocations: _selectedLocations,
         selectedDateRange: _selectedDateRange,
+        showArchived: _showArchived,
+        showBroken: _showBroken,
         availableStages: _getAvailableStages(ref.read(itemListProvider).value ?? []),
         availableLocations: _getAvailableLocations(ref.read(itemListProvider).value ?? []),
-        onFiltersChanged: (stages, locations, dateRange) {
+        onFiltersChanged: (stages, locations, dateRange, showArchived, showBroken) {
           setState(() {
             _selectedStages = stages;
             _selectedLocations = locations;
             _selectedDateRange = dateRange;
+            _showArchived = showArchived;
+            _showBroken = showBroken;
           });
         },
         onClearAll: () {
@@ -400,6 +456,8 @@ class _ItemsHomePageState extends ConsumerState<ItemsHomePage> {
             _selectedStages.clear();
             _selectedLocations.clear();
             _selectedDateRange = null;
+            _showArchived = false;
+            _showBroken = false;
           });
         },
       ),
@@ -425,8 +483,9 @@ class _ItemsHomePageState extends ConsumerState<ItemsHomePage> {
   }
 }
 
-// New pottery card implementation
-class _PotteryItemCard extends StatelessWidget {
+// Opening move: Convert to StatefulWidget with AutomaticKeepAliveClientMixin
+// This prevents the widget from being disposed when scrolling, keeping photos cached
+class _PotteryItemCard extends StatefulWidget {
   const _PotteryItemCard({
     required this.item,
     this.onTap,
@@ -438,41 +497,59 @@ class _PotteryItemCard extends StatelessWidget {
   final VoidCallback? onLongPress;
 
   @override
+  State<_PotteryItemCard> createState() => _PotteryItemCardState();
+}
+
+class _PotteryItemCardState extends State<_PotteryItemCard>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
   Widget build(BuildContext context) {
+    // Big play: Call super.build to enable keep-alive functionality
+    super.build(context);
+
     return PotteryCard(
-      name: item.name,
-      clayType: item.clayType,
-      location: item.location,
+      name: widget.item.name,
+      clayType: widget.item.clayType,
+      location: widget.item.location,
       primaryPhotoUrl: _getPrimaryPhotoUrl(),
-      photos: item.photos.map((photo) => {
+      photos: widget.item.photos.map((photo) => {
         'stage': photo.stage,
         'signedUrl': photo.signedUrl,
         'id': photo.id,
       }).toList(),
-      currentStatus: item.currentStatus,
-      createdDateTime: item.createdDateTime,
-      onTap: onTap,
-      onLongPress: onLongPress,
-      heroTag: 'item-${item.id}',
+      currentStatus: widget.item.currentStatus,
+      createdDateTime: widget.item.createdDateTime,
+      lastUpdatedDateTime: widget.item.updatedDateTime,
+      isBroken: widget.item.isBroken,
+      isArchived: widget.item.isArchived,
+      onTap: widget.onTap,
+      onLongPress: widget.onLongPress,
+      heroTag: 'item-${widget.item.id}',
       cardVariant: PotteryCardVariant.grid,
     );
   }
 
   String? _getPrimaryPhotoUrl() {
-    if (item.photos.isEmpty) return null;
+    if (widget.item.photos.isEmpty) return null;
 
-    // Prefer final stage, then bisque, then greenware
-    for (final stage in ['final', 'bisque', 'greenware']) {
-      final stagePhoto = item.photos.where((p) =>
-        p.stage.toLowerCase() == stage).firstOrNull;
-      if (stagePhoto?.signedUrl != null) {
-        return stagePhoto!.signedUrl;
-      }
+    // Check if any photo is marked as primary
+    final primaryPhoto = widget.item.photos.where((p) => p.isPrimary).firstOrNull;
+    if (primaryPhoto?.signedUrl != null) {
+      return primaryPhoto!.signedUrl;
     }
 
-    // Fallback to first photo with signedUrl
-    final photoWithUrl = item.photos.where((p) => p.signedUrl != null).firstOrNull;
-    return photoWithUrl?.signedUrl;
+    // If no primary photo, use the most recent photo (newest uploadedAt)
+    final photosWithUrl = widget.item.photos.where((p) => p.signedUrl != null).toList();
+    if (photosWithUrl.isEmpty) return null;
+
+    // Sort by uploadedAt descending (most recent first)
+    photosWithUrl.sort((a, b) => b.uploadedAt.compareTo(a.uploadedAt));
+
+    // Victory lap: return the most recent photo
+    return photosWithUrl.first.signedUrl;
   }
 }
 
@@ -674,6 +751,8 @@ class _FilterOptionsSheet extends StatefulWidget {
     required this.selectedStages,
     required this.selectedLocations,
     required this.selectedDateRange,
+    required this.showArchived,
+    required this.showBroken,
     required this.availableStages,
     required this.availableLocations,
     required this.onFiltersChanged,
@@ -683,9 +762,11 @@ class _FilterOptionsSheet extends StatefulWidget {
   final Set<String> selectedStages;
   final Set<String> selectedLocations;
   final DateTimeRange? selectedDateRange;
+  final bool showArchived;
+  final bool showBroken;
   final Set<String> availableStages;
   final Set<String> availableLocations;
-  final Function(Set<String>, Set<String>, DateTimeRange?) onFiltersChanged;
+  final Function(Set<String>, Set<String>, DateTimeRange?, bool, bool) onFiltersChanged;
   final VoidCallback onClearAll;
 
   @override
@@ -696,6 +777,8 @@ class _FilterOptionsSheetState extends State<_FilterOptionsSheet> {
   late Set<String> _tempSelectedStages;
   late Set<String> _tempSelectedLocations;
   DateTimeRange? _tempSelectedDateRange;
+  late bool _tempShowArchived;
+  late bool _tempShowBroken;
 
   @override
   void initState() {
@@ -703,6 +786,8 @@ class _FilterOptionsSheetState extends State<_FilterOptionsSheet> {
     _tempSelectedStages = Set.from(widget.selectedStages);
     _tempSelectedLocations = Set.from(widget.selectedLocations);
     _tempSelectedDateRange = widget.selectedDateRange;
+    _tempShowArchived = widget.showArchived;
+    _tempShowBroken = widget.showBroken;
   }
 
   @override
@@ -742,6 +827,8 @@ class _FilterOptionsSheetState extends State<_FilterOptionsSheet> {
                         _tempSelectedStages.clear();
                         _tempSelectedLocations.clear();
                         _tempSelectedDateRange = null;
+                        _tempShowArchived = false;
+                        _tempShowBroken = false;
                       });
                     },
                     child: const Text('Clear all'),
@@ -755,6 +842,18 @@ class _FilterOptionsSheetState extends State<_FilterOptionsSheet> {
                 child: ListView(
                   controller: scrollController,
                   children: [
+                    // Big play: Section header for visibility filters
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                      child: Text(
+                        'VISIBILITY',
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: Theme.of(context).colorScheme.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+
                     // Date range filter
                     ListTile(
                       leading: const Icon(Icons.date_range),
@@ -787,18 +886,76 @@ class _FilterOptionsSheetState extends State<_FilterOptionsSheet> {
                       },
                     ),
 
+                    PotterySpace.slipVertical,
+
+                    // Victory lap: Explanation of visibility logic
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      child: Text(
+                        'By default, archived and broken items are hidden. These filters show ONLY the selected type (mutually exclusive).',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+
+                    // Show archived toggle - battle-hardened visibility control
+                    SwitchListTile(
+                      secondary: const Icon(Icons.archive_outlined),
+                      title: const Text('Show only archived items'),
+                      subtitle: const Text('View completed/filed items only'),
+                      value: _tempShowArchived,
+                      onChanged: (value) {
+                        setState(() {
+                          _tempShowArchived = value;
+                          // Big play: Mutually exclusive - disable broken when archived enabled
+                          if (value) _tempShowBroken = false;
+                        });
+                      },
+                    ),
+
+                    // Show broken toggle - same pattern as archived
+                    SwitchListTile(
+                      secondary: const Icon(Icons.warning_outlined),
+                      title: const Text('Show only broken items'),
+                      subtitle: const Text('View damaged items only'),
+                      value: _tempShowBroken,
+                      onChanged: (value) {
+                        setState(() {
+                          _tempShowBroken = value;
+                          // Big play: Mutually exclusive - disable archived when broken enabled
+                          if (value) _tempShowArchived = false;
+                        });
+                      },
+                    ),
+
                     PotterySpace.clayVertical,
+                    const Divider(),
+
+                    // Main play: Section header for stage filters
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                      child: Text(
+                        'FIRING STAGE',
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: Theme.of(context).colorScheme.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      child: Text(
+                        'Select one or more stages to filter by. Items must match at least one selected stage.',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
 
                     // Firing stages filter
                     if (widget.availableStages.isNotEmpty) ...[
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Text(
-                          'Firing stages',
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                      ),
-                      PotterySpace.trimVertical,
                       ...widget.availableStages.map((stage) {
                         final isSelected = _tempSelectedStages.contains(stage);
                         return CheckboxListTile(
@@ -818,16 +975,32 @@ class _FilterOptionsSheetState extends State<_FilterOptionsSheet> {
                       PotterySpace.clayVertical,
                     ],
 
-                    // Locations filter
-                    if (widget.availableLocations.isNotEmpty) ...[
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Text(
-                          'Locations',
-                          style: Theme.of(context).textTheme.titleMedium,
+                    const Divider(),
+
+                    // Main play: Section header for location filters
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                      child: Text(
+                        'LOCATION',
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: Theme.of(context).colorScheme.primary,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
-                      PotterySpace.trimVertical,
+                    ),
+
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      child: Text(
+                        'Select one or more locations to filter by. Items must match at least one selected location.',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+
+                    // Locations filter
+                    if (widget.availableLocations.isNotEmpty) ...[
                       ...widget.availableLocations.map((location) {
                         final isSelected = _tempSelectedLocations.contains(location);
                         return CheckboxListTile(
@@ -866,6 +1039,8 @@ class _FilterOptionsSheetState extends State<_FilterOptionsSheet> {
                           _tempSelectedStages,
                           _tempSelectedLocations,
                           _tempSelectedDateRange,
+                          _tempShowArchived,
+                          _tempShowBroken,
                         );
                         Navigator.of(context).pop();
                       },

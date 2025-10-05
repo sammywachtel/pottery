@@ -27,6 +27,9 @@ pytz
 # For handling multipart/form-data (file uploads)
 python-multipart
 
+# For image processing (aspect ratio calculation)
+Pillow
+
 # For JWT authentication
 python-jose[cryptography]
 passlib[bcrypt]==1.7.4

@@ -36,7 +36,7 @@ existing_photo_internal = Photo(
     stage="Greenware",
     fileName="existing.png",
     uploadedAt=NOW_UTC,  # Aware UTC
-    uploadedTimezone="UTC",
+    isPrimary=False,  # Not primary by default
 )
 
 # Sample PotteryItem with an existing photo
@@ -96,7 +96,7 @@ async def test_upload_photo_success(client: TestClient, mocker, auth_headers):
         fileName="dummy.jpg",
         imageNote="Test upload",
         uploadedAt=NOW_UTC,  # Should match mocked datetime.now
-        uploadedTimezone="UTC",
+        isPrimary=True,  # First photo should be primary
     )
     updated_item_internal = sample_item_no_photos.model_copy(deep=True)
     updated_item_internal.photos.append(new_photo_internal)
@@ -133,7 +133,7 @@ async def test_upload_photo_success(client: TestClient, mocker, auth_headers):
     assert json_response["id"] == TEST_PHOTO_ID_NEW
     assert json_response["stage"] == form_data["photo_stage"]
     assert json_response["signedUrl"] == mock_generate_url.return_value
-    assert json_response["uploadedTimezone"] == "UTC"
+    assert json_response["isPrimary"] is True  # Should be primary (first photo)
 
     # Compare datetime values, not strings
     response_dt_str = json_response["uploadedAt"]

@@ -34,6 +34,17 @@ class PhotoBase(BaseModel):
     fileName: Optional[str] = Field(
         None, description="Original filename, useful for display"
     )
+    isPrimary: bool = Field(
+        default=False,
+        description="Whether this photo is the primary display photo for the item",
+    )
+    aspectRatio: Optional[float] = Field(
+        None,
+        description=(
+            "Photo aspect ratio (width/height). "
+            "E.g., 1.5 for landscape, 0.75 for portrait, 1.0 for square"
+        ),
+    )
 
 
 class Photo(PhotoBase):
@@ -75,10 +86,13 @@ class PhotoResponse(PhotoBase):
 
 
 class PhotoUpdate(BaseModel):
-    """Schema for updating photo metadata fields (stage, imageNote)."""
+    """Schema for updating photo metadata fields (stage, imageNote, isPrimary)."""
 
     stage: Optional[str] = Field(None, description="New stage for the photo")
     imageNote: Optional[str] = Field(None, description="New note for the photo")
+    isPrimary: Optional[bool] = Field(
+        None, description="Whether this is the primary photo"
+    )
 
 
 # --- Pottery Item Schemas ---
@@ -97,6 +111,14 @@ class PotteryItemBase(BaseModel):
     cone: Optional[str] = None
     location: str
     note: Optional[str] = None
+    isBroken: bool = Field(
+        default=False,
+        description="Whether the finished item is broken (applies to final stage)",
+    )
+    isArchived: bool = Field(
+        default=False,
+        description="Whether the item is archived (hidden from default view)",
+    )
     createdDateTime: datetime = Field(
         ...,
         description="Timestamp item was created/started (UTC)",

@@ -271,6 +271,61 @@ async def update_item_metadata(
         raise
 
 
+async def patch_item_fields(
+    item_id: str, update_fields: dict, user_id: str = None
+) -> Optional[PotteryItem]:
+    """
+    Opening move: Partially update specific fields without full model.
+    Useful for toggling flags like isBroken or isArchived.
+
+    Args:
+        item_id: The ID of the item to update
+        update_fields: Dictionary of fields to update (e.g., {'isBroken': True})
+        user_id: If provided, only updates if item belongs to this user
+
+    Returns:
+        Updated PotteryItem if successful, None if not found or permission denied
+    """
+    db, items_collection = _ensure_firestore_client()
+
+    try:
+        doc_ref = items_collection.document(item_id)
+        doc_snapshot = await doc_ref.get()
+
+        if not doc_snapshot.exists:
+            logger.warning(f"Attempted to patch non-existent item with ID: {item_id}")
+            return None
+
+        # Big play: Check ownership if user_id provided
+        item_data = doc_snapshot.to_dict()
+        if user_id and item_data.get("user_id") != user_id:
+            logger.warning(
+                f"User {user_id} attempted to patch item {item_id} "
+                f"which belongs to user {item_data.get('user_id')}."
+            )
+            return None
+
+        # Main play: Always set updatedDateTime on any field update
+        update_fields["updatedDateTime"] = datetime.now(timezone.utc)
+
+        logger.debug(f"Patching item {item_id} with fields: {update_fields}")
+        await doc_ref.update(update_fields)
+
+        # Victory lap: Retrieve and return updated item
+        updated_item = await get_item_by_id(item_id, user_id)
+        if updated_item:
+            logger.info(f"Patched fields for item with ID: {item_id}")
+        return updated_item
+
+    except Exception:
+        logger.error(
+            f"Error patching item {item_id} in Firestore. Fields attempted: "
+            f"{update_fields}",
+            exc_info=True,
+        )
+        raise
+
+
 async def delete_item_and_photos(item_id: str, user_id: str = None) -> bool:
     """
     Deletes a pottery item document from Firestore.
@@ -540,6 +595,77 @@ async def update_photo_details_in_item(
     except Exception as e:
         logger.error(
             f"Error updating photo {photo_id} details for item {item_id}: {e}",
+            exc_info=True,
+        )
+        raise
+
+
+async def set_primary_photo(
+    item_id: str, photo_id: str, user_id: str = None
+) -> Optional[Photo]:
+    """
+    Sets a photo as the primary photo for an item.
+    Ensures only one photo is marked as primary by setting isPrimary=True for the
+    target photo and isPrimary=False for all other photos in the item.
+    If user_id is provided, only updates the photo if the item belongs to that user.
+    If user_id is None, updates the photo regardless of ownership (admin functionality).
+    """
+    db, items_collection = _ensure_firestore_client()
+    try:
+        # Opening move: verify item exists and user has access
+        item = await get_item_by_id(item_id, user_id)
+        if not item:
+            if user_id:
+                logger.warning(
+                    f"User {user_id} attempted to set primary photo in item {item_id} "
+                    f"which either doesn't exist or doesn't belong to them."
+                )
+            else:
+                logger.warning(
+                    f"Cannot set primary photo {photo_id}, item {item_id} not found."
+                )
+            return None
+
+        doc_ref = items_collection.document(item_id)
+        updated_photos_list = []
+        target_photo_model: Optional[Photo] = None
+        photo_found = False
+
+        # Main play: loop through photos and set isPrimary appropriately
+        for p in item.photos:
+            photo_dict = p.model_dump()
+            if p.id == photo_id:
+                # Victory moment: mark this one as primary
+                photo_found = True
+                photo_dict["isPrimary"] = True
+                target_photo_model = Photo(**photo_dict)
+                logger.debug(f"Setting photo {photo_id} as primary in item {item_id}")
+            else:
+                # Supporting cast: ensure all others are not primary
+                photo_dict["isPrimary"] = False
+            updated_photos_list.append(photo_dict)
+
+        if not photo_found:
+            logger.warning(
+                f"Photo {photo_id} not found within item {item_id}. "
+                f"Cannot set as primary."
+            )
+            return None
+
+        # Final whistle: persist the changes
+        await doc_ref.update(
+            {
+                "photos": updated_photos_list,
+                "updatedDateTime": datetime.now(timezone.utc),
+            }
+        )
+
+        logger.info(f"Set photo {photo_id} as primary for item {item_id}")
+        return target_photo_model
+
+    except Exception as e:
+        logger.error(
+            f"Error setting primary photo {photo_id} for item {item_id}: {e}",
             exc_info=True,
         )
         raise
